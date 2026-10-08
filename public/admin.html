@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="dashboard-body">
+    <header class="topbar dashboard-header">
+      <div class="container nav">
+        <div class="brand">
+          <span class="brand-mark">F</span>
+          <div>
+            <h1>Admin Panel</h1>
+            <p>Platform overview</p>
+          </div>
+        </div>
+        <nav>
+          <a href="index.html">Customer</a>
+          <a href="restaurant.html">Restaurant</a>
+          <a href="delivery.html">Delivery</a>
+          <a href="login.html">Login</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="dashboard-main">
+      <div class="container">
+        <div class="admin-summary" id="admin-summary"></div>
+
+        <section class="security-section weekly-menu-section">
+          <div class="section-title left">
+            <p class="eyebrow">Account security</p>
+            <h3>Change Admin Password</h3>
+          </div>
+          <p>Use a unique password with at least 14 characters. Changing it signs out other admin sessions.</p>
+          <form id="admin-password-form" class="admin-password-form">
+            <div class="field-group">
+              <label for="current-admin-password">Current password</label>
+              <input id="current-admin-password" type="password" autocomplete="current-password" required />
+            </div>
+            <div class="field-group">
+              <label for="new-admin-password">New password</label>
+              <input id="new-admin-password" type="password" minlength="14" autocomplete="new-password" required />
+            </div>
+            <button type="submit" class="submit-btn">Update Admin Password</button>
+            <p id="admin-password-status" class="schedule-status" role="status"></p>
+          </form>
+        </section>
+
+        <section class="weekly-menu-section">
+          <div class="section-title left">
+            <p class="eyebrow">Staff permissions</p>
+            <h3>Create Cashier Account</h3>
+          </div>
+          <p class="schedule-help">Cashier accounts can record student deposits and manage order status, but cannot access the admin dashboard.</p>
+          <form id="cashier-create-form" class="admin-password-form">
+            <div class="field-group">
+              <label for="cashier-full-name">Cashier name</label>
+              <input id="cashier-full-name" type="text" maxlength="255" required />
+            </div>
+            <div class="field-group">
+              <label for="cashier-username">Username</label>
+              <input id="cashier-username" type="text" maxlength="100" required />
+            </div>
+            <div class="field-group">
+              <label for="cashier-password">Temporary password (at least 14 characters)</label>
+              <input id="cashier-password" type="password" minlength="14" required />
+            </div>
+            <button type="submit" class="submit-btn">Create Cashier</button>
+            <p id="cashier-create-status" class="schedule-status" role="status"></p>
+          </form>
+          <a class="submit-btn cashier-desk-link" href="cashier.html">Open Cashier Desk</a>
+        </section>
+
+        <section class="weekly-menu-section">
+          <div class="section-title left">
+            <p class="eyebrow">Meals by weekday</p>
+            <h3>Weekly Menu Schedule</h3>
+          </div>
+          <p class="schedule-help">Choose which days each meal is served. The customer menu updates automatically for the current date.</p>
+          <div id="menu-schedule-status" class="schedule-status" role="status"></div>
+          <div class="schedule-table-wrap">
+            <table class="schedule-table">
+              <thead id="menu-schedule-head"></thead>
+              <tbody id="menu-schedule-body"></tbody>
+            </table>
+          </div>
+          <button type="button" class="submit-btn schedule-save-btn" id="save-menu-schedule">Save Weekly Schedule</button>
+        </section>
+
+        <div class="section-title left">
+          <p class="eyebrow">Order activity</p>
+          <h3>All Orders</h3>
+        </div>
+        <div id="admin-orders" class="order-list"></div>
+
+        <div class="section-title left">
+          <p class="eyebrow">System users</p>
+          <h3>Clients and Admin</h3>
+        </div>
+        <div id="admin-users" class="order-list admin-user-directory"></div>
+      </div>
+    </main>
+
+    <dialog id="revenue-dialog" class="notice-dialog revenue-dialog" aria-labelledby="revenue-dialog-title">
+      <div class="notice-dialog-content">
+        <div class="revenue-dialog-header">
+          <div>
+            <p class="eyebrow">Sales details</p>
+            <h2 id="revenue-dialog-title">Items Purchased</h2>
+          </div>
+          <button type="button" class="revenue-dialog-close" id="close-revenue-dialog" aria-label="Close revenue details">×</button>
+        </div>
+        <p id="revenue-dialog-status" class="schedule-status" role="status"></p>
+        <div class="revenue-table-wrap">
+          <table class="schedule-table revenue-table">
+            <thead>
+              <tr>
+                <th scope="col">Order</th>
+                <th scope="col">Date</th>
+                <th scope="col">Customer</th>
+                <th scope="col">Item</th>
+                <th scope="col">Qty</th>
+                <th scope="col">Unit price</th>
+                <th scope="col">Line total</th>
+              </tr>
+            </thead>
+            <tbody id="revenue-sales-body"></tbody>
+          </table>
+        </div>
+        <div class="revenue-grand-total">
+          <span>Total revenue</span>
+          <strong id="revenue-sales-total">$0.00</strong>
+        </div>
+      </div>
+    </dialog>
+
+    <script>
+      const nav = document.querySelector('nav');
+      if (nav) {
+        Array.from(nav.querySelectorAll('a')).forEach(link => {
+          link.style.display = 'none';
+        });
+
+        const logoutLink = document.createElement('a');
+        logoutLink.href = '#';
+        logoutLink.textContent = 'Logout';
+        logoutLink.addEventListener('click', async (event) => {
+          event.preventDefault();
+          try {
+            const response = await fetch('/api/auth/logout', { method: 'POST' });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || 'Unable to log out safely.');
+            localStorage.removeItem('foodieUser');
+            window.location.href = 'admin-login.html';
+          } catch (error) {
+            window.alert(error.message);
+          }
+        });
+        nav.appendChild(logoutLink);
+        const cashierDeskLink = document.createElement('a');
+        cashierDeskLink.href = 'cashier.html';
+        cashierDeskLink.textContent = 'Cashier Desk';
+        nav.appendChild(cashierDeskLink);
+      }
+    </script>
+    <script src="admin.js"></script>
+  </body>
+</html>

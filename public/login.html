@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login | THE KITCHEN</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="auth-body">
+    <header class="topbar">
+      <div class="container nav">
+        <div class="brand">
+          <span class="brand-mark">F</span>
+          <div>
+            <h1>THE KITCHEN</h1>
+            <p>User access</p>
+          </div>
+        </div>
+        <nav>
+          <a href="home.html">Home</a>
+          <a href="restaurant.html">Restaurant</a>
+          <a href="delivery.html">Delivery</a>
+          <a href="admin-login.html">Admin Login</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="auth-main">
+      <div class="auth-card">
+        <div class="auth-header">
+          <p class="eyebrow">Secure access</p>
+          <h2>Login</h2>
+        </div>
+
+        <form id="login-form" class="auth-form">
+          <div class="field-group">
+            <label for="loginUsername">Username</label>
+            <input id="loginUsername" type="text" placeholder="Enter username" required />
+          </div>
+          <div class="field-group">
+            <label for="loginPassword">Password</label>
+            <input id="loginPassword" type="password" placeholder="Enter password" required />
+          </div>
+          <button type="submit" class="submit-btn">Login</button>
+        </form>
+
+        <p class="auth-link-row">
+          Don’t have an account?
+          <a href="register.html">Create one</a>
+        </p>
+        <p class="auth-link-row">
+          Admin access?
+          <a href="admin-login.html">Admin Login</a>
+        </p>
+        <p class="auth-link-row">
+          Cashier access?
+          <a href="cashier-login.html">Cashier Login</a>
+        </p>
+      </div>
+    </main>
+
+    <div id="toast" class="toast"></div>
+    <script src="auth.js"></script>
+    <script src="admin-gate.js"></script>
+  </body>
+</html>

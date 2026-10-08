@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>THE KITCHEN | Home</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="container nav">
+        <div class="brand">
+          <span class="brand-mark">F</span>
+          <div>
+            <h1>THE KITCHEN</h1>
+            <p>Tasty Fresh Affordable</p>
+          </div>
+        </div>
+        <nav>
+          <a href="#menu">Menu</a>
+          <a href="#my-orders">My Orders</a>
+          <a href="#checkout">Checkout</a>
+          <a href="home.html">Home</a>
+          <a href="restaurant.html">Restaurant</a>
+          <a href="delivery.html">Delivery</a>
+          <a href="admin-login.html">Admin Login</a>
+          <a href="cashier-login.html">Cashier Login</a>
+          <a href="login.html">Login</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="container hero-inner">
+          <div>
+            <p class="eyebrow">Fresh meals delivered</p>
+            <h2>Order delicious food in minutes</h2>
+            <p>
+              A simple food ordering system built for Zimbabwean restaurants and busy customers.
+            </p>
+            <a class="cta" href="#menu">Browse Menu</a>
+          </div>
+          <div class="hero-card">
+            <h3>Why it works</h3>
+            <ul>
+              <li>Simple online ordering</li>
+              <li>Restaurant updates in real time</li>
+              <li>Delivery tracking from kitchen to door</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="menu" class="menu-section">
+        <div class="container">
+          <div class="section-title">
+            <p class="eyebrow" id="menu-date">Meals available today</p>
+            <h3>Today's Menu</h3>
+          </div>
+          <div id="menu-grid" class="menu-grid"></div>
+        </div>
+      </section>
+
+      <section id="my-orders" class="menu-section">
+        <div class="container">
+          <div class="section-title left">
+            <p class="eyebrow">Live updates</p>
+            <h3>Your Orders</h3>
+          </div>
+          <p id="order-update-message" class="order-update-message" role="status" aria-live="polite"></p>
+          <div id="student-orders" class="order-list"></div>
+        </div>
+      </section>
+
+      <section id="checkout" class="checkout-section">
+        <div class="container checkout-grid">
+          <div>
+            <div class="section-title left">
+              <p class="eyebrow">Your order</p>
+              <h3>Cart</h3>
+            </div>
+            <div id="cart-items" class="cart-items"></div>
+            <div class="totals">
+              <div><span>Subtotal</span><strong id="subtotal">$0.00</strong></div>
+              <div><span>Delivery</span><strong id="delivery">$0.00</strong></div>
+              <div class="grand-total"><span>Total</span><strong id="total">$0.00</strong></div>
+            </div>
+          </div>
+
+          <div class="order-form-wrap">
+            <h3>Place your order</h3>
+            <section class="wallet-card" aria-live="polite">
+              <p class="eyebrow">Student credit</p>
+              <strong id="wallet-balance">Loading balance…</strong>
+              <div id="wallet-transactions" class="wallet-transactions"></div>
+            </section>
+            <form id="order-form">
+              <div class="field-group">
+                <label>Order Type</label>
+                <select id="deliveryOption">
+                  <option value="pickup">Pickup</option>
+                  <option value="delivery">Delivery (temporarily unavailable)</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label>Name</label>
+                <input type="text" id="customerName" placeholder="Your full name" readonly required />
+              </div>
+              <div class="field-group">
+                <label>Phone Number</label>
+                <input type="tel" id="phone" placeholder="0771234567" required />
+              </div>
+              <div class="field-group" id="addressField" style="display: none;">
+                <label>Delivery Address</label>
+                <textarea id="address" rows="3" placeholder="Street, suburb, city"></textarea>
+              </div>
+              <div class="field-group">
+                <label>Order Note</label>
+                <textarea id="note" rows="3" placeholder="Extra details"></textarea>
+              </div>
+              <button type="submit" class="submit-btn">Confirm Order</button>
+            </form>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast"></div>
+    <dialog id="delivery-unavailable-dialog" class="notice-dialog" aria-labelledby="delivery-notice-title">
+      <div class="notice-dialog-content">
+        <p class="eyebrow">A quick update</p>
+        <h2 id="delivery-notice-title">Pickup is available</h2>
+        <p>We’re sorry, but delivery is temporarily unavailable while we arrange our motorbike. Please choose pickup for your order. Thank you for your understanding!</p>
+        <button type="button" class="submit-btn" id="close-delivery-unavailable">Got it</button>
+      </div>
+    </dialog>
+    <dialog id="drink-picker-dialog" class="notice-dialog drink-picker-dialog" aria-labelledby="drink-picker-title">
+      <div class="drink-picker-content">
+        <img class="drink-picker-image" src="drinks-assortment.svg" alt="An assortment of juice and soft drinks" />
+        <div class="drink-picker-body">
+          <p class="eyebrow">Cold drinks</p>
+          <h2 id="drink-picker-title">Choose a drink</h2>
+          <p class="drink-picker-help">Choose your drink below. You can add more than one.</p>
+          <div id="drink-picker-options" class="drink-picker-options"></div>
+          <button type="button" class="admin-gate-cancel drink-picker-close" id="close-drink-picker">Done</button>
+        </div>
+      </div>
+    </dialog>
+    <dialog id="payment-choice-dialog" class="notice-dialog" aria-labelledby="payment-choice-title">
+      <div class="notice-dialog-content">
+        <p class="eyebrow">Choose how to pay</p>
+        <h2 id="payment-choice-title">Payment method</h2>
+        <p>Your current credit: <strong id="payment-credit-balance">$0.00</strong></p>
+        <p>Pay with cash, or use your saved student credit (“change”).</p>
+        <div class="payment-choice-actions">
+          <button type="button" class="submit-btn" data-payment-method="cash">Pay Cash</button>
+          <button type="button" class="submit-btn" data-payment-method="credit">Use Student Credit</button>
+          <button type="button" class="admin-gate-cancel" id="cancel-payment-choice">Go Back</button>
+        </div>
+      </div>
+    </dialog>
+    <script>
+      const currentUser = JSON.parse(localStorage.getItem('foodieUser') || 'null');
+      if (!currentUser) {
+        window.location.href = 'login.html';
+      } else if (currentUser.role === 'admin') {
+        window.location.href = 'admin.html';
+      } else if (currentUser.role === 'cashier') {
+        window.location.href = 'cashier.html';
+      } else {
+        const nav = document.querySelector('nav');
+        if (nav) {
+          Array.from(nav.querySelectorAll('a')).forEach(link => {
+            const href = link.getAttribute('href');
+            if (['#menu', '#checkout', 'home.html', 'restaurant.html', 'delivery.html', 'admin.html', 'login.html', 'cashier-login.html'].includes(href)) {
+              link.style.display = 'none';
+            }
+          });
+
+          const logoutLink = document.createElement('a');
+          logoutLink.href = '#';
+          logoutLink.textContent = 'Logout';
+          logoutLink.addEventListener('click', async (event) => {
+            event.preventDefault();
+            try {
+              const response = await fetch('/api/auth/logout', { method: 'POST' });
+              const result = await response.json();
+              if (!response.ok) throw new Error(result.message || 'Unable to log out.');
+              localStorage.removeItem('foodieUser');
+              window.location.href = 'login.html';
+            } catch (error) {
+              window.alert(error.message);
+            }
+          });
+          nav.appendChild(logoutLink);
+        }
+      }
+    </script>
+    <script src="app.js"></script>
+    <script src="admin-gate.js"></script>
+  </body>
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Account | THE KITCHEN</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="auth-body">
+    <header class="topbar">
+      <div class="container nav">
+        <div class="brand">
+          <span class="brand-mark">F</span>
+          <div>
+            <h1>THE KITCHEN</h1>
+          </div>
+        </div>
+        <nav>
+          <a href="home.html">Home</a>
+          <a href="restaurant.html">Restaurant</a>
+          <a href="delivery.html">Delivery</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="auth-main">
+      <div class="auth-card">
+        <div class="auth-header">
+          <h2>Create Account</h2>
+        </div>
+
+        <form id="register-form" class="auth-form">
+          <div class="field-group">
+            <label for="registerName">Full Name</label>
+            <input id="registerName" type="text" placeholder="Your Full Name" required />
+          </div>
+          <div class="field-group">
+            <label for="registerUsername">Username</label>
+            <input id="registerUsername" type="text" placeholder="Choose username" required />
+          </div>
+          <div class="field-group">
+            <label for="registerAge">Age</label>
+            <input id="registerAge" type="number" min="1" max="120" placeholder="Your age" required />
+          </div>
+          <div class="field-group">
+            <label for="registerWeight">Weight (kg)</label>
+            <input id="registerWeight" type="number" min="1" step="0.1" placeholder="Your weight" required />
+          </div>
+          <div class="field-group">
+            <label for="registerHeight">Height (cm)</label>
+            <input id="registerHeight" type="number" min="1" step="0.1" placeholder="Your height" required />
+          </div>
+          <div class="field-group">
+            <label for="registerPassword">Password</label>
+            <input id="registerPassword" type="password" placeholder="Create password" required />
+          </div>
+          <button type="submit" class="submit-btn secondary">Create Account</button>
+        </form>
+
+        <p class="auth-link-row">
+          Already have an account?
+          <a href="login.html">Login</a>
+        </p>
+      </div>
+    </main>
+
+    <div id="toast" class="toast"></div>
+    <script src="auth.js"></script>
+  </body>
+</html>

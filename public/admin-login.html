@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Login | THE KITCHEN</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="auth-body">
+    <header class="topbar">
+      <div class="container nav">
+        <div class="brand">
+          <span class="brand-mark">F</span>
+          <div>
+            <h1>THE KITCHEN</h1>
+            <p>Admin access</p>
+          </div>
+        </div>
+        <nav>
+          <a href="login.html">User Login</a>
+          <a href="home.html">Home</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="auth-main">
+      <div class="auth-card">
+        <div class="auth-header">
+          <p class="eyebrow">Restricted portal</p>
+          <h2>Admin Login</h2>
+        </div>
+
+        <form id="admin-login-form" class="auth-form">
+          <div class="field-group">
+            <label for="adminLoginUsername">Username</label>
+            <input id="adminLoginUsername" type="text" placeholder="Enter admin username" required />
+          </div>
+          <div class="field-group">
+            <label for="adminLoginPassword">Password</label>
+            <input id="adminLoginPassword" type="password" placeholder="Enter admin password" required />
+          </div>
+          <button type="submit" class="submit-btn">Login as Admin</button>
+        </form>
+
+        <p class="auth-link-row">
+          Customer access?
+          <a href="login.html">User Login</a>
+        </p>
+      </div>
+    </main>
+
+    <div id="toast" class="toast"></div>
+    <script src="auth.js"></script>
+  </body>
+</html>

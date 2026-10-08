@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Start app and open Login",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/server.js",
+      "cwd": "${workspaceFolder}",
+      "serverReadyAction": {
+        "pattern": "Server running on (https?://\\S+)",
+        "uriFormat": "%s/login.html",
+        "action": "openExternally"
+      }
+    }
+  ]
+}

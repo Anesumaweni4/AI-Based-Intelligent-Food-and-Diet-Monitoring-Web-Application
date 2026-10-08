@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Credit | THE KITCHEN</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="dashboard-body">
+    <header class="topbar dashboard-header">
+      <div class="container nav">
+        <div class="brand">
+          <span class="brand-mark">F</span>
+          <div>
+            <h1>Cashier Desk</h1>
+            <p>Student credit and deposits</p>
+          </div>
+        </div>
+        <nav>
+          <a href="restaurant.html">Orders</a>
+          <a href="delivery.html">Delivery</a>
+          <a href="login.html" id="cashier-logout">Logout</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="dashboard-main">
+      <div class="container">
+        <section class="weekly-menu-section">
+          <div class="section-title left">
+            <p class="eyebrow">Record cash deposits</p>
+            <h3>Student Credit</h3>
+          </div>
+          <p class="schedule-help">Find the student account first, confirm the name, then enter the cash deposit amount in USD.</p>
+          <form id="student-search-form" class="cashier-search-form">
+            <div class="field-group">
+              <label for="student-search">Student name or username</label>
+              <input id="student-search" type="search" minlength="2" required />
+            </div>
+            <button class="submit-btn" type="submit">Find Student</button>
+          </form>
+          <p id="cashier-status" class="schedule-status" role="status"></p>
+          <div id="student-search-results" class="order-list"></div>
+          <form id="deposit-form" class="cashier-deposit-form" hidden>
+            <h4 id="selected-student"></h4>
+            <div class="field-group">
+              <label for="deposit-amount">Deposit amount (USD)</label>
+              <input id="deposit-amount" type="number" min="0.01" step="0.01" required />
+            </div>
+            <button class="submit-btn" type="submit">Record Deposit</button>
+          </form>
+        </section>
+
+        <section class="weekly-menu-section">
+          <div class="section-title left">
+            <p class="eyebrow">Audit trail</p>
+            <h3>Recent Credit Activity</h3>
+          </div>
+          <div id="credit-transactions" class="order-list"></div>
+        </section>
+      </div>
+    </main>
+    <script src="cashier.js"></script>
+  </body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>THE KITCHEN | Order Food</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="container nav">
+        <div class="brand">
+          <span class="brand-mark">F</span>
+          <div>
+            <h1>THE KITCHEN</h1>
+            <p>Tasty Fresh Affordable</p>
+          </div>
+        </div>
+        <nav>
+          <a href="#menu">Menu</a>
+          <a href="#checkout">Checkout</a>
+          <a href="restaurant.html">Restaurant</a>
+          <a href="delivery.html">Delivery</a>
+          <a href="login.html">Login</a>
+          <a href="admin-login.html">Admin Login</a>
+          <a href="cashier-login.html">Cashier Login</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="container hero-inner">
+          <div>
+            <p class="eyebrow">Fresh meals delivered</p>
+            <h2>Order delicious food in minutes</h2>
+            <p>
+              A simple food ordering system built for Zimbabwean restaurants and busy customers.
+            </p>
+            <a class="cta" href="#menu">Browse Menu</a>
+          </div>
+          <div class="hero-card">
+            <h3>Why it works</h3>
+            <ul>
+              <li>Simple online ordering</li>
+              <li>Restaurant updates in real time</li>
+              <li>Delivery tracking from kitchen to door</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="menu" class="menu-section">
+        <div class="container">
+          <div class="section-title">
+            <p class="eyebrow" id="menu-date">Meals available today</p>
+            <h3>Today's Menu</h3>
+          </div>
+          <div id="menu-grid" class="menu-grid"></div>
+        </div>
+      </section>
+
+      <section id="checkout" class="checkout-section">
+        <div class="container checkout-grid">
+          <div>
+            <div class="section-title left">
+              <p class="eyebrow">Your order</p>
+              <h3>Cart</h3>
+            </div>
+            <div id="cart-items" class="cart-items"></div>
+            <div class="totals">
+              <div><span>Subtotal</span><strong id="subtotal">$0.00</strong></div>
+              <div><span>Delivery</span><strong id="delivery">$3.50</strong></div>
+              <div class="grand-total"><span>Total</span><strong id="total">$0.00</strong></div>
+            </div>
+          </div>
+
+          <div class="order-form-wrap">
+            <h3>Place your order</h3>
+            <form id="order-form">
+              <div class="field-group">
+                <label for="deliveryOption">Order Type</label>
+                <select id="deliveryOption">
+                  <option value="pickup">Pickup</option>
+                  <option value="delivery">Delivery (temporarily unavailable)</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label>Name</label>
+                <input type="text" id="customerName" placeholder="Your full name" required />
+              </div>
+              <div class="field-group">
+                <label>Phone Number</label>
+                <input type="tel" id="phone" placeholder="0771234567" required />
+              </div>
+              <div class="field-group" id="addressField" style="display: none;">
+                <label>Delivery Address</label>
+                <textarea id="address" rows="3" placeholder="Street, suburb, city"></textarea>
+              </div>
+              <div class="field-group">
+                <label>Order Note</label>
+                <textarea id="note" rows="3" placeholder="Extra details"></textarea>
+              </div>
+              <button type="submit" class="submit-btn">Confirm Order</button>
+            </form>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast"></div>
+    <dialog id="delivery-unavailable-dialog" class="notice-dialog" aria-labelledby="delivery-notice-title">
+      <div class="notice-dialog-content">
+        <p class="eyebrow">A quick update</p>
+        <h2 id="delivery-notice-title">Pickup is available</h2>
+        <p>We’re sorry, but delivery is temporarily unavailable while we arrange our motorbike. Please choose pickup for your order. Thank you for your understanding!</p>
+        <button type="button" class="submit-btn" id="close-delivery-unavailable">Got it</button>
+      </div>
+    </dialog>
+    <script src="app.js"></script>
+    <script src="admin-gate.js"></script>
+  </body>
+</html>

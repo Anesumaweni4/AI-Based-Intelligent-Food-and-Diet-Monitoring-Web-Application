@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Delivery Dashboard</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="dashboard-body">
+    <header class="topbar dashboard-header">
+      <div class="container nav">
+        <div class="brand">
+          <span class="brand-mark">F</span>
+          <div>
+            <h1>Delivery Panel</h1>
+            <p>Track order progress</p>
+          </div>
+        </div>
+        <nav>
+          <a href="index.html">Customer</a>
+          <a href="restaurant.html">Restaurant</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="dashboard-main">
+      <div class="container">
+        <div class="section-title left">
+          <p class="eyebrow">Live updates</p>
+          <h3>Delivery Dashboard</h3>
+        </div>
+        <div id="delivery-orders" class="order-list"></div>
+      </div>
+    </main>
+
+    <script>
+      const currentUser = JSON.parse(localStorage.getItem('foodieUser') || 'null');
+      if (!currentUser) {
+        window.location.href = 'login.html';
+      } else {
+        const nav = document.querySelector('nav');
+        if (nav) {
+          Array.from(nav.querySelectorAll('a')).forEach(link => {
+            const href = link.getAttribute('href');
+            if (['index.html', 'home.html', 'restaurant.html', 'delivery.html', 'admin.html', 'login.html'].includes(href)) {
+              link.style.display = 'none';
+            }
+          });
+
+          const logoutLink = document.createElement('a');
+          logoutLink.href = '#';
+          logoutLink.textContent = 'Logout';
+          logoutLink.addEventListener('click', (event) => {
+            event.preventDefault();
+            localStorage.removeItem('foodieUser');
+            window.location.href = 'login.html';
+          });
+          nav.appendChild(logoutLink);
+        }
+      }
+    </script>
+    <script src="delivery.js"></script>
+  </body>
+</html>

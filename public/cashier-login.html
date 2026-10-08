@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cashier Login | THE KITCHEN</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="auth-body">
+    <header class="topbar">
+      <div class="container nav">
+        <div class="brand">
+          <span class="brand-mark">F</span>
+          <div>
+            <h1>THE KITCHEN</h1>
+            <p>Cashier access</p>
+          </div>
+        </div>
+        <nav><a href="login.html">Student Login</a></nav>
+      </div>
+    </header>
+
+    <main class="auth-main">
+      <div class="auth-card">
+        <div class="auth-header">
+          <p class="eyebrow">Staff access</p>
+          <h2>Cashier Login</h2>
+        </div>
+        <form id="cashier-login-form" class="auth-form">
+          <div class="field-group">
+            <label for="cashierLoginUsername">Username</label>
+            <input id="cashierLoginUsername" type="text" autocomplete="username" required />
+          </div>
+          <div class="field-group">
+            <label for="cashierLoginPassword">Password</label>
+            <input id="cashierLoginPassword" type="password" autocomplete="current-password" required />
+          </div>
+          <button type="submit" class="submit-btn">Login as Cashier</button>
+        </form>
+        <p class="auth-link-row">Cashier accounts are created by an administrator.</p>
+      </div>
+    </main>
+    <div id="toast" class="toast"></div>
+    <script src="auth.js"></script>
+  </body>
+</html>
