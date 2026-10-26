@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Create Account | THE KITCHEN</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=password-reset-1" />
   </head>
   <body class="auth-body">
     <header class="topbar">
@@ -39,6 +39,10 @@
             <input id="registerUsername" type="text" placeholder="Choose username" required />
           </div>
           <div class="field-group">
+            <label for="registerEmail">Email address</label>
+            <input id="registerEmail" type="email" autocomplete="email" maxlength="255" placeholder="you@example.com" required />
+          </div>
+          <div class="field-group">
             <label for="registerAge">Age</label>
             <input id="registerAge" type="number" min="1" max="120" placeholder="Your age" required />
           </div>
@@ -65,6 +69,7 @@
     </main>
 
     <div id="toast" class="toast"></div>
-    <script src="auth.js"></script>
+    <script src="auth.js?v=password-reset-1"></script>
+    <script src="staff-dashboard-links.js?v=20261026-1"></script>
   </body>
 </html>

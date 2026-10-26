@@ -1,24 +1,148 @@
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const { initializeDatabase, get, all, run, withTransaction, replaceMenuSchedule } = require('./db');
 const { hashPassword, verifyPassword, passwordNeedsRehash } = require('./passwords');
+const { getNutrition, recommendFoods, GOALS } = require('./diet-model');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const WEEKDAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const ADMIN_SESSION_COOKIE = 'foodieAdminSession';
-const ADMIN_GATE_COOKIE = 'foodieAdminGate';
 const ACCOUNT_SESSION_COOKIE = 'foodieAccountSession';
 const ADMIN_SESSION_DURATION_MS = 8 * 60 * 60 * 1000;
-const ADMIN_GATE_DURATION_MS = 5 * 60 * 1000;
-const ADMIN_GATE_ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
-const ADMIN_GATE_MAX_ATTEMPTS = 10;
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
-const adminGateAttempts = new Map();
+const PASSWORD_RESET_DURATION_MS = 60 * 60 * 1000;
+const passwordResetRequests = new Map();
+const CLIENT_FEEDBACK_CATEGORIES = new Set(['food', 'order', 'service', 'website', 'other']);
+const CLIENT_FEEDBACK_STATUSES = new Set(['new', 'reviewing', 'resolved']);
 
 if (SESSION_SECRET.length < 32) {
   throw new Error('SESSION_SECRET must be at least 32 characters long.');
+}
+
+function normalizeEmail(value) {
+  return typeof value === 'string' ? value.trim().toLowerCase() : '';
+}
+
+function isValidEmail(email) {
+  return email.length <= 255 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function getPasswordResetBaseUrl() {
+  const baseUrl = process.env.APP_BASE_URL;
+  if (!baseUrl) return null;
+
+  let appUrl;
+  try {
+    appUrl = new URL(baseUrl);
+  } catch {
+    return null;
+  }
+  if (!['http:', 'https:'].includes(appUrl.protocol) ||
+      (process.env.NODE_ENV === 'production' && appUrl.protocol !== 'https:') ||
+      appUrl.username || appUrl.password) {
+    return null;
+  }
+  return appUrl.origin;
+}
+
+function getPasswordResetMailer() {
+  const host = process.env.SMTP_HOST;
+  const port = Number(process.env.SMTP_PORT);
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  const from = process.env.SMTP_FROM || user;
+  const baseUrl = getPasswordResetBaseUrl();
+  if (!host || !Number.isInteger(port) || port <= 0 || !user || !pass || !from || !baseUrl) {
+    return null;
+  }
+
+  return {
+    transporter: nodemailer.createTransport({
+      host,
+      port,
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: { user, pass }
+    }),
+    from,
+    baseUrl
+  };
+}
+
+function getWhatsAppPasswordResetConfig() {
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  const templateName = process.env.WHATSAPP_RESET_TEMPLATE;
+  const apiVersion = process.env.WHATSAPP_API_VERSION;
+  const baseUrl = getPasswordResetBaseUrl();
+  if (!phoneNumberId || !/^\d+$/.test(phoneNumberId) ||
+      !accessToken || !templateName || !/^[a-z0-9_]+$/i.test(templateName) ||
+      !apiVersion || !/^v\d+\.\d+$/.test(apiVersion) || !baseUrl) {
+    return null;
+  }
+
+  return {
+    phoneNumberId,
+    accessToken,
+    templateName,
+    language: process.env.WHATSAPP_RESET_TEMPLATE_LANGUAGE || 'en',
+    apiVersion,
+    baseUrl
+  };
+}
+
+async function sendWhatsAppPasswordReset(config, phoneNumber, resetUrl) {
+  const response = await fetch(
+    `https://graph.facebook.com/${config.apiVersion}/${config.phoneNumberId}/messages`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${config.accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: phoneNumber.slice(1),
+        type: 'template',
+        template: {
+          name: config.templateName,
+          language: { code: config.language },
+          components: [{
+            type: 'body',
+            parameters: [{ type: 'text', text: resetUrl }]
+          }]
+        }
+      }),
+      signal: AbortSignal.timeout(10000)
+    }
+  );
+  if (!response.ok) {
+    throw new Error(`WhatsApp Cloud API returned HTTP ${response.status}.`);
+  }
+}
+
+function allowPasswordResetRequest(ip) {
+  const now = Date.now();
+  const windowMs = 15 * 60 * 1000;
+  const previous = passwordResetRequests.get(ip) || [];
+  const recent = previous.filter((timestamp) => now - timestamp < windowMs);
+  if (recent.length >= 5) {
+    passwordResetRequests.set(ip, recent);
+    return false;
+  }
+  recent.push(now);
+  passwordResetRequests.set(ip, recent);
+  if (passwordResetRequests.size > 10000) {
+    for (const [address, timestamps] of passwordResetRequests) {
+      if (!timestamps.some((timestamp) => now - timestamp < windowMs)) {
+        passwordResetRequests.delete(address);
+      }
+    }
+  }
+  return true;
 }
 
 function getCurrentMenuDay() {
@@ -30,6 +154,41 @@ function getCurrentMenuDay() {
     String(now.getDate()).padStart(2, '0')
   ].join('-');
   return { dayOfWeek, date, dayName: WEEKDAY_NAMES[dayOfWeek] };
+}
+
+function getCurrentRevenueDayRange() {
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfNextDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const toDatabaseTimestamp = (date) => date.toISOString().slice(0, 19).replace('T', ' ');
+  return {
+    start: toDatabaseTimestamp(startOfDay),
+    end: toDatabaseTimestamp(startOfNextDay)
+  };
+}
+
+function getLocalDayRange(daysBeforeToday = 0) {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - daysBeforeToday);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  const toDatabaseTimestamp = (date) => {
+    const pad = (value) => String(value).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ` +
+      `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+  };
+  return { start: toDatabaseTimestamp(start), end: toDatabaseTimestamp(end) };
+}
+
+function sumDietNutrition(meals) {
+  return meals.reduce((totals, meal) => {
+    const servings = Number(meal.servings);
+    for (const field of ['calories', 'protein', 'carbohydrates', 'fat', 'fiber']) {
+      totals[field] += Number(meal[field]) * servings;
+    }
+    return totals;
+  }, { calories: 0, protein: 0, carbohydrates: 0, fat: 0, fiber: 0 });
 }
 
 function signAdminSession(user) {
@@ -94,72 +253,26 @@ function clearAdminSessionCookie(req, res) {
   });
 }
 
-function signAdminGate() {
-  const payload = Buffer.from(JSON.stringify({
-    expiresAt: Date.now() + ADMIN_GATE_DURATION_MS
-  })).toString('base64url');
-  const signature = crypto.createHmac('sha256', SESSION_SECRET).update(payload).digest('base64url');
-  return `${payload}.${signature}`;
+function getPublicUser(user) {
+  return {
+    id: user.id,
+    fullName: user.full_name,
+    username: user.username,
+    age: user.age,
+    weight: user.weight,
+    height: user.height,
+    walletBalanceCents: Number(user.wallet_balance_cents || 0),
+    role: user.role
+  };
 }
 
-function hasValidAdminGate(req) {
-  const token = getCookie(req, ADMIN_GATE_COOKIE);
-  if (!token) return false;
-
-  const [payload, providedSignature, extra] = token.split('.');
-  if (!payload || !providedSignature || extra !== undefined) return false;
-
-  const expectedSignature = crypto.createHmac('sha256', SESSION_SECRET).update(payload).digest();
-  const actualSignature = Buffer.from(providedSignature, 'base64url');
-  if (actualSignature.length !== expectedSignature.length ||
-      !crypto.timingSafeEqual(actualSignature, expectedSignature)) {
-    return false;
+function establishAuthenticatedSession(req, res, user) {
+  if (user.role === 'admin') {
+    setAdminSessionCookie(req, res, user);
+  } else {
+    clearAdminSessionCookie(req, res);
+    setAccountSessionCookie(res, user);
   }
-
-  try {
-    const gate = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
-    return Number.isSafeInteger(gate.expiresAt) &&
-      gate.expiresAt > Date.now() &&
-      gate.expiresAt <= Date.now() + ADMIN_GATE_DURATION_MS;
-  } catch {
-    return false;
-  }
-}
-
-function setAdminGateCookie(res) {
-  res.cookie(ADMIN_GATE_COOKIE, signAdminGate(), {
-    httpOnly: true,
-    sameSite: 'strict',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    maxAge: ADMIN_GATE_DURATION_MS
-  });
-}
-
-function clearAdminGateCookie(req, res) {
-  res.clearCookie(ADMIN_GATE_COOKIE, {
-    httpOnly: true,
-    sameSite: 'strict',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/'
-  });
-}
-
-function safeCredentialMatch(provided, configured) {
-  const providedHash = crypto.createHash('sha256').update(provided).digest();
-  const configuredHash = crypto.createHash('sha256').update(configured).digest();
-  return crypto.timingSafeEqual(providedHash, configuredHash);
-}
-
-function getGateAttemptState(ipAddress) {
-  const now = Date.now();
-  const existing = adminGateAttempts.get(ipAddress);
-  if (!existing || now - existing.startedAt >= ADMIN_GATE_ATTEMPT_WINDOW_MS) {
-    const fresh = { startedAt: now, count: 0 };
-    adminGateAttempts.set(ipAddress, fresh);
-    return fresh;
-  }
-  return existing;
 }
 
 async function getAuthenticatedAdmin(req) {
@@ -279,6 +392,33 @@ async function requireCashierOrAdminApi(req, res, next) {
   }
 }
 
+async function requireCashierOrAdminPage(req, res, next) {
+  try {
+    const admin = await getAuthenticatedAdmin(req);
+    const account = admin ? null : await getAuthenticatedAccount(req);
+    if (!admin && (!account || account.role !== 'cashier')) {
+      return res.redirect('/login.html');
+    }
+    next();
+  } catch (error) {
+    console.error('Error verifying staff dashboard access:', error);
+    res.status(500).send('Unable to verify staff dashboard access.');
+  }
+}
+
+async function requireStudentPage(req, res, next) {
+  try {
+    const account = await getAuthenticatedAccount(req);
+    if (!account || account.role !== 'staff') {
+      return res.redirect('/login.html');
+    }
+    next();
+  } catch (error) {
+    console.error('Error verifying customer page access:', error);
+    res.status(500).send('Unable to verify customer login.');
+  }
+}
+
 async function requireStudentApi(req, res, next) {
   try {
     const account = await getAuthenticatedAccount(req);
@@ -294,10 +434,10 @@ async function requireStudentApi(req, res, next) {
 }
 
 app.use(express.json());
+app.get('/cashier-login.html', (req, res) => {
+  res.redirect('/login.html');
+});
 app.get('/admin-login.html', (req, res) => {
-  if (!hasValidAdminGate(req)) {
-    return res.redirect('/login.html');
-  }
   res.sendFile(path.join(__dirname, 'public', 'admin-login.html'));
 });
 
@@ -318,13 +458,31 @@ app.get('/cashier.html', async (req, res) => {
     const admin = await getAuthenticatedAdmin(req);
     const account = admin ? null : await getAuthenticatedAccount(req);
     if (!admin && (!account || account.role !== 'cashier')) {
-      return res.redirect('/cashier-login.html');
+      return res.redirect('/login.html');
     }
     res.sendFile(path.join(__dirname, 'public', 'cashier.html'));
   } catch (error) {
     console.error('Error verifying cashier page access:', error);
     res.status(500).send('Unable to verify cashier access.');
   }
+});
+app.get('/api/staff/session', requireCashierOrAdminApi, (req, res) => {
+  res.json({ role: req.accountUser.role });
+});
+app.get('/api/student/session', requireStudentApi, (req, res) => {
+  res.json({ role: req.accountUser.role });
+});
+app.get('/restaurant.html', requireCashierOrAdminPage, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'restaurant.html'));
+});
+app.get('/delivery.html', requireCashierOrAdminPage, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'delivery.html'));
+});
+app.get('/home.html', requireStudentPage, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'home.html'));
+});
+app.get('/diet-monitoring.html', requireStudentPage, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'diet-monitoring.html'));
 });
 app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
@@ -340,7 +498,7 @@ app.get('/register', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'register.html'));
 });
 
-app.get('/home', (req, res) => {
+app.get('/home', requireStudentPage, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'home.html'));
 });
 
@@ -355,7 +513,6 @@ app.post('/api/auth/logout', async (req, res) => {
       await run('UPDATE users SET session_version = session_version + 1 WHERE id = ?', [user.id]);
     }
     clearAdminSessionCookie(req, res);
-    clearAdminGateCookie(req, res);
     clearAccountSessionCookie(req, res);
     res.json({ message: 'Logged out.' });
   } catch (error) {
@@ -364,40 +521,16 @@ app.post('/api/auth/logout', async (req, res) => {
   }
 });
 
-app.post('/api/admin/gate', (req, res) => {
-  const configuredUsername = process.env.ADMIN_GATE_USERNAME;
-  const configuredPassword = process.env.ADMIN_GATE_PASSWORD;
-  if (!configuredUsername || !configuredPassword) {
-    return res.status(503).json({ message: 'Admin login access is not configured on the server.' });
-  }
-
-  const state = getGateAttemptState(req.ip);
-  if (state.count >= ADMIN_GATE_MAX_ATTEMPTS) {
-    return res.status(429).json({ message: 'Too many attempts. Please try again in 15 minutes.' });
-  }
-
-  const { username, password } = req.body;
-  const credentialsMatch = typeof username === 'string' &&
-    typeof password === 'string' &&
-    safeCredentialMatch(username, configuredUsername) &&
-    safeCredentialMatch(password, configuredPassword);
-
-  if (!credentialsMatch) {
-    state.count += 1;
-    return res.status(401).json({ message: 'Those admin access details are incorrect.' });
-  }
-
-  adminGateAttempts.delete(req.ip);
-  setAdminGateCookie(res);
-  res.json({ message: 'Access verified.' });
-});
-
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { fullName, username, password, age, weight, height } = req.body;
+    const email = normalizeEmail(req.body.email);
 
-    if (!fullName || !username || !password) {
-      return res.status(400).json({ message: 'Full name, username, and password are required.' });
+    if (!fullName || !username || !password || !email) {
+      return res.status(400).json({ message: 'Full name, username, email, and password are required.' });
+    }
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ message: 'Enter a valid email address.' });
     }
 
     const parsedAge = Number(age);
@@ -412,10 +545,13 @@ app.post('/api/auth/register', async (req, res) => {
     if (existingUser) {
       return res.status(409).json({ message: 'That username already exists.' });
     }
+    if (await get('SELECT id FROM users WHERE email = ?', [email])) {
+      return res.status(409).json({ message: 'That email address is already linked to an account.' });
+    }
 
     const user = await run(
-      'INSERT INTO users (full_name, username, password, role, age, weight, height) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [fullName.trim(), username.trim(), await hashPassword(password), 'staff', parsedAge, parsedWeight, parsedHeight]
+      'INSERT INTO users (full_name, username, password, role, email, age, weight, height) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [fullName.trim(), username.trim(), await hashPassword(password), 'staff', email, parsedAge, parsedWeight, parsedHeight]
     );
 
     res.status(201).json({
@@ -436,17 +572,131 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
+app.post('/api/auth/password-reset/request', async (req, res) => {
+  if (!allowPasswordResetRequest(req.ip)) {
+    return res.status(429).json({ message: 'Too many reset requests. Please wait 15 minutes and try again.' });
+  }
+
+  const delivery = req.body.delivery === undefined ? 'email' : req.body.delivery;
+  if (!['email', 'whatsapp'].includes(delivery)) {
+    return res.status(400).json({ message: 'Choose email or WhatsApp as the reset-link delivery method.' });
+  }
+  const mailer = delivery === 'email' ? getPasswordResetMailer() : null;
+  const whatsapp = delivery === 'whatsapp' ? getWhatsAppPasswordResetConfig() : null;
+  if (delivery === 'email' && !mailer) {
+    return res.status(503).json({ message: 'Password reset email is not configured. Please contact the administrator.' });
+  }
+  if (delivery === 'whatsapp' && !whatsapp) {
+    return res.status(503).json({ message: 'WhatsApp password reset is not configured yet. Please contact the administrator or choose email.' });
+  }
+  const email = normalizeEmail(req.body.email);
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ message: 'Enter a valid email address.' });
+  }
+
+  try {
+    const user = await get(
+      "SELECT id, full_name, email, recovery_whatsapp FROM users WHERE email = ? AND role = 'staff'",
+      [email]
+    );
+    const canDeliver = user && (delivery === 'email' ? user.email : user.recovery_whatsapp);
+    if (canDeliver) {
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+      await withTransaction(async (transaction) => {
+        await transaction.run('DELETE FROM password_reset_tokens WHERE user_id = ?', [user.id]);
+        await transaction.run('DELETE FROM password_reset_tokens WHERE expires_at_ms <= ?', [Date.now()]);
+        await transaction.run(
+          'INSERT INTO password_reset_tokens (user_id, token_hash, expires_at_ms) VALUES (?, ?, ?)',
+          [user.id, tokenHash, Date.now() + PASSWORD_RESET_DURATION_MS]
+        );
+      });
+
+      const resetUrl = new URL('/reset-password.html', delivery === 'email' ? mailer.baseUrl : whatsapp.baseUrl);
+      resetUrl.searchParams.set('token', rawToken);
+      try {
+        if (delivery === 'email') {
+          await mailer.transporter.sendMail({
+            from: mailer.from,
+            to: user.email,
+            subject: 'Reset your THE KITCHEN password',
+            text: `Hello ${user.full_name},\n\nUse this link within one hour to reset your password:\n${resetUrl.toString()}\n\nIf you did not request a password reset, you can ignore this email.`
+          });
+        } else {
+          await sendWhatsAppPasswordReset(whatsapp, user.recovery_whatsapp, resetUrl.toString());
+        }
+      } catch (error) {
+        await run('DELETE FROM password_reset_tokens WHERE token_hash = ?', [tokenHash]);
+        throw error;
+      }
+    }
+    res.json({
+      message: delivery === 'email'
+        ? 'If an account is registered with that email, a password reset link will be sent shortly.'
+        : 'If an account with a confirmed WhatsApp recovery number is registered with that email, a reset link will be sent shortly.'
+    });
+  } catch (error) {
+    console.error(`Error sending password reset via ${delivery}:`, error);
+    res.status(500).json({
+      message: delivery === 'email'
+        ? 'Unable to send the password reset email right now. Please try again later.'
+        : 'Unable to send the password reset WhatsApp message right now. Please try again later.'
+    });
+  }
+});
+
+app.post('/api/auth/password-reset/complete', async (req, res) => {
+  if (!allowPasswordResetRequest(req.ip)) {
+    return res.status(429).json({ message: 'Too many reset attempts. Please wait 15 minutes and try again.' });
+  }
+  const token = typeof req.body.token === 'string' ? req.body.token : '';
+  const password = typeof req.body.password === 'string' ? req.body.password : '';
+  if (!/^[a-f0-9]{64}$/.test(token)) {
+    return res.status(400).json({ message: 'This reset link is invalid or has expired. Request a new one.' });
+  }
+  if (password.length < 8 || password.length > 256) {
+    return res.status(400).json({ message: 'Your new password must be between 8 and 256 characters.' });
+  }
+
+  try {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const passwordHash = await hashPassword(password);
+    const updated = await withTransaction(async (transaction) => {
+      const reset = await transaction.get(
+        `SELECT t.id, t.user_id
+         FROM password_reset_tokens t
+         JOIN users u ON u.id = t.user_id
+         WHERE t.token_hash = ? AND t.expires_at_ms > ? AND u.role = 'staff'`,
+        [tokenHash, Date.now()]
+      );
+      if (!reset) return false;
+      await transaction.run(
+        'UPDATE users SET password = ?, session_version = session_version + 1 WHERE id = ?',
+        [passwordHash, reset.user_id]
+      );
+      await transaction.run('DELETE FROM password_reset_tokens WHERE user_id = ?', [reset.user_id]);
+      return true;
+    });
+    if (!updated) {
+      return res.status(400).json({ message: 'This reset link is invalid or has expired. Request a new one.' });
+    }
+    res.json({ message: 'Your password has been reset. You can now log in with your new password.' });
+  } catch (error) {
+    console.error('Error resetting student password:', error);
+    res.status(500).json({ message: 'Unable to reset the password right now. Please try again later.' });
+  }
+});
+
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { username, password, role } = req.body;
     const requestedRole = String(role || 'user').toLowerCase();
 
-    if (!username || !password) {
+    if (typeof username !== 'string' || typeof password !== 'string' || !username.trim() || !password) {
       return res.status(400).json({ message: 'Username and password are required.' });
     }
-
-    if (requestedRole === 'admin' && !hasValidAdminGate(req)) {
-      return res.status(403).json({ message: 'Complete the admin access check before signing in.' });
+    if (!['admin', 'cashier', 'user', 'auto'].includes(requestedRole)) {
+      return res.status(400).json({ message: 'Choose a valid account type.' });
     }
 
     const user = await get('SELECT * FROM users WHERE username = ?', [username.trim()]);
@@ -466,33 +716,17 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(403).json({ message: 'Use the appropriate login page for this account.' });
     }
 
+    if (requestedRole === 'auto' && !['admin', 'cashier', 'staff'].includes(user.role)) {
+      return res.status(403).json({ message: 'This account type cannot sign in here.' });
+    }
+
     if (passwordNeedsRehash(user.password)) {
       user.password = await hashPassword(password);
       await run('UPDATE users SET password = ? WHERE id = ?', [user.password, user.id]);
     }
 
-    if (user.role === 'admin') {
-      setAdminSessionCookie(req, res, user);
-    } else {
-      clearAdminSessionCookie(req, res);
-      clearAdminGateCookie(req, res);
-      setAccountSessionCookie(res, user);
-    }
-
-    res.json({
-      message: 'Login successful.',
-      user: {
-        id: user.id,
-        fullName: user.full_name,
-        username: user.username,
-        age: user.age,
-        weight: user.weight,
-        height: user.height,
-        walletBalanceCents: Number(user.wallet_balance_cents || 0),
-        role: user.role
-      }
-    });
-
+    establishAuthenticatedSession(req, res, user);
+    res.json({ message: 'Login successful.', user: getPublicUser(user) });
   } catch (error) {
     console.error('Error logging in:', error);
     res.status(500).json({ message: 'Login failed.' });
@@ -545,21 +779,320 @@ app.get('/api/account/orders', requireStudentApi, async (req, res) => {
   }
 });
 
+app.get('/api/feedback', requireStudentApi, async (req, res) => {
+  try {
+    const feedback = await all(
+      `SELECT id, category, message, status, created_at
+       FROM client_feedback
+       WHERE user_id = ?
+       ORDER BY id DESC
+       LIMIT 20`,
+      [req.accountUser.id]
+    );
+    res.json(feedback);
+  } catch (error) {
+    console.error('Error loading client feedback:', error);
+    res.status(500).json({ message: 'Unable to load your feedback history.' });
+  }
+});
+
+app.post('/api/feedback', requireStudentApi, async (req, res) => {
+  const category = typeof req.body.category === 'string' ? req.body.category : '';
+  const message = typeof req.body.message === 'string' ? req.body.message.trim() : '';
+  if (!CLIENT_FEEDBACK_CATEGORIES.has(category)) {
+    return res.status(400).json({ message: 'Choose a feedback topic before sending your message.' });
+  }
+  if (!message || message.length > 2000) {
+    return res.status(400).json({ message: 'Write feedback of up to 2,000 characters.' });
+  }
+
+  try {
+    const result = await run(
+      'INSERT INTO client_feedback (user_id, category, message) VALUES (?, ?, ?)',
+      [req.accountUser.id, category, message]
+    );
+    res.status(201).json({
+      message: 'Thank you for sharing your feedback. The team will review it.',
+      feedback: { id: result.id, category, message, status: 'new' }
+    });
+  } catch (error) {
+    console.error('Error saving client feedback:', error);
+    res.status(500).json({ message: 'Unable to send your feedback right now.' });
+  }
+});
+
+app.get('/api/diet', requireStudentApi, async (req, res) => {
+  try {
+    const todayRange = getLocalDayRange();
+    const weekRange = getLocalDayRange(6);
+    const todayMeals = await all(
+      `SELECT id, menu_item_id, food_name, servings, calories, protein, carbohydrates, fat, fiber, eaten_at
+       FROM diet_meal_logs
+       WHERE user_id = ? AND eaten_at >= ? AND eaten_at < ?
+       ORDER BY eaten_at DESC, id DESC`,
+      [req.accountUser.id, todayRange.start, todayRange.end]
+    );
+    const weekMeals = await all(
+      `SELECT food_name, servings, calories, protein, carbohydrates, fat, fiber, eaten_at
+       FROM diet_meal_logs
+       WHERE user_id = ? AND eaten_at >= ? AND eaten_at < ?
+       ORDER BY eaten_at ASC, id ASC`,
+      [req.accountUser.id, weekRange.start, todayRange.end]
+    );
+    const profile = await get('SELECT goal FROM diet_profiles WHERE user_id = ?', [req.accountUser.id]);
+    const menuItems = await all('SELECT id, name, category FROM menu_items ORDER BY name');
+    const feedback = await all(
+      'SELECT rating, calories, protein, carbohydrates, fat, fiber FROM diet_feedback WHERE user_id = ?',
+      [req.accountUser.id]
+    );
+    const todayTotals = sumDietNutrition(todayMeals);
+    const dailyTotals = {
+      ...todayTotals,
+      foodNames: new Set(todayMeals.map((meal) => String(meal.food_name).toLowerCase()))
+    };
+    const groupedDays = new Map();
+    for (const meal of weekMeals) {
+      const date = String(meal.eaten_at).slice(0, 10);
+      if (!groupedDays.has(date)) {
+        groupedDays.set(date, { date, meals: 0, ...sumDietNutrition([]) });
+      }
+      const totals = groupedDays.get(date);
+      totals.meals += Number(meal.servings);
+      for (const field of ['calories', 'protein', 'carbohydrates', 'fat', 'fiber']) {
+        totals[field] += Number(meal[field]) * Number(meal.servings);
+      }
+    }
+    const recommendation = recommendFoods({
+      foods: menuItems,
+      feedback,
+      goal: profile ? profile.goal : 'balanced',
+      dailyTotals
+    });
+
+    res.json({
+      goal: profile ? profile.goal : 'balanced',
+      foods: menuItems.map((item) => ({ ...item, ...getNutrition(item) })),
+      meals: todayMeals,
+      totals: todayTotals,
+      weekly: Array.from(groupedDays.values()),
+      recommendations: recommendation.items,
+      model: recommendation.model
+    });
+  } catch (error) {
+    console.error('Error loading diet monitoring data:', error);
+    res.status(500).json({ message: 'Unable to load diet monitoring data.' });
+  }
+});
+
+app.post('/api/diet/meals', requireStudentApi, async (req, res) => {
+  const menuItemId = Number(req.body.menuItemId);
+  const servings = Number(req.body.servings);
+  if (!Number.isSafeInteger(menuItemId) || menuItemId <= 0 ||
+      !Number.isFinite(servings) || servings <= 0 || servings > 5 ||
+      Math.round(servings * 2) !== servings * 2) {
+    return res.status(400).json({ message: 'Choose a menu food and enter a serving amount from 0.5 to 5.' });
+  }
+
+  try {
+    const food = await get('SELECT id, name, category FROM menu_items WHERE id = ?', [menuItemId]);
+    if (!food) {
+      return res.status(404).json({ message: 'That food is no longer available in the menu.' });
+    }
+    const nutrition = getNutrition(food);
+    const result = await run(
+      `INSERT INTO diet_meal_logs
+       (user_id, menu_item_id, food_name, servings, calories, protein, carbohydrates, fat, fiber)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        req.accountUser.id, food.id, food.name, servings,
+        nutrition.calories, nutrition.protein, nutrition.carbohydrates, nutrition.fat, nutrition.fiber
+      ]
+    );
+    res.status(201).json({ message: 'Meal added to your food diary.', id: result.id });
+  } catch (error) {
+    console.error('Error recording diet meal:', error);
+    res.status(500).json({ message: 'Unable to record that meal.' });
+  }
+});
+
+app.put('/api/diet/goal', requireStudentApi, async (req, res) => {
+  const goal = typeof req.body.goal === 'string' ? req.body.goal : '';
+  if (!GOALS.has(goal)) {
+    return res.status(400).json({ message: 'Choose one of the available general nutrition focus options.' });
+  }
+
+  try {
+    await withTransaction(async (transaction) => {
+      await transaction.run('DELETE FROM diet_profiles WHERE user_id = ?', [req.accountUser.id]);
+      await transaction.run(
+        'INSERT INTO diet_profiles (user_id, goal) VALUES (?, ?)',
+        [req.accountUser.id, goal]
+      );
+    });
+    res.json({ message: 'Your recommendation focus was saved.', goal });
+  } catch (error) {
+    console.error('Error saving diet recommendation focus:', error);
+    res.status(500).json({ message: 'Unable to save your recommendation focus.' });
+  }
+});
+
+app.post('/api/diet/feedback', requireStudentApi, async (req, res) => {
+  const menuItemId = Number(req.body.menuItemId);
+  const rating = Number(req.body.rating);
+  if (!Number.isSafeInteger(menuItemId) || menuItemId <= 0 || ![-1, 1].includes(rating)) {
+    return res.status(400).json({ message: 'Choose a recommendation and mark it helpful or not helpful.' });
+  }
+
+  try {
+    const food = await get('SELECT id, name, category FROM menu_items WHERE id = ?', [menuItemId]);
+    if (!food) {
+      return res.status(404).json({ message: 'That recommendation is no longer available.' });
+    }
+    const nutrition = getNutrition(food);
+    await withTransaction(async (transaction) => {
+      await transaction.run(
+        'DELETE FROM diet_feedback WHERE user_id = ? AND menu_item_id = ?',
+        [req.accountUser.id, food.id]
+      );
+      await transaction.run(
+        `INSERT INTO diet_feedback
+         (user_id, menu_item_id, rating, calories, protein, carbohydrates, fat, fiber)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          req.accountUser.id, food.id, rating,
+          nutrition.calories, nutrition.protein, nutrition.carbohydrates, nutrition.fat, nutrition.fiber
+        ]
+      );
+    });
+    res.json({ message: 'Thanks. Your feedback will help personalize future suggestions.' });
+  } catch (error) {
+    console.error('Error saving diet recommendation feedback:', error);
+    res.status(500).json({ message: 'Unable to save your recommendation feedback.' });
+  }
+});
+
 app.use('/api/admin', requireAdminApi);
+
+app.get('/api/admin/feedback', async (req, res) => {
+  try {
+    const feedback = await all(
+      `SELECT f.id, f.category, f.message, f.status, f.created_at,
+              u.full_name, u.username
+       FROM client_feedback f
+       JOIN users u ON u.id = f.user_id
+       ORDER BY CASE f.status WHEN 'new' THEN 0 WHEN 'reviewing' THEN 1 ELSE 2 END, f.id DESC
+       LIMIT 200`
+    );
+    res.json(feedback);
+  } catch (error) {
+    console.error('Error loading submitted client feedback:', error);
+    res.status(500).json({ message: 'Unable to load submitted client feedback.' });
+  }
+});
+
+app.patch('/api/admin/feedback/:id/status', async (req, res) => {
+  const feedbackId = Number(req.params.id);
+  const status = typeof req.body.status === 'string' ? req.body.status : '';
+  if (!Number.isSafeInteger(feedbackId) || feedbackId <= 0 || !CLIENT_FEEDBACK_STATUSES.has(status)) {
+    return res.status(400).json({ message: 'Choose a valid feedback item and review status.' });
+  }
+
+  try {
+    const existing = await get('SELECT id FROM client_feedback WHERE id = ?', [feedbackId]);
+    if (!existing) {
+      return res.status(404).json({ message: 'That feedback item could not be found.' });
+    }
+    await run('UPDATE client_feedback SET status = ? WHERE id = ?', [status, feedbackId]);
+    res.json({ message: 'Feedback review status updated.', id: feedbackId, status });
+  } catch (error) {
+    console.error('Error updating client feedback status:', error);
+    res.status(500).json({ message: 'Unable to update the feedback review status.' });
+  }
+});
+
+app.patch('/api/admin/users/:id/email', async (req, res) => {
+  const userId = Number(req.params.id);
+  const email = normalizeEmail(req.body.email);
+  if (!Number.isSafeInteger(userId) || userId <= 0 || !isValidEmail(email)) {
+    return res.status(400).json({ message: 'Enter a valid student email address.' });
+  }
+
+  try {
+    const student = await get("SELECT id, email FROM users WHERE id = ? AND role = 'staff'", [userId]);
+    if (!student) {
+      return res.status(404).json({ message: 'Student account not found.' });
+    }
+    const existingEmail = await get('SELECT id FROM users WHERE email = ? AND id <> ?', [email, userId]);
+    if (existingEmail) {
+      return res.status(409).json({ message: 'That email address is already linked to another account.' });
+    }
+    await withTransaction(async (transaction) => {
+      await transaction.run('UPDATE users SET email = ? WHERE id = ?', [email, userId]);
+      if (student.email !== email) {
+        await transaction.run('DELETE FROM password_reset_tokens WHERE user_id = ?', [userId]);
+      }
+    });
+    res.json({ message: 'Student recovery email saved.' });
+  } catch (error) {
+    console.error('Error saving student recovery email:', error);
+    res.status(500).json({ message: 'Unable to save the student recovery email.' });
+  }
+});
+
+app.patch('/api/admin/users/:id/recovery-whatsapp', async (req, res) => {
+  const userId = Number(req.params.id);
+  const phone = typeof req.body.phone === 'string' ? req.body.phone.trim() : '';
+  if (!Number.isSafeInteger(userId) || userId <= 0 ||
+      (phone && !/^\+[1-9]\d{7,14}$/.test(phone))) {
+    return res.status(400).json({ message: 'Enter a WhatsApp number in international format, for example +263771234567.' });
+  }
+  if (phone && req.body.confirmed !== true) {
+    return res.status(400).json({ message: 'Confirm that the student agreed to use this number for password recovery.' });
+  }
+
+  try {
+    const student = await get(
+      "SELECT id, recovery_whatsapp FROM users WHERE id = ? AND role = 'staff'",
+      [userId]
+    );
+    if (!student) {
+      return res.status(404).json({ message: 'Student account not found.' });
+    }
+    await withTransaction(async (transaction) => {
+      await transaction.run(
+        'UPDATE users SET recovery_whatsapp = ? WHERE id = ?',
+        [phone || null, userId]
+      );
+      if (student.recovery_whatsapp !== (phone || null)) {
+        await transaction.run('DELETE FROM password_reset_tokens WHERE user_id = ?', [userId]);
+      }
+    });
+    res.json({ message: phone ? 'Confirmed WhatsApp recovery number saved.' : 'WhatsApp recovery number removed.' });
+  } catch (error) {
+    console.error('Error saving student WhatsApp recovery number:', error);
+    res.status(500).json({ message: 'Unable to save the WhatsApp recovery number.' });
+  }
+});
 
 app.get('/api/admin/summary', async (req, res) => {
   try {
+    const revenueDay = getCurrentRevenueDayRange();
     const totals = await get(`
       SELECT
         COUNT(*) AS total_orders,
-        COALESCE(SUM(CASE WHEN status != 'Cancelled' THEN total ELSE 0 END), 0) AS revenue,
+        COALESCE(SUM(
+          CASE
+            WHEN status = 'Collected' AND collected_at >= ? AND collected_at < ? THEN total
+            ELSE 0
+          END
+        ), 0) AS revenue,
         SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) AS pending,
         SUM(CASE WHEN status = 'Delivered' THEN 1 ELSE 0 END) AS delivered
       FROM orders
-    `);
+    `, [revenueDay.start, revenueDay.end]);
 
     const users = await all(
-      'SELECT id, full_name, username, role, wallet_balance_cents FROM users ORDER BY created_at DESC'
+      'SELECT id, full_name, username, role, email, recovery_whatsapp, wallet_balance_cents FROM users ORDER BY created_at DESC'
     );
 
     res.json({
@@ -598,6 +1131,132 @@ app.post('/api/admin/cashiers', async (req, res) => {
   } catch (error) {
     console.error('Error creating cashier account:', error);
     res.status(500).json({ message: 'Unable to create cashier account.' });
+  }
+});
+
+app.get('/api/cashier/inventory', requireCashierOrAdminApi, async (req, res) => {
+  try {
+    const items = await all('SELECT id, name, category, stock_quantity FROM menu_items ORDER BY category, name');
+    const receipts = await all(
+      `SELECT m.id, m.menu_item_id, m.quantity_change, m.type, m.created_at,
+              i.name AS item_name, u.full_name AS received_by
+       FROM stock_movements m
+       JOIN menu_items i ON i.id = m.menu_item_id
+       LEFT JOIN users u ON u.id = m.created_by
+       WHERE m.type IN ('received', 'used')
+       ORDER BY m.id DESC
+       LIMIT 20`
+    );
+    res.json({ items, receipts });
+  } catch (error) {
+    console.error('Error loading stock inventory:', error);
+    res.status(500).json({ message: 'Unable to load stock inventory.' });
+  }
+});
+
+app.post('/api/cashier/stock-usage', requireCashierOrAdminApi, async (req, res) => {
+  try {
+    const menuItemId = Number(req.body.menuItemId);
+    const quantity = Number(req.body.quantity);
+    if (!Number.isSafeInteger(menuItemId) || menuItemId <= 0 ||
+        !Number.isSafeInteger(quantity) || quantity <= 0 || quantity > 1000000) {
+      return res.status(400).json({ message: 'Select a menu item and enter a whole-number quantity used.' });
+    }
+
+    const item = await withTransaction(async (transaction) => {
+      const existing = await transaction.get(
+        'SELECT id, name, stock_quantity FROM menu_items WHERE id = ?',
+        [menuItemId]
+      );
+      if (!existing) {
+        const error = new Error('That menu item could not be found.');
+        error.statusCode = 404;
+        throw error;
+      }
+
+      const update = await transaction.run(
+        'UPDATE menu_items SET stock_quantity = stock_quantity - ? WHERE id = ? AND stock_quantity >= ?',
+        [quantity, menuItemId, quantity]
+      );
+      if (update.changes !== 1) {
+        const error = new Error(`Only ${Number(existing.stock_quantity)} ${existing.name} are currently in stock.`);
+        error.statusCode = 409;
+        throw error;
+      }
+
+      await transaction.run(
+        `INSERT INTO stock_movements (menu_item_id, quantity_change, type, created_by)
+         VALUES (?, ?, 'used', ?)`,
+        [menuItemId, -quantity, req.accountUser.id]
+      );
+      return transaction.get(
+        'SELECT id, name, stock_quantity FROM menu_items WHERE id = ?',
+        [menuItemId]
+      );
+    });
+
+    res.status(201).json({
+      message: `Removed ${quantity} ${item.name} from stock.`,
+      item
+    });
+  } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    console.error('Error recording used stock:', error);
+    res.status(500).json({ message: 'Unable to subtract used stock.' });
+  }
+});
+
+app.post('/api/cashier/stock-receipts', requireCashierOrAdminApi, async (req, res) => {
+  try {
+    const menuItemId = Number(req.body.menuItemId);
+    const quantity = Number(req.body.quantity);
+    if (!Number.isSafeInteger(menuItemId) || menuItemId <= 0 ||
+        !Number.isSafeInteger(quantity) || quantity <= 0 || quantity > 1000000) {
+      return res.status(400).json({ message: 'Select a menu item and enter a whole-number quantity received.' });
+    }
+
+    const item = await withTransaction(async (transaction) => {
+      const existing = await transaction.get(
+        'SELECT id, name, stock_quantity FROM menu_items WHERE id = ?',
+        [menuItemId]
+      );
+      if (!existing) {
+        const error = new Error('That menu item could not be found.');
+        error.statusCode = 404;
+        throw error;
+      }
+      const update = await transaction.run(
+        'UPDATE menu_items SET stock_quantity = stock_quantity + ? WHERE id = ? AND stock_quantity <= ?',
+        [quantity, menuItemId, 2147483647 - quantity]
+      );
+      if (update.changes !== 1) {
+        const error = new Error('The resulting stock quantity is too large to save.');
+        error.statusCode = 400;
+        throw error;
+      }
+      await transaction.run(
+        `INSERT INTO stock_movements (menu_item_id, quantity_change, type, created_by)
+         VALUES (?, ?, 'received', ?)`,
+        [menuItemId, quantity, req.accountUser.id]
+      );
+      const updated = await transaction.get(
+        'SELECT id, name, stock_quantity FROM menu_items WHERE id = ?',
+        [menuItemId]
+      );
+      return updated;
+    });
+    res.status(201).json({
+      message: `Added ${quantity} ${item.name} to stock.`,
+      item
+    });
+  } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    console.error('Error recording received stock:', error);
+    res.status(500).json({ message: 'Unable to record received stock.' });
   }
 });
 
@@ -687,6 +1346,12 @@ app.post('/api/cashier/deposits', requireCashierOrAdminApi, async (req, res) => 
 
 app.get('/api/cashier/transactions', requireCashierOrAdminApi, async (req, res) => {
   try {
+    const students = await all(
+      `SELECT full_name, username, wallet_balance_cents AS balance_cents
+       FROM users
+       WHERE role = 'staff'
+       ORDER BY full_name`
+    );
     const transactions = await all(
       `SELECT t.id, t.amount_cents, t.type, t.created_at,
               u.full_name AS student_name, u.username AS student_username,
@@ -697,7 +1362,19 @@ app.get('/api/cashier/transactions', requireCashierOrAdminApi, async (req, res) 
        ORDER BY t.id DESC
        LIMIT 40`
     );
-    res.json({ transactions });
+    const accountsByUsername = new Map(students.map((student) => [
+      student.username,
+      {
+        student_name: student.full_name,
+        student_username: student.username,
+        balance_cents: Number(student.balance_cents),
+        transactions: []
+      }
+    ]));
+    for (const transaction of transactions) {
+      accountsByUsername.get(transaction.student_username)?.transactions.push(transaction);
+    }
+    res.json({ accounts: Array.from(accountsByUsername.values()) });
   } catch (error) {
     console.error('Error loading credit transactions:', error);
     res.status(500).json({ message: 'Unable to load recent credit transactions.' });
@@ -706,20 +1383,23 @@ app.get('/api/cashier/transactions', requireCashierOrAdminApi, async (req, res) 
 
 app.get('/api/admin/revenue', async (req, res) => {
   try {
+    const revenueDay = getCurrentRevenueDayRange();
     const sales = await all(`
       SELECT
         o.id AS order_id,
         o.customer_name,
-        o.created_at,
+        o.collected_at,
         mi.name AS item_name,
         oi.quantity,
         oi.unit_price
       FROM order_items oi
       JOIN orders o ON o.id = oi.order_id
       JOIN menu_items mi ON mi.id = oi.menu_item_id
-      WHERE o.status != 'Cancelled'
-      ORDER BY o.created_at DESC, o.id DESC, mi.name
-    `);
+      WHERE o.status = 'Collected'
+        AND o.collected_at >= ?
+        AND o.collected_at < ?
+      ORDER BY o.collected_at DESC, o.id DESC, mi.name
+    `, [revenueDay.start, revenueDay.end]);
 
     res.json({
       sales: sales.map((sale) => ({
@@ -947,6 +1627,28 @@ app.post('/api/orders', requireStudentApi, async (req, res) => {
         ]
       );
       for (const orderItem of orderItems) {
+        const stockUpdate = await transaction.run(
+          'UPDATE menu_items SET stock_quantity = stock_quantity - ? WHERE id = ? AND stock_quantity >= ?',
+          [orderItem.quantity, orderItem.menu_item_id, orderItem.quantity]
+        );
+        if (stockUpdate.changes !== 1) {
+          const menuItem = await transaction.get(
+            'SELECT name, stock_quantity FROM menu_items WHERE id = ?',
+            [orderItem.menu_item_id]
+          );
+          const error = new Error(
+            menuItem
+              ? `Not enough ${menuItem.name} in stock. Only ${Number(menuItem.stock_quantity)} available.`
+              : 'A menu item in this order is no longer available.'
+          );
+          error.statusCode = 409;
+          throw error;
+        }
+        await transaction.run(
+          `INSERT INTO stock_movements (menu_item_id, quantity_change, type, order_id)
+           VALUES (?, ?, 'sale', ?)`,
+          [orderItem.menu_item_id, -orderItem.quantity, orderResult.id]
+        );
         await transaction.run(
           'INSERT INTO order_items (order_id, menu_item_id, quantity, unit_price) VALUES (?, ?, ?, ?)',
           [orderResult.id, orderItem.menu_item_id, orderItem.quantity, orderItem.unit_price]
@@ -1039,19 +1741,44 @@ app.patch('/api/orders/:id/status', requireCashierOrAdminApi, async (req, res) =
         error.statusCode = 409;
         throw error;
       }
-      if (status === 'Collected' && order.status !== 'Ready for Pickup') {
-        const error = new Error('An order must be ready for pickup before it can be marked collected.');
+      if (status === 'Collected' && !['Pending', 'Preparing', 'Ready for Pickup'].includes(order.status)) {
+        const error = new Error('Only an active pickup order can be marked collected.');
         error.statusCode = 409;
         throw error;
       }
-      const update = await transaction.run(
-        'UPDATE orders SET status = ? WHERE id = ? AND status = ?',
-        [status, req.params.id, order.status]
-      );
+      const update = status === 'Collected'
+        ? await transaction.run(
+          'UPDATE orders SET status = ?, collected_at = ? WHERE id = ? AND status = ?',
+          [status, new Date().toISOString().slice(0, 19).replace('T', ' '), req.params.id, order.status]
+        )
+        : await transaction.run(
+          'UPDATE orders SET status = ? WHERE id = ? AND status = ?',
+          [status, req.params.id, order.status]
+        );
       if (update.changes !== 1) {
         const error = new Error('The order changed before this update. Refresh and try again.');
         error.statusCode = 409;
         throw error;
+      }
+      if (status === 'Cancelled') {
+        const soldStock = await transaction.all(
+          `SELECT menu_item_id, quantity_change
+           FROM stock_movements
+           WHERE order_id = ? AND type = 'sale'`,
+          [order.id]
+        );
+        for (const movement of soldStock) {
+          const returnedQuantity = -Number(movement.quantity_change);
+          await transaction.run(
+            'UPDATE menu_items SET stock_quantity = stock_quantity + ? WHERE id = ?',
+            [returnedQuantity, movement.menu_item_id]
+          );
+          await transaction.run(
+            `INSERT INTO stock_movements (menu_item_id, quantity_change, type, order_id, created_by)
+             VALUES (?, ?, 'return', ?, ?)`,
+            [movement.menu_item_id, returnedQuantity, order.id, req.accountUser.id]
+          );
+        }
       }
       if (status === 'Cancelled' && order.user_id && order.payment_method === 'credit') {
         const refundCents = Math.round(Number(order.total) * 100);

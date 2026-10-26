@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Diet Monitoring | THE KITCHEN</title>
+    <link rel="stylesheet" href="styles.css?v=diet-model-1" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="container nav">
+        <div class="brand">
+          <span class="brand-mark">F</span>
+          <div>
+            <h1>THE KITCHEN</h1>
+            <p>Diet Monitoring</p>
+          </div>
+        </div>
+        <nav>
+          <a href="home.html#my-orders">My Orders</a>
+          <a href="diet-monitoring.html" aria-current="page">Diet Monitoring</a>
+          <a href="#" id="diet-logout">Logout</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="dashboard-main">
+      <div class="container">
+        <section class="weekly-menu-section diet-page">
+          <div class="section-title left">
+            <p class="eyebrow">Student tools</p>
+            <h2>Diet Monitoring</h2>
+          </div>
+          <p class="diet-intro">
+            Keep a simple food diary and explore menu suggestions. Nutrition values are estimates for demonstration,
+            not medical or dietary advice.
+          </p>
+
+          <p id="diet-status" class="schedule-status" role="status" aria-live="polite"></p>
+
+          <section class="diet-panel" aria-labelledby="diet-focus-title">
+            <div class="diet-panel-heading">
+              <div>
+                <p class="eyebrow">Personalize suggestions</p>
+                <h3 id="diet-focus-title">Your general focus</h3>
+              </div>
+            </div>
+            <form id="diet-goal-form" class="diet-inline-form">
+              <div class="field-group">
+                <label for="diet-goal">What would you like suggestions to emphasize?</label>
+                <select id="diet-goal" name="goal">
+                  <option value="balanced">Balanced options</option>
+                  <option value="protein">More protein</option>
+                  <option value="fiber">More fiber</option>
+                  <option value="variety">More variety</option>
+                </select>
+              </div>
+              <button type="submit" class="submit-btn">Save focus</button>
+            </form>
+          </section>
+
+          <section class="diet-panel" aria-labelledby="diet-today-title">
+            <div class="diet-panel-heading">
+              <div>
+                <p class="eyebrow">Food diary</p>
+                <h3 id="diet-today-title">Today's nutrition estimates</h3>
+              </div>
+            </div>
+            <div id="diet-totals" class="diet-totals" aria-live="polite"></div>
+          </section>
+
+          <div class="diet-columns">
+            <section class="diet-panel" aria-labelledby="diet-log-title">
+              <div class="diet-panel-heading">
+                <div>
+                  <p class="eyebrow">Capture</p>
+                  <h3 id="diet-log-title">Log a meal</h3>
+                </div>
+              </div>
+              <form id="diet-meal-form">
+                <div class="field-group">
+                  <label for="diet-food">Food from the menu</label>
+                  <select id="diet-food" name="menuItemId" disabled required>
+                    <option value="">Loading menu…</option>
+                  </select>
+                </div>
+                <div id="diet-food-nutrition" class="diet-food-estimate"></div>
+                <div class="field-group">
+                  <label for="diet-servings">Servings</label>
+                  <input id="diet-servings" name="servings" type="number" min="0.5" max="5" step="0.5" value="1" required />
+                </div>
+                <button type="submit" class="submit-btn">Add to food diary</button>
+              </form>
+            </section>
+
+            <section class="diet-panel" aria-labelledby="diet-recommendations-title">
+              <div class="diet-panel-heading">
+                <div>
+                  <p class="eyebrow">Analyze and guide</p>
+                  <h3 id="diet-recommendations-title">Suggested menu choices</h3>
+                </div>
+              </div>
+              <p id="diet-model-description" class="diet-model-description"></p>
+              <div id="diet-recommendations" class="diet-recommendations" aria-live="polite"></div>
+            </section>
+          </div>
+
+          <div class="diet-columns">
+            <section class="diet-panel" aria-labelledby="diet-meals-title">
+              <div class="diet-panel-heading">
+                <div>
+                  <p class="eyebrow">Today</p>
+                  <h3 id="diet-meals-title">Meals logged</h3>
+                </div>
+              </div>
+              <div id="diet-meals" class="diet-list"></div>
+            </section>
+
+            <section class="diet-panel" aria-labelledby="diet-week-title">
+              <div class="diet-panel-heading">
+                <div>
+                  <p class="eyebrow">Recent pattern</p>
+                  <h3 id="diet-week-title">Last 7 days</h3>
+                </div>
+              </div>
+              <div id="diet-week" class="diet-week-list"></div>
+            </section>
+          </div>
+        </section>
+      </div>
+    </main>
+    <script src="diet-monitoring.js?v=diet-model-1"></script>
+  </body>
+</html>

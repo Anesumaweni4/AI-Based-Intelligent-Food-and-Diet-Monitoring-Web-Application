@@ -6,6 +6,12 @@ const selectedStudentLabel = document.getElementById('selected-student');
 const depositAmount = document.getElementById('deposit-amount');
 const cashierStatus = document.getElementById('cashier-status');
 const transactionsContainer = document.getElementById('credit-transactions');
+const stockReceiptForm = document.getElementById('stock-receipt-form');
+const stockMenuItem = document.getElementById('stock-menu-item');
+const stockQuantity = document.getElementById('stock-quantity');
+const stockStatus = document.getElementById('stock-status');
+const inventoryContainer = document.getElementById('cashier-inventory');
+const stockReceiptsContainer = document.getElementById('stock-receipts');
 let selectedStudent = null;
 
 function escapeHtml(value) {
@@ -22,22 +28,52 @@ function formatCurrency(cents) {
   return `$${(Number(cents) / 100).toFixed(2)}`;
 }
 
+async function readApiResponse(response) {
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.toLowerCase().includes('application/json')) {
+    throw new Error(`The stock API returned a webpage (HTTP ${response.status}). Open the dashboard from the running app at http://localhost:3000, not from VS Code Live Server or a file link.`);
+  }
+
+  try {
+    return await response.json();
+  } catch {
+    throw new Error(`The stock API returned invalid data (HTTP ${response.status}). Restart the app and try again.`);
+  }
+}
+
 async function loadTransactions() {
   try {
     const response = await fetch('/api/cashier/transactions');
     const result = await response.json();
     if (!response.ok) throw new Error(result.message || 'Unable to load credit activity.');
-    transactionsContainer.innerHTML = result.transactions.length
-      ? result.transactions.map((entry) => `
-          <article class="order-card">
-            <div class="order-header">
+    transactionsContainer.innerHTML = result.accounts.length
+      ? result.accounts.map((account) => `
+          <article class="order-card credit-account-card">
+            <div class="credit-account-summary">
               <div>
-                <h4>${escapeHtml(entry.student_name)} (@${escapeHtml(entry.student_username)})</h4>
-                <div class="order-meta"><span>${escapeHtml(entry.type)}</span><span>${escapeHtml(entry.recorded_by || 'System')}</span></div>
+                <h4>${escapeHtml(account.student_name)} (@${escapeHtml(account.student_username)})</h4>
               </div>
-              <strong class="${Number(entry.amount_cents) < 0 ? 'credit-debit' : 'credit-addition'}">${formatCurrency(entry.amount_cents)}</strong>
+              <div class="credit-account-balance">
+                <span>Wallet balance</span>
+                <strong>${formatCurrency(account.balance_cents)}</strong>
+              </div>
             </div>
-            <div class="order-meta"><span>${new Date(entry.created_at).toLocaleString()}</span></div>
+            ${account.transactions.length ? `
+              <details class="credit-account-history">
+                <summary>Recent transactions (${account.transactions.length})</summary>
+                <div class="credit-account-transactions">
+                  ${account.transactions.map((entry) => `
+                    <div class="credit-account-transaction">
+                      <div>
+                        <strong>${escapeHtml(entry.type)}</strong>
+                        <span>${escapeHtml(entry.recorded_by || 'System')} · ${new Date(entry.created_at).toLocaleString()}</span>
+                      </div>
+                      <strong class="${Number(entry.amount_cents) < 0 ? 'credit-debit' : 'credit-addition'}">${formatCurrency(entry.amount_cents)}</strong>
+                    </div>
+                  `).join('')}
+                </div>
+              </details>
+            ` : '<span class="credit-account-no-history">No credit transactions yet.</span>'}
           </article>
         `).join('')
       : '<div class="empty-state">No credit activity has been recorded yet.</div>';
@@ -45,6 +81,79 @@ async function loadTransactions() {
     transactionsContainer.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
   }
 }
+
+async function loadInventory() {
+  stockStatus.textContent = 'Loading stock inventory…';
+  stockStatus.classList.remove('error');
+  try {
+    const response = await fetch('/api/cashier/inventory');
+    const result = await readApiResponse(response);
+    if (!response.ok) throw new Error(result.message || 'Unable to load stock inventory.');
+
+    stockMenuItem.innerHTML = result.items.length
+      ? `<option value="">Choose a menu item</option>${result.items.map((item) => `
+          <option value="${Number(item.id)}">${escapeHtml(item.name)}</option>
+        `).join('')}`
+      : '<option value="">No menu items available</option>';
+    stockMenuItem.disabled = !result.items.length;
+    inventoryContainer.innerHTML = result.items.length
+      ? result.items.map((item) => `
+          <article class="cashier-inventory-card ${Number(item.stock_quantity) === 0 ? 'out-of-stock' : ''}">
+            <span>${escapeHtml(item.category || 'Menu item')}</span>
+            <strong>${escapeHtml(item.name)}</strong>
+            <b>${Number(item.stock_quantity)} <small>in stock</small></b>
+          </article>
+        `).join('')
+      : '<div class="empty-state">No menu items are available.</div>';
+    stockReceiptsContainer.innerHTML = result.receipts.length
+      ? result.receipts.map((receipt) => `
+          <article class="cashier-stock-receipt">
+            <div><strong>${Number(receipt.quantity_change) > 0 ? '+' : '−'}${Math.abs(Number(receipt.quantity_change))} ${escapeHtml(receipt.item_name)}</strong>
+              <span>${receipt.type === 'used' ? 'Used' : 'Received'} by ${escapeHtml(receipt.received_by || 'staff')}</span></div>
+            <time>${escapeHtml(new Date(receipt.created_at).toLocaleString())}</time>
+          </article>
+        `).join('')
+      : '<div class="empty-state">No stock activity has been recorded yet.</div>';
+    stockStatus.textContent = '';
+  } catch (error) {
+    stockStatus.textContent = error.message;
+    stockStatus.classList.add('error');
+    inventoryContainer.innerHTML = '<div class="empty-state">Unable to load stock levels.</div>';
+    stockReceiptsContainer.innerHTML = '';
+  }
+}
+
+stockReceiptForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const action = event.submitter?.value || 'received';
+  if (!['received', 'used'].includes(action)) return;
+  const isRemoval = action === 'used';
+  const buttons = stockReceiptForm.querySelectorAll('button[type="submit"]');
+  buttons.forEach((button) => { button.disabled = true; });
+  stockStatus.textContent = isRemoval ? 'Removing used stock…' : 'Recording received stock…';
+  stockStatus.classList.remove('error');
+  try {
+    const response = await fetch(isRemoval ? '/api/cashier/stock-usage' : '/api/cashier/stock-receipts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        menuItemId: stockMenuItem.value,
+        quantity: stockQuantity.value
+      })
+    });
+    const result = await readApiResponse(response);
+    if (!response.ok) throw new Error(result.message || (isRemoval ? 'Unable to remove stock.' : 'Unable to record received stock.'));
+    stockReceiptForm.reset();
+    stockStatus.textContent = result.message;
+    await loadInventory();
+    stockStatus.textContent = result.message;
+  } catch (error) {
+    stockStatus.textContent = error.message;
+    stockStatus.classList.add('error');
+  } finally {
+    buttons.forEach((button) => { button.disabled = false; });
+  }
+});
 
 searchForm.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -121,7 +230,7 @@ document.getElementById('cashier-logout').addEventListener('click', async (event
     const result = await response.json();
     if (!response.ok) throw new Error(result.message || 'Unable to log out.');
     localStorage.removeItem('foodieUser');
-    window.location.href = 'cashier-login.html';
+    window.location.href = 'login.html';
   } catch (error) {
     cashierStatus.textContent = error.message;
     cashierStatus.classList.add('error');
@@ -129,3 +238,4 @@ document.getElementById('cashier-logout').addEventListener('click', async (event
 });
 
 loadTransactions();
+loadInventory();

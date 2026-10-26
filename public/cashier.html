@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Student Credit | THE KITCHEN</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=20261023-wallet-list-dropdown-1" />
   </head>
   <body class="dashboard-body">
     <header class="topbar dashboard-header">
@@ -26,6 +26,39 @@
 
     <main class="dashboard-main">
       <div class="container">
+        <section class="weekly-menu-section">
+          <div class="section-title left">
+            <p class="eyebrow">Inventory control</p>
+            <h3>Stock Control</h3>
+          </div>
+          <p class="schedule-help">Select an item and quantity, then add stock received or remove stock used. Customer orders automatically reduce the available stock.</p>
+          <form id="stock-receipt-form" class="cashier-stock-form">
+            <div class="field-group">
+              <label for="stock-menu-item">Menu item</label>
+              <select id="stock-menu-item" required>
+                <option value="">Loading menu items…</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="stock-quantity">Quantity</label>
+              <input id="stock-quantity" type="number" min="1" max="1000000" step="1" required />
+            </div>
+            <div class="cashier-stock-actions">
+              <button class="submit-btn" type="submit" name="stockAction" value="received">Add to Stock</button>
+              <button class="cashier-stock-remove-button" type="submit" name="stockAction" value="used">Remove from Stock</button>
+            </div>
+          </form>
+          <p id="stock-status" class="schedule-status" role="status" aria-live="polite"></p>
+          <div class="cashier-inventory-wrap">
+            <h4>Current stock</h4>
+            <div id="cashier-inventory" class="cashier-inventory-grid"></div>
+          </div>
+          <details class="cashier-stock-history">
+            <summary>Recent stock activity</summary>
+            <div id="stock-receipts" class="order-list cashier-stock-history-list"></div>
+          </details>
+        </section>
+
         <section class="weekly-menu-section">
           <div class="section-title left">
             <p class="eyebrow">Record cash deposits</p>
@@ -53,13 +86,17 @@
 
         <section class="weekly-menu-section">
           <div class="section-title left">
-            <p class="eyebrow">Audit trail</p>
-            <h3>Recent Credit Activity</h3>
+            <p class="eyebrow">Student accounts</p>
+            <h3>Wallet Balances</h3>
           </div>
-          <div id="credit-transactions" class="order-list"></div>
+          <details class="wallet-balances-dropdown">
+            <summary>Show student accounts</summary>
+            <div id="credit-transactions" class="order-list wallet-balances-list"></div>
+          </details>
         </section>
       </div>
     </main>
-    <script src="cashier.js"></script>
+    <script src="cashier.js?v=credit-account-summary-2"></script>
+    <script src="staff-dashboard-links.js?v=20261026-1"></script>
   </body>
 </html>

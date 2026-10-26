@@ -11,8 +11,8 @@ The system allows users to register, login, place food orders, and manage the or
 ## 2. Roles and Access
 ### User Access
 - Users create an account from the registration page
-- They login through the normal user login screen
-- After login, they are redirected to the main customer menu page
+- Students and cashiers use the shared login screen; the account role determines which dashboard opens
+- Students are redirected to the main customer menu; cashiers are redirected to the Cashier Desk
 - Cash held by the cashier can be added to their account as USD credit
 - At checkout, students choose cash or student credit (“change”); cash orders do not need a deposit or change the account balance
 - Credit orders are checked against and deducted from the student's balance when placed; cashiers/admins can cancel a credit order to refund its balance
@@ -26,7 +26,7 @@ The system allows users to register, login, place food orders, and manage the or
 - Admins create cashier accounts from the admin dashboard. Cashier passwords must be at least 14 characters.
 
 ### Cashier Access
-- Cashiers sign in at `cashier-login.html` and use the Cashier Desk to find a student by name or username and record deposits.
+- Cashiers sign in at `login.html` and use the Cashier Desk to find a student by name or username and record deposits.
 - Deposits, purchases, and refunds are recorded in the `account_transactions` table.
 - Cashiers can update order status and cancel an order for a refund. Delivered or already-cancelled orders cannot be refunded again.
 - Student balance changes and the corresponding order/transaction records are committed together.
@@ -120,7 +120,7 @@ The app runs locally using:
 In VS Code, select **Start app and open Login** in Run and Debug and press **F5**. This starts the server and opens the login page when the server is ready. To access the admin login, use the **Admin Login** link on that page so the required access check runs first. A `localhost` URL only works while the server is running.
 
 The admin page can be accessed from the dedicated admin login page.
-Cashier login is available at `http://localhost:3000/cashier-login.html`.
+Cashiers sign in at `http://localhost:3000/login.html`.
 
 ## 10. Verified Functionality
 The following actions were completed and tested:

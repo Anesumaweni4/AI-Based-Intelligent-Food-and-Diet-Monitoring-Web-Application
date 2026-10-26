@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=whatsapp-recovery-1" />
   </head>
   <body class="dashboard-body">
     <header class="topbar dashboard-header">
@@ -76,6 +76,75 @@
 
         <section class="weekly-menu-section">
           <div class="section-title left">
+            <p class="eyebrow">Inventory control</p>
+            <h3>Stock Control</h3>
+          </div>
+          <p class="schedule-help">Select an item and quantity, then add stock received or remove stock used. Customer orders automatically reduce the available stock.</p>
+          <form id="stock-receipt-form" class="cashier-stock-form">
+            <div class="field-group">
+              <label for="stock-menu-item">Menu item</label>
+              <select id="stock-menu-item" required>
+                <option value="">Loading menu items…</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="stock-quantity">Quantity</label>
+              <input id="stock-quantity" type="number" min="1" max="1000000" step="1" required />
+            </div>
+            <div class="cashier-stock-actions">
+              <button class="submit-btn" type="submit" name="stockAction" value="received">Add to Stock</button>
+              <button class="cashier-stock-remove-button" type="submit" name="stockAction" value="used">Remove from Stock</button>
+            </div>
+          </form>
+          <p id="stock-status" class="schedule-status" role="status" aria-live="polite"></p>
+          <div class="cashier-inventory-wrap">
+            <h4>Current stock</h4>
+            <div id="cashier-inventory" class="cashier-inventory-grid"></div>
+          </div>
+          <details class="cashier-stock-history">
+            <summary>Recent stock activity</summary>
+            <div id="stock-receipts" class="order-list cashier-stock-history-list"></div>
+          </details>
+        </section>
+
+        <section class="weekly-menu-section">
+          <div class="section-title left">
+            <p class="eyebrow">Record cash deposits</p>
+            <h3>Student Credit</h3>
+          </div>
+          <p class="schedule-help">Find the student account first, confirm the name, then enter the cash deposit amount in USD.</p>
+          <form id="student-search-form" class="cashier-search-form">
+            <div class="field-group">
+              <label for="student-search">Student name or username</label>
+              <input id="student-search" type="search" minlength="2" required />
+            </div>
+            <button class="submit-btn" type="submit">Find Student</button>
+          </form>
+          <p id="cashier-status" class="schedule-status" role="status"></p>
+          <div id="student-search-results" class="order-list"></div>
+          <form id="deposit-form" class="cashier-deposit-form" hidden>
+            <h4 id="selected-student"></h4>
+            <div class="field-group">
+              <label for="deposit-amount">Deposit amount (USD)</label>
+              <input id="deposit-amount" type="number" min="0.01" step="0.01" required />
+            </div>
+            <button class="submit-btn" type="submit">Record Deposit</button>
+          </form>
+        </section>
+
+        <section class="weekly-menu-section">
+          <div class="section-title left">
+            <p class="eyebrow">Student accounts</p>
+            <h3>Wallet Balances</h3>
+          </div>
+          <details class="wallet-balances-dropdown">
+            <summary>Show student accounts</summary>
+            <div id="credit-transactions" class="order-list wallet-balances-list"></div>
+          </details>
+        </section>
+
+        <section class="weekly-menu-section">
+          <div class="section-title left">
             <p class="eyebrow">Meals by weekday</p>
             <h3>Weekly Menu Schedule</h3>
           </div>
@@ -91,18 +160,45 @@
         </section>
 
         <div class="section-title left">
+          <p class="eyebrow">Client voice</p>
+          <h3>Client Feedback</h3>
+        </div>
+        <p id="client-feedback-status" class="schedule-status" role="status" aria-live="polite"></p>
+        <div id="client-feedback-list" class="order-list client-feedback-list"></div>
+
+        <div class="section-title left">
           <p class="eyebrow">Order activity</p>
           <h3>All Orders</h3>
         </div>
         <div id="admin-orders" class="order-list"></div>
 
-        <div class="section-title left">
-          <p class="eyebrow">System users</p>
-          <h3>Clients and Admin</h3>
-        </div>
-        <div id="admin-users" class="order-list admin-user-directory"></div>
+        <section class="admin-directory-section" aria-labelledby="admin-directory-title">
+          <div class="admin-directory-heading">
+            <div>
+              <p class="eyebrow">System users</p>
+              <h3 id="admin-directory-title">Account directory</h3>
+              <p class="admin-directory-description">Select an account category to view accounts. Add each student's email in the recovery email column so they can reset their password.</p>
+            </div>
+            <span class="admin-directory-live"><span aria-hidden="true"></span> Live overview</span>
+          </div>
+          <div id="admin-user-stats" class="admin-user-stats" aria-label="Account counts"></div>
+        </section>
       </div>
     </main>
+
+    <dialog id="order-dialog" class="notice-dialog admin-order-dialog" aria-labelledby="order-dialog-title">
+      <div class="notice-dialog-content">
+        <div class="revenue-dialog-header">
+          <div>
+            <p class="eyebrow">Order details</p>
+            <h2 id="order-dialog-title">Order</h2>
+          </div>
+          <button type="button" class="revenue-dialog-close" id="close-order-dialog" aria-label="Close order details">×</button>
+        </div>
+        <p id="order-dialog-status" class="schedule-status" role="status" aria-live="polite"></p>
+        <div id="order-dialog-content"></div>
+      </div>
+    </dialog>
 
     <dialog id="revenue-dialog" class="notice-dialog revenue-dialog" aria-labelledby="revenue-dialog-title">
       <div class="notice-dialog-content">
@@ -119,7 +215,7 @@
             <thead>
               <tr>
                 <th scope="col">Order</th>
-                <th scope="col">Date</th>
+                <th scope="col">Collected at</th>
                 <th scope="col">Customer</th>
                 <th scope="col">Item</th>
                 <th scope="col">Qty</th>
@@ -131,9 +227,22 @@
           </table>
         </div>
         <div class="revenue-grand-total">
-          <span>Total revenue</span>
+          <span>Today's revenue</span>
           <strong id="revenue-sales-total">$0.00</strong>
         </div>
+      </div>
+    </dialog>
+
+    <dialog id="account-dialog" class="notice-dialog admin-account-dialog" aria-labelledby="account-dialog-title">
+      <div class="notice-dialog-content">
+        <div class="revenue-dialog-header">
+          <div>
+            <p class="eyebrow">Account directory</p>
+            <h2 id="account-dialog-title">Accounts</h2>
+          </div>
+          <button type="button" class="revenue-dialog-close" id="close-account-dialog" aria-label="Close account details">×</button>
+        </div>
+        <div id="admin-users" class="order-list admin-user-directory"></div>
       </div>
     </dialog>
 
@@ -166,6 +275,7 @@
         nav.appendChild(cashierDeskLink);
       }
     </script>
-    <script src="admin.js"></script>
+    <script src="admin.js?v=whatsapp-recovery-1"></script>
+    <script src="staff-dashboard-links.js?v=20261026-1"></script>
   </body>
 </html>

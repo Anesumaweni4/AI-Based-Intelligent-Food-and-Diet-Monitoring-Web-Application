@@ -66,13 +66,19 @@ async function loadWallet() {
     accountBalanceCents = Number(result.user.balanceCents);
     document.getElementById('customerName').value = result.user.fullName;
     walletBalanceEl.textContent = `Available: ${formatCredit(result.user.balanceCents)}`;
+    const activityIsOpen = Boolean(walletTransactionsEl.querySelector('details[open]'));
     walletTransactionsEl.innerHTML = result.transactions.length
-      ? `<h4>Recent activity</h4>${result.transactions.map((entry) => `
-          <div class="wallet-transaction">
-            <span>${String(entry.type).replace(/[&<>"']/g, '')}</span>
-            <strong>${formatCredit(entry.amount_cents)}</strong>
+      ? `<details class="wallet-activity-dropdown" ${activityIsOpen ? 'open' : ''}>
+          <summary>Recent activity</summary>
+          <div class="wallet-activity-list">
+            ${result.transactions.map((entry) => `
+              <div class="wallet-transaction">
+                <span>${escapeHtml(entry.type)}</span>
+                <strong>${formatCredit(entry.amount_cents)}</strong>
+              </div>
+            `).join('')}
           </div>
-        `).join('')}`
+        </details>`
       : '<p>No credit activity yet.</p>';
   } catch (error) {
     walletBalanceEl.textContent = error.message;
@@ -116,18 +122,21 @@ function renderStudentOrders(orders) {
     return;
   }
 
+  const openOrderIds = new Set(
+    Array.from(studentOrdersEl.querySelectorAll('details[open]'), element => element.dataset.orderId)
+  );
   studentOrdersEl.innerHTML = orders.map(order => `
-    <article class="order-card">
-      <div class="order-header">
-        <h4>Order #${escapeHtml(order.id)}</h4>
+    <details class="order-card student-order-card" data-order-id="${escapeHtml(order.id)}" ${openOrderIds.has(String(order.id)) ? 'open' : ''}>
+      <summary class="student-order-summary">
+        <strong>Order #${escapeHtml(order.id)}</strong>
         <span class="badge">${escapeHtml(order.status)}</span>
-      </div>
-      <div class="order-meta">
-        <span>${new Date(order.created_at).toLocaleString()}</span>
+        <span class="student-order-date">${new Date(order.created_at).toLocaleString()}</span>
         <strong>${formatCurrency(order.total)}</strong>
+      </summary>
+      <div class="student-order-details">
+        <p class="order-status-message">${escapeHtml(getOrderUpdateMessage(order.status))}</p>
       </div>
-      <p class="order-status-message">${escapeHtml(getOrderUpdateMessage(order.status))}</p>
-    </article>
+    </details>
   `).join('');
 }
 
@@ -192,7 +201,7 @@ function renderCart() {
       <div class="qty-controls">
         <button type="button" data-action="decrease" data-id="${item.id}">-</button>
         <span>${item.quantity}</span>
-        <button type="button" data-action="increase" data-id="${item.id}">+</button>
+        <button type="button" data-action="increase" data-id="${item.id}" ${item.quantity >= Number(item.stock_quantity) ? 'disabled' : ''}>+</button>
       </div>
       <div>${formatCurrency(item.price * item.quantity)}</div>
       <button type="button" class="remove-btn" data-action="remove" data-id="${item.id}">Remove</button>
@@ -207,6 +216,10 @@ function addToCart(menuId) {
   if (!selected) return;
 
   const existing = getCartItem(menuId);
+  if (Number(existing ? existing.quantity : 0) >= Number(selected.stock_quantity)) {
+    showToast(`Only ${Number(selected.stock_quantity)} ${selected.name} available in stock`);
+    return;
+  }
   if (existing) {
     existing.quantity += 1;
   } else {
@@ -221,6 +234,10 @@ function changeQuantity(menuId, delta) {
   const item = getCartItem(menuId);
   if (!item) return;
 
+  if (delta > 0 && item.quantity >= Number(item.stock_quantity)) {
+    showToast(`Only ${Number(item.stock_quantity)} ${item.name} available in stock`);
+    return;
+  }
   item.quantity += delta;
   if (item.quantity <= 0) {
     cart = cart.filter(entry => entry.id !== menuId);
@@ -258,6 +275,7 @@ async function loadMenu() {
   }
 
   const drinkItems = menu.filter(item => String(item.category).toLowerCase() === 'drink');
+  const burgerAndChips = menu.find(item => item.name === 'Beef Burger & Chips');
   const menuCards = [];
   let drinkCardAdded = false;
   for (const item of menu) {
@@ -265,14 +283,14 @@ async function loadMenu() {
       if (!drinkCardAdded) {
         menuCards.push(`
           <article class="menu-card">
-            <img src="drinks-assortment.svg" alt="An assortment of juice and soft drinks" />
+            <img src="drinks-assortment.jpg" alt="Bottled Minute Maid drinks" />
             <div class="menu-card-content">
               <span class="menu-category">Drink</span>
               <h4>Choose a drink</h4>
               <p>Minute Maid, Pepsi, Coke, and Fruit Smoothie.</p>
               <div class="meta-row">
                 <span class="price">From ${formatCurrency(Math.min(...drinkItems.map(drink => Number(drink.price))))}</span>
-                <button type="button" class="add-btn" data-action="choose-drink">Choose</button>
+                <button type="button" class="add-btn" data-action="choose-drink" ${drinkItems.every(drink => Number(drink.stock_quantity) === 0) ? 'disabled' : ''}>Choose</button>
               </div>
             </div>
           </article>
@@ -281,6 +299,9 @@ async function loadMenu() {
       }
       continue;
     }
+    if (item.name === 'Beef Burger & Chips') continue;
+
+    const isBeefBurger = item.name === 'Beef Burger' && burgerAndChips;
 
     menuCards.push(`
       <article class="menu-card">
@@ -289,15 +310,45 @@ async function loadMenu() {
           <span class="menu-category">${escapeHtml(item.category)}</span>
           <h4>${escapeHtml(item.name)}</h4>
           <p>${escapeHtml(item.description || '')}</p>
+          ${isBeefBurger ? `
+            <label class="burger-option-label">
+              Burger option
+              <select class="burger-option" aria-label="Choose a burger option">
+                <option value="${Number(item.id)}">Burger alone — ${formatCurrency(item.price)}</option>
+                <option value="${Number(burgerAndChips.id)}">Burger &amp; chips — ${formatCurrency(burgerAndChips.price)}</option>
+              </select>
+            </label>
+          ` : ''}
           <div class="meta-row">
-            <span class="price">${formatCurrency(item.price)}</span>
-            <button type="button" class="add-btn" data-id="${Number(item.id)}">Add</button>
+            <span class="price" ${isBeefBurger ? 'data-burger-price' : ''}>${formatCurrency(item.price)}</span>
+            <span class="menu-stock ${Number(item.stock_quantity) === 0 ? 'out-of-stock' : ''}" ${isBeefBurger ? 'data-burger-stock' : ''}>
+              ${Number(item.stock_quantity) === 0 ? 'Out of stock' : `${Number(item.stock_quantity)} available`}
+            </span>
+            <button type="button" class="add-btn" data-id="${Number(item.id)}" ${Number(item.stock_quantity) === 0 ? 'disabled' : ''}>Add</button>
           </div>
         </div>
       </article>
     `);
   }
   menuGrid.innerHTML = menuCards.join('');
+
+  menuGrid.querySelectorAll('.burger-option').forEach(select => {
+    select.addEventListener('change', () => {
+      const selected = menu.find(item => item.id === Number(select.value));
+      if (!selected) return;
+
+      const card = select.closest('.menu-card');
+      card.querySelector('[data-burger-price]').textContent = formatCurrency(selected.price);
+      const addButton = card.querySelector('.add-btn');
+      const stockLabel = card.querySelector('[data-burger-stock]');
+      addButton.dataset.id = String(selected.id);
+      addButton.disabled = Number(selected.stock_quantity) === 0;
+      stockLabel.textContent = Number(selected.stock_quantity) === 0
+        ? 'Out of stock'
+        : `${Number(selected.stock_quantity)} available`;
+      stockLabel.classList.toggle('out-of-stock', Number(selected.stock_quantity) === 0);
+    });
+  });
 
   menuGrid.querySelectorAll('.add-btn').forEach(button => {
     if (button.dataset.action === 'choose-drink') {
@@ -315,9 +366,12 @@ function openDrinkPicker() {
       <div>
         <strong>${escapeHtml(item.name)}</strong>
         <span>${escapeHtml(item.description || '')}</span>
+        <span class="menu-stock ${Number(item.stock_quantity) === 0 ? 'out-of-stock' : ''}">
+          ${Number(item.stock_quantity) === 0 ? 'Out of stock' : `${Number(item.stock_quantity)} available`}
+        </span>
       </div>
       <strong class="drink-picker-price">${formatCurrency(item.price)}</strong>
-      <button type="button" class="add-btn" data-id="${Number(item.id)}">Add</button>
+      <button type="button" class="add-btn" data-id="${Number(item.id)}" ${Number(item.stock_quantity) === 0 ? 'disabled' : ''}>Add</button>
     </div>
   `).join('');
   drinkPickerOptions.querySelectorAll('.add-btn').forEach(button => {
@@ -361,6 +415,7 @@ async function placeOrder(paymentMethod) {
     showToast(paymentMethod === 'credit'
       ? `Order placed. Remaining credit: ${formatCredit(accountBalanceCents)}`
       : 'Order placed. Please pay cash when collecting your food.');
+    await loadMenu();
     await loadWallet();
     await loadStudentOrders();
   } catch (error) {

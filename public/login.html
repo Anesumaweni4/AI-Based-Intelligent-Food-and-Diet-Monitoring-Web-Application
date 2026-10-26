@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login | THE KITCHEN</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=password-reset-1" />
   </head>
   <body class="auth-body">
     <header class="topbar">
@@ -17,10 +17,9 @@
           </div>
         </div>
         <nav>
-          <a href="home.html">Home</a>
-          <a href="restaurant.html">Restaurant</a>
-          <a href="delivery.html">Delivery</a>
-          <a href="admin-login.html">Admin Login</a>
+          <a href="/home.html">Home</a>
+          <a href="/restaurant.html">Restaurant</a>
+          <a href="/delivery.html">Delivery</a>
         </nav>
       </div>
     </header>
@@ -32,35 +31,30 @@
           <h2>Login</h2>
         </div>
 
-        <form id="login-form" class="auth-form">
+        <form id="login-form" class="auth-form" method="post" action="/api/auth/login">
           <div class="field-group">
             <label for="loginUsername">Username</label>
-            <input id="loginUsername" type="text" placeholder="Enter username" required />
+            <input id="loginUsername" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Enter username" required />
           </div>
           <div class="field-group">
             <label for="loginPassword">Password</label>
-            <input id="loginPassword" type="password" placeholder="Enter password" required />
+            <input id="loginPassword" name="password" type="password" autocomplete="current-password" placeholder="Enter password" required />
           </div>
           <button type="submit" class="submit-btn">Login</button>
         </form>
 
         <p class="auth-link-row">
+          <a href="/reset-password.html">Forgot password?</a>
+        </p>
+        <p class="auth-link-row">
           Don’t have an account?
-          <a href="register.html">Create one</a>
-        </p>
-        <p class="auth-link-row">
-          Admin access?
-          <a href="admin-login.html">Admin Login</a>
-        </p>
-        <p class="auth-link-row">
-          Cashier access?
-          <a href="cashier-login.html">Cashier Login</a>
+          <a href="/register.html">Create one</a>
         </p>
       </div>
     </main>
 
     <div id="toast" class="toast"></div>
-    <script src="auth.js"></script>
-    <script src="admin-gate.js"></script>
+    <script src="auth.js?v=password-reset-1"></script>
+    <script src="staff-dashboard-links.js?v=20261026-1"></script>
   </body>
 </html>

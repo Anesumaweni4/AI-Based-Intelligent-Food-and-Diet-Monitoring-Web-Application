@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>THE KITCHEN | Home</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=client-feedback-1" />
   </head>
   <body>
     <header class="topbar">
@@ -23,8 +23,6 @@
           <a href="home.html">Home</a>
           <a href="restaurant.html">Restaurant</a>
           <a href="delivery.html">Delivery</a>
-          <a href="admin-login.html">Admin Login</a>
-          <a href="cashier-login.html">Cashier Login</a>
           <a href="login.html">Login</a>
         </nav>
       </div>
@@ -137,7 +135,7 @@
     </dialog>
     <dialog id="drink-picker-dialog" class="notice-dialog drink-picker-dialog" aria-labelledby="drink-picker-title">
       <div class="drink-picker-content">
-        <img class="drink-picker-image" src="drinks-assortment.svg" alt="An assortment of juice and soft drinks" />
+        <img class="drink-picker-image" src="drinks-assortment.jpg" alt="Bottled Minute Maid drinks" />
         <div class="drink-picker-body">
           <p class="eyebrow">Cold drinks</p>
           <h2 id="drink-picker-title">Choose a drink</h2>
@@ -160,6 +158,37 @@
         </div>
       </div>
     </dialog>
+    <aside class="feedback-chat">
+      <button type="button" id="feedback-chat-toggle" class="feedback-chat-toggle" aria-expanded="false" aria-controls="feedback-chat-panel">
+        Give feedback
+      </button>
+      <section id="feedback-chat-panel" class="feedback-chat-panel" aria-labelledby="feedback-chat-title" hidden>
+        <header class="feedback-chat-header">
+          <div>
+            <p class="eyebrow">Client support</p>
+            <h2 id="feedback-chat-title">Feedback assistant</h2>
+          </div>
+          <button type="button" id="feedback-chat-close" class="feedback-chat-close" aria-label="Close feedback assistant">×</button>
+        </header>
+        <div id="feedback-chat-messages" class="feedback-chat-messages" role="log" aria-live="polite" aria-relevant="additions"></div>
+        <div id="feedback-chat-categories" class="feedback-chat-categories" hidden>
+          <p>What would you like to tell us about?</p>
+          <div class="feedback-chat-choices">
+            <button type="button" data-feedback-category="food">Food</button>
+            <button type="button" data-feedback-category="order">My order</button>
+            <button type="button" data-feedback-category="service">Service</button>
+            <button type="button" data-feedback-category="website">Website</button>
+            <button type="button" data-feedback-category="other">Something else</button>
+          </div>
+        </div>
+        <form id="feedback-chat-form" class="feedback-chat-form" hidden>
+          <label class="sr-only" for="feedback-chat-input">Your feedback</label>
+          <textarea id="feedback-chat-input" maxlength="2000" rows="3" placeholder="Type your feedback…" required></textarea>
+          <button type="submit" class="submit-btn">Send</button>
+        </form>
+        <p id="feedback-chat-status" class="feedback-chat-status" role="status" aria-live="polite"></p>
+      </section>
+    </aside>
     <script>
       const currentUser = JSON.parse(localStorage.getItem('foodieUser') || 'null');
       if (!currentUser) {
@@ -173,7 +202,7 @@
         if (nav) {
           Array.from(nav.querySelectorAll('a')).forEach(link => {
             const href = link.getAttribute('href');
-            if (['#menu', '#checkout', 'home.html', 'restaurant.html', 'delivery.html', 'admin.html', 'login.html', 'cashier-login.html'].includes(href)) {
+            if (['#menu', '#checkout', 'home.html', 'restaurant.html', 'delivery.html', 'admin.html', 'login.html'].includes(href)) {
               link.style.display = 'none';
             }
           });
@@ -193,11 +222,16 @@
               window.alert(error.message);
             }
           });
+          const dietMonitoringLink = document.createElement('a');
+          dietMonitoringLink.href = 'diet-monitoring.html';
+          dietMonitoringLink.textContent = 'Diet Monitoring';
+          nav.appendChild(dietMonitoringLink);
           nav.appendChild(logoutLink);
         }
       }
     </script>
     <script src="app.js"></script>
-    <script src="admin-gate.js"></script>
+    <script src="staff-dashboard-links.js?v=20261026-1"></script>
+    <script src="feedback-chatbot.js?v=feedback-chat-1"></script>
   </body>
 </html>
