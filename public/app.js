@@ -266,7 +266,11 @@ async function loadMenu() {
   const response = await fetch('/api/menu');
   const result = await response.json();
   if (!response.ok) throw new Error(result.message || 'Failed to load menu');
-  menu = result.items;
+  menu = result.items.map(item => ({
+    ...item,
+    id: Number(item.id),
+    stock_quantity: Number(item.stock_quantity)
+  }));
   menuDateEl.textContent = `${result.dayName}, ${result.date} — today's meals`;
 
   if (menu.length === 0) {

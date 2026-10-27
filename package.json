@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "migrate:neon": "node scripts/migrate-sqlite-to-neon.js"
+    "migrate:neon": "node scripts/migrate-sqlite-to-neon.js",
+    "sync:stock:neon": "node scripts/sync-stock-to-neon.js"
   },
   "dependencies": {
     "express": "^4.21.2",

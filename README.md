@@ -67,10 +67,30 @@ npm.cmd run migrate:neon
 
 By default, the migration reads `data/food-ordering-app.db`; set
 `SQLITE_DB_PATH` first if your current database is elsewhere. The migration
-preserves row IDs and related records, checks row counts, and stops if it finds
+preserves row IDs and related records, including orders, account activity,
+feedback, and diet-monitoring data; checks row counts; and stops if it finds
 existing data in the Neon tables rather than overwriting it. User account
 password hashes are included so migrated accounts can continue to sign in.
 Keep the connection string private, and rotate it if it has been shared.
+
+To copy only current stock quantities from SQLite into an already-used Neon
+database, set `DATABASE_URL` and preview the changes first:
+
+```powershell
+npm.cmd run sync:stock:neon
+```
+
+The preview matches menu items by name and refuses to proceed if names are
+missing or ambiguous. If the preview is correct, apply it with:
+
+```powershell
+npm.cmd run sync:stock:neon -- --apply
+```
+
+This updates only `menu_items.stock_quantity`; it does not change Neon orders,
+accounts, or stock-movement history. By default, the source is
+`data/food-ordering-app.db`; set `SQLITE_DB_PATH` if the stock data is in a
+different SQLite file.
 
 To use a different SQLite database file, set `SQLITE_DB_PATH` before starting
 the app. For example, in PowerShell:

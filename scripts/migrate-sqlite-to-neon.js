@@ -150,7 +150,11 @@ async function main() {
       const result = {};
       for (const table of tableOrder) {
         if (!snapshot.has(table)) continue;
-        result[table] = await migrateTable(transaction, table, snapshot.get(table));
+        try {
+          result[table] = await migrateTable(transaction, table, snapshot.get(table));
+        } catch (error) {
+          throw new Error(`Failed to migrate ${table}: ${error.message}`);
+        }
       }
       for (const table of tableOrder) {
         if (!snapshot.has(table)) continue;

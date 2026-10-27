@@ -34,7 +34,7 @@ function postgresSql(sql) {
 }
 
 function postgresRun(client, sql, params = []) {
-  const isInsertWithId = /^\s*INSERT\s+INTO\s+(?!menu_schedule\b)/i.test(sql);
+  const isInsertWithId = /^\s*INSERT\s+INTO\s+(?!"?menu_schedule\b)/i.test(sql);
   const statement = isInsertWithId && !/\bRETURNING\b/i.test(sql)
     ? `${sql.trim().replace(/;$/, '')} RETURNING id`
     : sql;
