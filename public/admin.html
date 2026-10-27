@@ -200,6 +200,20 @@
       </div>
     </dialog>
 
+    <dialog id="pending-orders-dialog" class="notice-dialog admin-account-dialog" aria-labelledby="pending-orders-title">
+      <div class="notice-dialog-content">
+        <div class="revenue-dialog-header">
+          <div>
+            <p class="eyebrow">Orders awaiting action</p>
+            <h2 id="pending-orders-title">Pending Orders</h2>
+          </div>
+          <button type="button" class="revenue-dialog-close" id="close-pending-orders-dialog" aria-label="Close pending orders">×</button>
+        </div>
+        <p id="pending-orders-status" class="schedule-status" role="status" aria-live="polite"></p>
+        <div id="pending-orders-list" class="order-list"></div>
+      </div>
+    </dialog>
+
     <dialog id="revenue-dialog" class="notice-dialog revenue-dialog" aria-labelledby="revenue-dialog-title">
       <div class="notice-dialog-content">
         <div class="revenue-dialog-header">
@@ -275,7 +289,7 @@
         nav.appendChild(cashierDeskLink);
       }
     </script>
-    <script src="admin.js?v=whatsapp-recovery-1"></script>
+    <script src="admin.js?v=pending-orders-dialog-1"></script>
     <script src="staff-dashboard-links.js?v=20261026-1"></script>
   </body>
 </html>

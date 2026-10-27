@@ -34,6 +34,9 @@ const orderDialogTitle = document.getElementById('order-dialog-title');
 const orderDialogContent = document.getElementById('order-dialog-content');
 const orderDialogStatus = document.getElementById('order-dialog-status');
 let activeOrderDetails = null;
+const pendingOrdersDialog = document.getElementById('pending-orders-dialog');
+const pendingOrdersStatus = document.getElementById('pending-orders-status');
+const pendingOrdersList = document.getElementById('pending-orders-list');
 const cashierCreateForm = document.getElementById('cashier-create-form');
 const cashierCreateStatus = document.getElementById('cashier-create-status');
 const clientFeedbackList = document.getElementById('client-feedback-list');
@@ -127,6 +130,7 @@ usersContainer.addEventListener('submit', async (event) => {
 document.getElementById('close-revenue-dialog').addEventListener('click', () => revenueDialog.close());
 document.getElementById('close-order-dialog').addEventListener('click', () => orderDialog.close());
 document.getElementById('close-account-dialog').addEventListener('click', () => accountDialog.close());
+document.getElementById('close-pending-orders-dialog').addEventListener('click', () => pendingOrdersDialog.close());
 accountDialog.addEventListener('click', (event) => {
   if (event.target === accountDialog) accountDialog.close();
 });
@@ -138,6 +142,26 @@ accountDialog.addEventListener('close', () => {
 });
 orderDialog.addEventListener('click', (event) => {
   if (event.target === orderDialog) orderDialog.close();
+});
+pendingOrdersDialog.addEventListener('click', (event) => {
+  if (event.target === pendingOrdersDialog) pendingOrdersDialog.close();
+});
+pendingOrdersList.addEventListener('click', async (event) => {
+  const button = event.target.closest('[data-pending-order-id]');
+  if (!button) return;
+
+  try {
+    const response = await fetch('/api/orders');
+    const orders = await response.json();
+    if (!response.ok) throw new Error(orders.message || 'Unable to load order details.');
+    const selectedOrder = orders.find((order) => Number(order.id) === Number(button.dataset.pendingOrderId));
+    if (!selectedOrder) throw new Error('This order is no longer available.');
+    pendingOrdersDialog.close();
+    showOrderDetails(selectedOrder);
+  } catch (error) {
+    pendingOrdersStatus.textContent = error.message;
+    pendingOrdersStatus.classList.add('error');
+  }
 });
 orderDialogContent.addEventListener('click', async (event) => {
   const button = event.target.closest('[data-next-order-status]');
@@ -787,6 +811,22 @@ async function loadSummary() {
     if (!accountDialog.open) renderUserDirectory();
 
     const totalOrdersCard = summaryContainer.querySelector('[data-target="admin-orders"]');
+    const pendingOrdersCard = Array.from(summaryContainer.querySelectorAll('.stat-card'))
+      .find((card) => card.querySelector('span')?.textContent === 'Pending');
+    if (pendingOrdersCard) {
+      pendingOrdersCard.classList.add('stat-card-link');
+      pendingOrdersCard.tabIndex = 0;
+      pendingOrdersCard.setAttribute('role', 'button');
+      pendingOrdersCard.setAttribute('aria-label', 'View pending orders');
+      pendingOrdersCard.addEventListener('click', showPendingOrders);
+      pendingOrdersCard.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          showPendingOrders();
+        }
+      });
+    }
+
     if (totalOrdersCard) {
       const renderSummaryDropdown = (orders) => {
         const dropdown = summaryContainer.querySelector('.admin-summary-dropdown');
@@ -869,6 +909,44 @@ async function loadSummary() {
   } catch (error) {
     summaryContainer.innerHTML = '<div class="empty-state">Unable to load admin data.</div>';
     console.error(error);
+  }
+}
+
+async function showPendingOrders() {
+  pendingOrdersStatus.textContent = 'Loading pending orders…';
+  pendingOrdersStatus.classList.remove('error');
+  pendingOrdersList.innerHTML = '';
+  pendingOrdersDialog.showModal();
+
+  try {
+    const response = await fetch('/api/orders');
+    const orders = await response.json();
+    if (!response.ok) throw new Error(orders.message || 'Unable to load pending orders.');
+
+    const pendingOrders = orders.filter((order) => order.status === 'Pending');
+    if (!pendingOrders.length) {
+      pendingOrdersStatus.textContent = 'There are no pending orders right now.';
+      return;
+    }
+
+    pendingOrdersStatus.textContent = `${pendingOrders.length} pending order${pendingOrders.length === 1 ? '' : 's'}. Select an order to view its details.`;
+    pendingOrdersList.innerHTML = pendingOrders.map((order) => `
+      <button type="button" class="order-card admin-order-summary" data-pending-order-id="${Number(order.id)}">
+        <span class="admin-order-summary-main">
+          <span class="admin-order-number">Order #${Number(order.id)}</span>
+          <span class="admin-order-customer">${escapeHtml(order.customer_name)}</span>
+        </span>
+        <span class="admin-order-summary-end">
+          <span class="badge">${escapeHtml(order.status)}</span>
+          <strong>${formatCurrency(order.total)}</strong>
+        </span>
+        <span class="admin-order-open-label">View order</span>
+      </button>
+    `).join('');
+  } catch (error) {
+    console.error('Error loading pending orders:', error);
+    pendingOrdersStatus.textContent = error.message;
+    pendingOrdersStatus.classList.add('error');
   }
 }
 
