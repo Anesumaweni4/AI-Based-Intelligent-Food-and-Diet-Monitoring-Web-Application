@@ -15,7 +15,9 @@ const stockMenuItem = document.getElementById('stock-menu-item');
 const stockQuantity = document.getElementById('stock-quantity');
 const stockStatus = document.getElementById('stock-status');
 const inventoryContainer = document.getElementById('cashier-inventory');
+const stockAlertsContainer = document.getElementById('stock-alerts');
 const stockReceiptsContainer = document.getElementById('stock-receipts');
+const STOCK_ALERT_THRESHOLD = 0;
 let selectedStudent = null;
 const accountDialog = document.getElementById('account-dialog');
 const accountDialogTitle = document.getElementById('account-dialog-title');
@@ -536,11 +538,21 @@ async function loadInventory() {
         `).join('')}`
       : '<option value="">No menu items available</option>';
     stockMenuItem.disabled = !result.items.length;
+    const outOfStockItems = result.items.filter((item) => Number(item.stock_quantity) <= STOCK_ALERT_THRESHOLD);
+    const alertContent = outOfStockItems.length
+      ? `<strong>Out of stock alert: ${outOfStockItems.length} item${outOfStockItems.length === 1 ? '' : 's'} need restocking.</strong>
+         <ul>${outOfStockItems.map((item) => `<li>${escapeHtml(item.name)}</li>`).join('')}</ul>`
+      : '';
+    stockAlertsContainer.hidden = outOfStockItems.length === 0;
+    if (stockAlertsContainer.innerHTML !== alertContent) {
+      stockAlertsContainer.innerHTML = alertContent;
+    }
     inventoryContainer.innerHTML = result.items.length
       ? result.items.map((item) => `
-          <article class="cashier-inventory-card ${Number(item.stock_quantity) === 0 ? 'out-of-stock' : ''}">
+          <article class="cashier-inventory-card ${Number(item.stock_quantity) <= STOCK_ALERT_THRESHOLD ? 'out-of-stock' : ''}">
             <span>${escapeHtml(item.category || 'Menu item')}</span>
             <strong>${escapeHtml(item.name)}</strong>
+            ${Number(item.stock_quantity) <= STOCK_ALERT_THRESHOLD ? '<span class="stock-alert-badge">Out of stock</span>' : ''}
             <b>${Number(item.stock_quantity)} <small>in stock</small></b>
           </article>
         `).join('')
@@ -558,6 +570,8 @@ async function loadInventory() {
   } catch (error) {
     stockStatus.textContent = error.message;
     stockStatus.classList.add('error');
+    stockAlertsContainer.hidden = true;
+    stockAlertsContainer.innerHTML = '';
     inventoryContainer.innerHTML = '<div class="empty-state">Unable to load stock levels.</div>';
     stockReceiptsContainer.innerHTML = '';
   }
