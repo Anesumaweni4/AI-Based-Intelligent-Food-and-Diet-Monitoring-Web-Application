@@ -17,6 +17,8 @@ const paymentChoiceDialog = document.getElementById('payment-choice-dialog');
 const paymentCreditBalanceEl = document.getElementById('payment-credit-balance');
 const studentOrdersEl = document.getElementById('student-orders');
 const orderUpdateMessageEl = document.getElementById('order-update-message');
+const enableOrderNotificationsButton = document.getElementById('enable-order-notifications');
+const orderNotificationStatusEl = document.getElementById('order-notification-status');
 const drinkPickerDialog = document.getElementById('drink-picker-dialog');
 const drinkPickerOptions = document.getElementById('drink-picker-options');
 
@@ -116,6 +118,71 @@ function getOrderUpdateMessage(status) {
   return messages[status] || `Your order status is ${status}.`;
 }
 
+function updateOrderNotificationControls() {
+  if (!enableOrderNotificationsButton || !orderNotificationStatusEl) return;
+
+  if (!('Notification' in window) || !window.isSecureContext) {
+    enableOrderNotificationsButton.hidden = true;
+    orderNotificationStatusEl.textContent = 'Browser notifications require a supported browser and a secure connection.';
+    return;
+  }
+
+  enableOrderNotificationsButton.hidden = Notification.permission === 'granted';
+  enableOrderNotificationsButton.disabled = Notification.permission === 'denied';
+  orderNotificationStatusEl.textContent = Notification.permission === 'granted'
+    ? 'Browser notifications are enabled.'
+    : Notification.permission === 'denied'
+      ? 'Notifications are blocked. Allow them in your browser site settings to enable alerts.'
+      : 'Enable alerts for order status changes.';
+}
+
+function notifyOrderStatus(order, status) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+  const updates = {
+    Pending: { title: 'Order received', body: 'Your order has been received and is waiting for the kitchen.' },
+    Preparing: { title: 'Order accepted', body: 'The kitchen has accepted your order and is preparing it.' },
+    'Ready for Pickup': { title: 'Order ready for pickup', body: 'Your food is ready. Please come to collect your order.' }
+  };
+  const update = updates[status];
+  if (!update) return;
+
+  try {
+    const notification = new Notification(update.title, {
+      body: `Order #${order.id}: ${update.body}`,
+      tag: `order-${order.id}-${status}`
+    });
+    notification.addEventListener('click', () => {
+      window.focus();
+      window.location.hash = 'my-orders';
+      notification.close();
+    });
+  } catch (error) {
+    console.error('Unable to show order status notification:', error);
+    if (orderNotificationStatusEl) {
+      orderNotificationStatusEl.textContent = 'Unable to display a browser notification. Your order update is still shown on this page.';
+    }
+  }
+}
+
+if (enableOrderNotificationsButton) {
+  enableOrderNotificationsButton.addEventListener('click', async () => {
+    if (!('Notification' in window) || !window.isSecureContext) {
+      updateOrderNotificationControls();
+      return;
+    }
+
+    try {
+      await Notification.requestPermission();
+      updateOrderNotificationControls();
+    } catch (error) {
+      console.error('Unable to request browser notification permission:', error);
+      orderNotificationStatusEl.textContent = 'Unable to enable browser notifications. Please check your browser settings.';
+    }
+  });
+  updateOrderNotificationControls();
+}
+
 function renderStudentOrders(orders) {
   if (!orders.length) {
     studentOrdersEl.innerHTML = '<div class="empty-state">You have no orders yet. Your order updates will appear here.</div>';
@@ -167,6 +234,7 @@ async function loadStudentOrders() {
       ).join(' ');
       orderUpdateMessageEl.textContent = message;
       showToast(message);
+      changedOrders.forEach((order) => notifyOrderStatus(order, order.status));
     }
   } catch (error) {
     console.error('Error loading student order updates:', error);
@@ -419,6 +487,7 @@ async function placeOrder(paymentMethod) {
     showToast(paymentMethod === 'credit'
       ? `Order placed. Remaining credit: ${formatCredit(accountBalanceCents)}`
       : 'Order placed. Please pay cash when collecting your food.');
+    if (result.order) notifyOrderStatus(result.order, 'Pending');
     await loadMenu();
     await loadWallet();
     await loadStudentOrders();

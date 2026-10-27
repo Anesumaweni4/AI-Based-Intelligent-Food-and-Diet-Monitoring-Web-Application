@@ -12,6 +12,7 @@ This project is a simple web-based food ordering system designed for small and m
 - Add foods to a shopping cart
 - Place customer orders
 - Track order status updates and receive in-app messages as the order progresses
+- Opt in to browser notifications for order receipt, preparation, and pickup readiness while the customer page is open
 - Mark pickup orders as collected so they no longer remain pending
 - Restaurant dashboard to manage incoming orders
 - Delivery dashboard to mark orders as ready/out for delivery/delivered

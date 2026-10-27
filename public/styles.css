@@ -1975,6 +1975,28 @@ nav {
   color: #a33c2c;
 }
 
+.order-notification-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin: 0 0 16px;
+}
+
+.order-notification-controls button {
+  width: auto;
+  margin: 0;
+  padding: 10px 14px;
+}
+
+.order-notification-controls .schedule-status {
+  margin: 0;
+}
+
+.order-notification-controls .schedule-status.error {
+  color: #a33c2c;
+}
+
 .cashier-stock-receipt {
   display: flex;
   justify-content: space-between;

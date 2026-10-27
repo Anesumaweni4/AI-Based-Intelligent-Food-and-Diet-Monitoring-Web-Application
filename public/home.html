@@ -67,6 +67,10 @@
             <h3>Your Orders</h3>
           </div>
           <p id="order-update-message" class="order-update-message" role="status" aria-live="polite"></p>
+          <div class="order-notification-controls">
+            <button type="button" class="admin-user-email-save" id="enable-order-notifications">Enable browser notifications</button>
+            <span id="order-notification-status" class="schedule-status" role="status" aria-live="polite"></span>
+          </div>
           <div id="student-orders" class="order-list"></div>
         </div>
       </section>
@@ -230,7 +234,7 @@
         }
       }
     </script>
-    <script src="app.js"></script>
+    <script src="app.js?v=order-notifications-1"></script>
     <script src="staff-dashboard-links.js?v=20261026-1"></script>
     <script src="feedback-chatbot.js?v=feedback-chat-1"></script>
   </body>
