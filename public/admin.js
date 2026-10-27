@@ -1,5 +1,13 @@
 const summaryContainer = document.getElementById('admin-summary');
 const ordersContainer = document.getElementById('admin-orders');
+const adminOrderSearchInput = document.getElementById('admin-order-search');
+const adminOrderDateInput = document.getElementById('admin-order-date');
+const adminOrderStatusSelect = document.getElementById('admin-order-status');
+const clearAdminOrderFiltersButton = document.getElementById('admin-order-filter-clear');
+const downloadOrderHistoryButton = document.getElementById('download-order-history');
+const adminOrderResultsMessage = document.getElementById('admin-order-results');
+let allOrders = [];
+let lastObservedOrderDate = '';
 const usersContainer = document.getElementById('admin-users');
 const userStatsContainer = document.getElementById('admin-user-stats');
 const searchForm = document.getElementById('student-search-form');
@@ -43,6 +51,10 @@ const cashierCreateForm = document.getElementById('cashier-create-form');
 const cashierCreateStatus = document.getElementById('cashier-create-status');
 const clientFeedbackList = document.getElementById('client-feedback-list');
 const clientFeedbackStatus = document.getElementById('client-feedback-status');
+const monthlyBillingPeriodInput = document.getElementById('monthly-billing-period');
+const generateMonthlyInvoicesButton = document.getElementById('generate-monthly-invoices');
+const monthlyBillingStatus = document.getElementById('monthly-billing-status');
+const monthlyInvoicesContainer = document.getElementById('monthly-invoices');
 let activeUserFilter = null;
 let directoryUsers = [];
 
@@ -68,12 +80,39 @@ userStatsContainer.addEventListener('click', (event) => {
 });
 
 usersContainer.addEventListener('submit', async (event) => {
-  const form = event.target.closest('.admin-user-email-form, .admin-user-whatsapp-form');
+  const form = event.target.closest('.admin-user-email-form, .admin-user-whatsapp-form, .admin-user-monthly-form');
   if (!form) return;
   event.preventDefault();
 
   const userId = Number(form.dataset.userId);
   const submitButton = form.querySelector('button[type="submit"]');
+  if (form.classList.contains('admin-user-monthly-form')) {
+    const approvalInput = form.querySelector('select[name="enabled"]');
+    const status = form.querySelector('[role="status"]');
+    const enabled = approvalInput.value === 'true';
+    status.textContent = 'Saving…';
+    status.classList.remove('error');
+    submitButton.disabled = true;
+    try {
+      const response = await fetch(`/api/admin/users/${userId}/monthly-account`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || 'Unable to update monthly billing approval.');
+      const user = directoryUsers.find((entry) => Number(entry.id) === userId);
+      if (user) user.monthly_account_enabled = enabled;
+      status.textContent = result.message;
+    } catch (error) {
+      status.textContent = error.message;
+      status.classList.add('error');
+    } finally {
+      submitButton.disabled = false;
+    }
+    return;
+  }
+
   if (form.classList.contains('admin-user-whatsapp-form')) {
     const phoneInput = form.querySelector('input[type="tel"]');
     const confirmation = form.querySelector('input[type="checkbox"]');
@@ -291,6 +330,7 @@ function renderUserDirectory() {
             <th scope="col">Role</th>
             <th scope="col">Recovery email</th>
             <th scope="col">WhatsApp recovery</th>
+            <th scope="col">Monthly billing</th>
             <th scope="col">Wallet balance</th>
           </tr>
         </thead>
@@ -337,6 +377,19 @@ function renderUserDirectory() {
                         Confirmed with client
                       </label>
                       <button type="submit" class="admin-user-email-save">Save number</button>
+                      <span role="status" aria-live="polite"></span>
+                    </form>
+                  ` : '—'}
+                </td>
+                <td>
+                  ${user.role === 'staff' ? `
+                    <form class="admin-user-monthly-form" data-user-id="${Number(user.id)}">
+                      <label class="visually-hidden" for="monthly-account-${Number(user.id)}">Monthly billing approval for ${escapeHtml(user.full_name)}</label>
+                      <select id="monthly-account-${Number(user.id)}" name="enabled">
+                        <option value="false" ${user.monthly_account_enabled ? '' : 'selected'}>Not approved</option>
+                        <option value="true" ${user.monthly_account_enabled ? 'selected' : ''}>Approved</option>
+                      </select>
+                      <button type="submit" class="admin-user-email-save">Save</button>
                       <span role="status" aria-live="polite"></span>
                     </form>
                   ` : '—'}
@@ -677,13 +730,63 @@ depositForm.addEventListener('submit', async (event) => {
   }
 });
 
-function renderOrders(orders) {
-  if (!orders.length) {
-    ordersContainer.innerHTML = '<div class="empty-state">No orders yet. New customer orders will appear here.</div>';
+function getOrderLocalDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getTodayLocalDate() {
+  return getOrderLocalDate(new Date());
+}
+
+function resetOrderFiltersForToday(today) {
+  adminOrderDateInput.value = today;
+  adminOrderSearchInput.value = '';
+  adminOrderStatusSelect.value = '';
+}
+
+lastObservedOrderDate = getTodayLocalDate();
+resetOrderFiltersForToday(lastObservedOrderDate);
+
+function renderOrders() {
+  const today = getTodayLocalDate();
+  if (today !== lastObservedOrderDate) {
+    lastObservedOrderDate = today;
+    resetOrderFiltersForToday(today);
+  }
+  if (!adminOrderDateInput.value) {
+    adminOrderDateInput.value = today;
+  }
+
+  const customerSearch = adminOrderSearchInput.value.trim().toLocaleLowerCase();
+  const selectedDate = adminOrderDateInput.value;
+  const selectedStatus = adminOrderStatusSelect.value;
+  const dateOrders = allOrders.filter((order) =>
+    !selectedDate || getOrderLocalDate(order.created_at) === selectedDate
+  );
+  const filteredOrders = dateOrders.filter((order) => {
+    const matchesCustomer = !customerSearch ||
+      `${order.customer_name} ${order.phone}`.toLocaleLowerCase().includes(customerSearch);
+    const matchesStatus = !selectedStatus || order.status === selectedStatus;
+    return matchesCustomer && matchesStatus;
+  });
+
+  adminOrderResultsMessage.textContent = dateOrders.length
+    ? `Showing ${filteredOrders.length} of ${dateOrders.length} orders for ${selectedDate}.`
+    : '';
+
+  if (!filteredOrders.length) {
+    ordersContainer.innerHTML = allOrders.length
+      ? '<div class="empty-state">No orders for this date match the selected filters. Choose another date or clear the filters.</div>'
+      : '<div class="empty-state">No orders yet. New customer orders will appear here.</div>';
     return;
   }
 
-  ordersContainer.innerHTML = orders.map(order => `
+  ordersContainer.innerHTML = filteredOrders.map(order => `
     <article class="order-card admin-order-card">
       <button type="button" class="admin-order-summary" data-order-id="${Number(order.id)}" aria-label="View details for order ${Number(order.id)}">
         <span class="admin-order-summary-main">
@@ -701,7 +804,7 @@ function renderOrders(orders) {
 
   ordersContainer.querySelectorAll('[data-order-id]').forEach((button) => {
     button.addEventListener('click', () => {
-      const order = orders.find((entry) => Number(entry.id) === Number(button.dataset.orderId));
+      const order = filteredOrders.find((entry) => Number(entry.id) === Number(button.dataset.orderId));
       if (!order) return;
       showOrderDetails(order);
     });
@@ -742,7 +845,7 @@ function showOrderDetails(order, statusMessage = '') {
     <div class="admin-order-dialog-meta-row">
       <div><span>Customer</span><strong>${escapeHtml(order.customer_name)}</strong></div>
       <div><span>Date</span><strong>${escapeHtml(formatSaleDate(order.created_at))}</strong></div>
-      <div><span>Payment</span><strong>${order.payment_method === 'credit' ? 'Student credit' : 'Cash'}</strong></div>
+      <div><span>Payment</span><strong>${order.payment_method === 'monthly' ? 'Monthly account' : order.payment_method === 'credit' ? 'Student credit' : 'Cash'}</strong></div>
       <div><span>Status</span><strong>${escapeHtml(order.status)}</strong></div>
     </div>
     <div class="admin-order-dialog-total"><span>Order total</span><strong>${formatCurrency(order.total)}</strong></div>
@@ -761,12 +864,75 @@ async function loadOrders() {
   try {
     const response = await fetch('/api/orders');
     const orders = await response.json();
-    renderOrders(orders);
+    if (!response.ok) throw new Error(orders.message || 'Unable to load orders.');
+    allOrders = orders;
+    downloadOrderHistoryButton.disabled = allOrders.length === 0;
+    adminOrderResultsMessage.classList.remove('error');
+    renderOrders();
   } catch (error) {
     console.error('Error loading orders:', error);
-    ordersContainer.innerHTML = '<div class="empty-state">Unable to load orders.</div>';
+    adminOrderResultsMessage.textContent = error.message;
+    adminOrderResultsMessage.classList.add('error');
   }
 }
+
+adminOrderSearchInput.addEventListener('input', renderOrders);
+adminOrderDateInput.addEventListener('change', renderOrders);
+adminOrderStatusSelect.addEventListener('change', renderOrders);
+clearAdminOrderFiltersButton.addEventListener('click', () => {
+  adminOrderSearchInput.value = '';
+  adminOrderDateInput.value = getTodayLocalDate();
+  adminOrderStatusSelect.value = '';
+  renderOrders();
+  adminOrderSearchInput.focus();
+});
+
+function csvCell(value) {
+  const text = value === null || value === undefined ? '' : String(value);
+  const safeText = /^[\s]*[=+\-@]/.test(text) ? `'${text}` : text;
+  return `"${safeText.replace(/"/g, '""')}"`;
+}
+
+downloadOrderHistoryButton.addEventListener('click', () => {
+  if (!allOrders.length) return;
+
+  const rows = [[
+    'Order ID', 'Customer', 'Phone', 'Address', 'Note', 'Date', 'Status',
+    'Payment method', 'Item', 'Quantity', 'Unit price', 'Line total', 'Order total'
+  ]];
+
+  allOrders.forEach((order) => {
+    const items = Array.isArray(order.items) && order.items.length ? order.items : [null];
+    items.forEach((item) => {
+      rows.push([
+        order.id,
+        order.customer_name,
+        order.phone,
+        order.address,
+        order.note,
+        new Date(order.created_at).toLocaleString(),
+        order.status,
+        order.payment_method === 'credit' ? 'Student credit' : 'Cash',
+        item ? item.item_name : '',
+        item ? item.quantity : '',
+        item ? Number(item.unit_price).toFixed(2) : '',
+        item ? (Number(item.unit_price) * Number(item.quantity)).toFixed(2) : '',
+        Number(order.total).toFixed(2)
+      ].map(csvCell));
+    });
+  });
+
+  const csv = `\uFEFF${rows.map((row) => row.join(',')).join('\r\n')}`;
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const downloadUrl = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = downloadUrl;
+  link.download = `order-history-${getTodayLocalDate()}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+});
 
 async function loadSummary() {
   try {
@@ -1046,15 +1212,127 @@ clientFeedbackList.addEventListener('submit', async (event) => {
   }
 });
 
+function getPreviousBillingPeriod() {
+  const date = new Date();
+  date.setDate(1);
+  date.setMonth(date.getMonth() - 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+monthlyBillingPeriodInput.value = getPreviousBillingPeriod();
+
+function renderMonthlyInvoices(invoices) {
+  if (!invoices.length) {
+    monthlyInvoicesContainer.innerHTML = '<div class="empty-state">No monthly statements have been generated for this month.</div>';
+    return;
+  }
+
+  monthlyInvoicesContainer.innerHTML = invoices.map((invoice) => `
+    <article class="order-card monthly-invoice-card">
+      <div class="monthly-invoice-heading">
+        <div>
+          <strong>Statement #${Number(invoice.id)} · ${escapeHtml(invoice.full_name)}</strong>
+          <span>@${escapeHtml(invoice.username)} · ${escapeHtml(invoice.billing_period)}</span>
+        </div>
+        <span class="monthly-invoice-status ${invoice.status === 'paid' ? 'paid' : ''}">${escapeHtml(invoice.status)}</span>
+      </div>
+      <div class="monthly-invoice-total">
+        <span>${invoice.orders.length} completed order${invoice.orders.length === 1 ? '' : 's'} · ${invoice.status === 'paid' ? `Paid ${escapeHtml(formatSaleDate(invoice.paid_at))}` : 'Payment due'}</span>
+        <strong>${formatCredit(invoice.total_cents)}</strong>
+      </div>
+      <details class="monthly-invoice-orders">
+        <summary>View included orders</summary>
+        ${invoice.orders.map((order) => `
+          <div class="monthly-invoice-order">
+            <span>Order #${Number(order.order_id)} · ${escapeHtml(formatSaleDate(order.created_at))} · ${escapeHtml(order.status)}</span>
+            <strong>${formatCurrency(order.total)}</strong>
+          </div>
+        `).join('')}
+      </details>
+      ${invoice.status === 'unpaid' ? `
+        <button type="button" class="submit-btn monthly-invoice-pay" data-pay-invoice="${Number(invoice.id)}">
+          Mark as paid
+        </button>
+      ` : ''}
+    </article>
+  `).join('');
+}
+
+async function loadMonthlyInvoices({ preserveStatus = false } = {}) {
+  const period = monthlyBillingPeriodInput.value;
+  if (!period) return;
+  if (!preserveStatus) {
+    monthlyBillingStatus.textContent = 'Loading monthly statements…';
+    monthlyBillingStatus.classList.remove('error');
+  }
+  try {
+    const response = await fetch(`/api/admin/monthly-invoices?period=${encodeURIComponent(period)}`);
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || 'Unable to load monthly statements.');
+    renderMonthlyInvoices(result.invoices);
+    if (!preserveStatus) monthlyBillingStatus.textContent = '';
+  } catch (error) {
+    monthlyBillingStatus.textContent = error.message;
+    monthlyBillingStatus.classList.add('error');
+  }
+}
+
+generateMonthlyInvoicesButton.addEventListener('click', async () => {
+  generateMonthlyInvoicesButton.disabled = true;
+  monthlyBillingStatus.textContent = 'Generating monthly statements…';
+  monthlyBillingStatus.classList.remove('error');
+  try {
+    const response = await fetch('/api/admin/monthly-invoices/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ period: monthlyBillingPeriodInput.value })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || 'Unable to generate monthly statements.');
+    monthlyBillingStatus.textContent = result.message;
+    await loadMonthlyInvoices({ preserveStatus: true });
+  } catch (error) {
+    monthlyBillingStatus.textContent = error.message;
+    monthlyBillingStatus.classList.add('error');
+  } finally {
+    generateMonthlyInvoicesButton.disabled = false;
+  }
+});
+
+monthlyBillingPeriodInput.addEventListener('change', loadMonthlyInvoices);
+
+monthlyInvoicesContainer.addEventListener('click', async (event) => {
+  const button = event.target.closest('[data-pay-invoice]');
+  if (!button) return;
+  button.disabled = true;
+  monthlyBillingStatus.textContent = 'Recording statement payment…';
+  monthlyBillingStatus.classList.remove('error');
+  try {
+    const response = await fetch(`/api/admin/monthly-invoices/${Number(button.dataset.payInvoice)}/pay`, {
+      method: 'PATCH'
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || 'Unable to record statement payment.');
+    monthlyBillingStatus.textContent = result.message;
+    await loadMonthlyInvoices({ preserveStatus: true });
+  } catch (error) {
+    monthlyBillingStatus.textContent = error.message;
+    monthlyBillingStatus.classList.add('error');
+    button.disabled = false;
+  }
+});
+
 loadOrders();
 loadSummary();
 loadClientFeedback();
 loadMenuSchedule();
 loadInventory();
 loadTransactions();
+loadMonthlyInvoices();
 saveScheduleButton.addEventListener('click', saveMenuSchedule);
 setInterval(loadOrders, 8000);
 setInterval(loadSummary, 8000);
 setInterval(loadClientFeedback, 15000);
+setInterval(loadMonthlyInvoices, 15000);
 setInterval(loadInventory, 12000);
 setInterval(loadTransactions, 12000);

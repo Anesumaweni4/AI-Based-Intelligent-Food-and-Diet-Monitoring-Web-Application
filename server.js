@@ -181,6 +181,25 @@ function getLocalDayRange(daysBeforeToday = 0) {
   return { start: toDatabaseTimestamp(start), end: toDatabaseTimestamp(end) };
 }
 
+function getBillingPeriodRange(period) {
+  if (typeof period !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(period)) {
+    return null;
+  }
+  const [year, month] = period.split('-').map(Number);
+  if (year < 2000) return null;
+  const nextMonth = month === 12
+    ? `${year + 1}-01`
+    : `${year}-${String(month + 1).padStart(2, '0')}`;
+  const now = new Date();
+  const currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  return {
+    period,
+    start: `${period}-01 00:00:00`,
+    end: `${nextMonth}-01 00:00:00`,
+    isClosed: period < currentPeriod
+  };
+}
+
 function sumDietNutrition(meals) {
   return meals.reduce((totals, meal) => {
     const servings = Number(meal.servings);
@@ -736,7 +755,7 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/account', requireStudentApi, async (req, res) => {
   try {
     const user = await get(
-      'SELECT id, full_name, username, wallet_balance_cents FROM users WHERE id = ?',
+      'SELECT id, full_name, username, wallet_balance_cents, monthly_account_enabled FROM users WHERE id = ?',
       [req.accountUser.id]
     );
     const transactions = await all(
@@ -747,12 +766,29 @@ app.get('/api/account', requireStudentApi, async (req, res) => {
        LIMIT 10`,
       [req.accountUser.id]
     );
+    const monthlyBalance = await get(
+      `SELECT COALESCE(ROUND(SUM(o.total * 100)), 0) AS balance_cents
+       FROM orders o
+       WHERE o.user_id = ?
+         AND o.payment_method = 'monthly'
+         AND o.status IN ('Collected', 'Delivered')
+         AND NOT EXISTS (
+           SELECT 1 FROM monthly_invoice_orders mio WHERE mio.order_id = o.id
+         )`,
+      [req.accountUser.id]
+    );
+    const unpaidInvoices = await get(
+      "SELECT COALESCE(SUM(total_cents), 0) AS balance_cents FROM monthly_invoices WHERE user_id = ? AND status = 'unpaid'",
+      [req.accountUser.id]
+    );
     res.json({
       user: {
         id: user.id,
         fullName: user.full_name,
         username: user.username,
-        balanceCents: Number(user.wallet_balance_cents)
+        balanceCents: Number(user.wallet_balance_cents),
+        monthlyAccountEnabled: Boolean(user.monthly_account_enabled),
+        monthlyBalanceCents: Number(monthlyBalance.balance_cents) + Number(unpaidInvoices.balance_cents)
       },
       transactions
     });
@@ -1093,6 +1129,29 @@ app.patch('/api/admin/users/:id/recovery-whatsapp', async (req, res) => {
   }
 });
 
+app.patch('/api/admin/users/:id/monthly-account', async (req, res) => {
+  const userId = Number(req.params.id);
+  const enabled = req.body.enabled;
+  if (!Number.isSafeInteger(userId) || userId <= 0 || typeof enabled !== 'boolean') {
+    return res.status(400).json({ message: 'Choose a valid client and monthly billing approval setting.' });
+  }
+
+  try {
+    const client = await get("SELECT id FROM users WHERE id = ? AND role = 'staff'", [userId]);
+    if (!client) {
+      return res.status(404).json({ message: 'Client account not found.' });
+    }
+    await run('UPDATE users SET monthly_account_enabled = ? WHERE id = ?', [enabled, userId]);
+    res.json({
+      message: enabled ? 'Monthly billing approved for this client.' : 'Monthly billing disabled for this client.',
+      enabled
+    });
+  } catch (error) {
+    console.error('Error updating client monthly billing approval:', error);
+    res.status(500).json({ message: 'Unable to update monthly billing approval.' });
+  }
+});
+
 app.get('/api/admin/summary', async (req, res) => {
   try {
     const revenueDay = getCurrentRevenueDayRange();
@@ -1111,7 +1170,7 @@ app.get('/api/admin/summary', async (req, res) => {
     `, [revenueDay.start, revenueDay.end]);
 
     const users = await all(
-      'SELECT id, full_name, username, role, email, recovery_whatsapp, wallet_balance_cents FROM users ORDER BY created_at DESC'
+      'SELECT id, full_name, username, role, email, recovery_whatsapp, wallet_balance_cents, monthly_account_enabled FROM users ORDER BY created_at DESC'
     );
 
     res.json({
@@ -1121,6 +1180,169 @@ app.get('/api/admin/summary', async (req, res) => {
   } catch (error) {
     console.error('Error loading admin summary:', error);
     res.status(500).json({ message: 'Unable to load admin summary.' });
+  }
+});
+
+app.get('/api/admin/monthly-invoices', async (req, res) => {
+  const range = getBillingPeriodRange(req.query.period);
+  if (!range) {
+    return res.status(400).json({ message: 'Choose a billing month in YYYY-MM format.' });
+  }
+
+  try {
+    const invoices = await all(
+      `SELECT i.id, i.user_id, i.billing_period, i.total_cents, i.status,
+              i.created_at, i.paid_at, u.full_name, u.username
+       FROM monthly_invoices i
+       JOIN users u ON u.id = i.user_id
+       WHERE i.billing_period = ?
+       ORDER BY CASE i.status WHEN 'unpaid' THEN 0 ELSE 1 END, u.full_name, i.id`,
+      [range.period]
+    );
+    if (invoices.length) {
+      const invoiceOrders = await all(
+        `SELECT mio.invoice_id, o.id AS order_id, o.total, o.status, o.created_at
+         FROM monthly_invoice_orders mio
+         JOIN orders o ON o.id = mio.order_id
+         WHERE mio.invoice_id IN (${invoices.map(() => '?').join(', ')})
+         ORDER BY o.created_at, o.id`,
+        invoices.map((invoice) => invoice.id)
+      );
+      const ordersByInvoice = new Map();
+      for (const order of invoiceOrders) {
+        const key = String(order.invoice_id);
+        const orders = ordersByInvoice.get(key) || [];
+        orders.push(order);
+        ordersByInvoice.set(key, orders);
+      }
+      invoices.forEach((invoice) => {
+        invoice.orders = ordersByInvoice.get(String(invoice.id)) || [];
+        invoice.total_cents = Number(invoice.total_cents);
+      });
+    }
+    res.json({ period: range.period, invoices });
+  } catch (error) {
+    console.error('Error loading monthly invoices:', error);
+    res.status(500).json({ message: 'Unable to load monthly invoices.' });
+  }
+});
+
+app.post('/api/admin/monthly-invoices/generate', async (req, res) => {
+  const range = getBillingPeriodRange(req.body.period);
+  if (!range) {
+    return res.status(400).json({ message: 'Choose a billing month in YYYY-MM format.' });
+  }
+  if (!range.isClosed) {
+    return res.status(400).json({ message: 'Statements can only be generated for a month that has ended.' });
+  }
+
+  try {
+    const result = await withTransaction(async (transaction) => {
+      const eligibleOrders = await transaction.all(
+        `SELECT o.id, o.user_id, o.total
+         FROM orders o
+         WHERE o.payment_method = 'monthly'
+           AND o.status IN ('Collected', 'Delivered')
+           AND o.user_id IS NOT NULL
+           AND o.created_at >= ? AND o.created_at < ?
+           AND NOT EXISTS (
+             SELECT 1 FROM monthly_invoice_orders mio WHERE mio.order_id = o.id
+           )
+         ORDER BY o.user_id, o.id`,
+        [range.start, range.end]
+      );
+      const ordersByClient = new Map();
+      for (const order of eligibleOrders) {
+        const key = String(order.user_id);
+        const orders = ordersByClient.get(key) || [];
+        const totalCents = Math.round(Number(order.total) * 100);
+        if (!Number.isSafeInteger(totalCents) || totalCents < 0) {
+          throw new Error(`Order ${order.id} has an invalid total and cannot be invoiced.`);
+        }
+        orders.push({ id: order.id, totalCents });
+        ordersByClient.set(key, orders);
+      }
+
+      let statementsUpdated = 0;
+      for (const [userId, orders] of ordersByClient) {
+        let invoice = await transaction.get(
+          `SELECT id, total_cents
+           FROM monthly_invoices
+           WHERE user_id = ? AND billing_period = ? AND status = 'unpaid'
+           ORDER BY id DESC
+           LIMIT 1`,
+          [userId, range.period]
+        );
+        if (!invoice) {
+          const createdInvoice = await transaction.run(
+            `INSERT INTO monthly_invoices (user_id, billing_period, created_by)
+             VALUES (?, ?, ?)`,
+            [userId, range.period, req.adminUser.id]
+          );
+          invoice = { id: createdInvoice.id, total_cents: 0 };
+        }
+
+        let addedCents = 0;
+        for (const order of orders) {
+          addedCents += order.totalCents;
+          await transaction.run(
+            'INSERT INTO monthly_invoice_orders (invoice_id, order_id) VALUES (?, ?)',
+            [invoice.id, order.id]
+          );
+        }
+        const updatedCents = Number(invoice.total_cents) + addedCents;
+        if (!Number.isSafeInteger(updatedCents)) {
+          throw new Error(`Invoice for client ${userId} exceeds the supported total.`);
+        }
+        await transaction.run(
+          'UPDATE monthly_invoices SET total_cents = ? WHERE id = ? AND status = \'unpaid\'',
+          [updatedCents, invoice.id]
+        );
+        statementsUpdated += 1;
+      }
+      return { statementsUpdated, ordersAdded: eligibleOrders.length };
+    });
+    res.json({
+      message: result.ordersAdded
+        ? `Added ${result.ordersAdded} completed order${result.ordersAdded === 1 ? '' : 's'} to ${result.statementsUpdated} monthly statement${result.statementsUpdated === 1 ? '' : 's'}.`
+        : 'No completed, unbilled monthly orders were found for that month.',
+      ...result
+    });
+  } catch (error) {
+    console.error('Error generating monthly invoices:', error);
+    res.status(500).json({ message: 'Unable to generate monthly statements.' });
+  }
+});
+
+app.patch('/api/admin/monthly-invoices/:id/pay', async (req, res) => {
+  const invoiceId = Number(req.params.id);
+  if (!Number.isSafeInteger(invoiceId) || invoiceId <= 0) {
+    return res.status(400).json({ message: 'Choose a valid monthly statement.' });
+  }
+
+  try {
+    const result = await withTransaction(async (transaction) => {
+      const update = await transaction.run(
+        `UPDATE monthly_invoices
+         SET status = 'paid', paid_at = CURRENT_TIMESTAMP, paid_by = ?
+         WHERE id = ? AND status = 'unpaid'`,
+        [req.adminUser.id, invoiceId]
+      );
+      if (update.changes !== 1) {
+        const invoice = await transaction.get('SELECT status FROM monthly_invoices WHERE id = ?', [invoiceId]);
+        const error = new Error(invoice ? 'This statement has already been paid.' : 'Monthly statement not found.');
+        error.statusCode = invoice ? 409 : 404;
+        throw error;
+      }
+      return transaction.get('SELECT id, status, paid_at FROM monthly_invoices WHERE id = ?', [invoiceId]);
+    });
+    res.json({ message: 'Monthly statement marked as paid.', invoice: result });
+  } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    console.error('Error recording monthly invoice payment:', error);
+    res.status(500).json({ message: 'Unable to record statement payment.' });
   }
 });
 
@@ -1569,8 +1791,8 @@ app.get('/api/orders', requireAdminApi, async (req, res) => {
 app.post('/api/orders', requireStudentApi, async (req, res) => {
   try {
     const { phone, address, note, items, orderType, paymentMethod } = req.body;
-    if (!['cash', 'credit'].includes(paymentMethod)) {
-      return res.status(400).json({ message: 'Choose cash or use your student credit to place the order.' });
+    if (!['cash', 'credit', 'monthly'].includes(paymentMethod)) {
+      return res.status(400).json({ message: 'Choose cash, student credit, or monthly billing to place the order.' });
     }
     const selectedOrderType = String(orderType || 'pickup').toLowerCase();
     const isDelivery = selectedOrderType === 'delivery';
@@ -1632,6 +1854,17 @@ app.post('/api/orders', requireStudentApi, async (req, res) => {
       return res.status(400).json({ message: 'The order total is invalid.' });
     }
     const orderResult = await withTransaction(async (transaction) => {
+      if (paymentMethod === 'monthly') {
+        const client = await transaction.get(
+          "SELECT monthly_account_enabled FROM users WHERE id = ? AND role = 'staff'",
+          [req.accountUser.id]
+        );
+        if (!client || !client.monthly_account_enabled) {
+          const error = new Error('Monthly billing is available only to clients approved by an administrator.');
+          error.statusCode = 403;
+          throw error;
+        }
+      }
       const orderResult = await transaction.run(
         `INSERT INTO orders (user_id, customer_name, phone, address, note, total, payment_method, status)
          VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending')`,

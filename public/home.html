@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>THE KITCHEN | Home</title>
-    <link rel="stylesheet" href="styles.css?v=home-redesign-1" />
+    <link rel="stylesheet" href="styles.css?v=home-monthly-billing-1" />
   </head>
   <body class="home-page">
     <header class="topbar">
@@ -100,6 +100,9 @@
               <p class="eyebrow">Student credit</p>
               <strong id="wallet-balance">Loading balance…</strong>
               <div id="wallet-transactions" class="wallet-transactions"></div>
+              <p id="monthly-account-balance" class="monthly-account-balance" hidden>
+                Monthly account balance: <strong id="monthly-account-balance-value">$0.00</strong>
+              </p>
             </section>
             <form id="order-form">
               <div class="field-group">
@@ -158,10 +161,11 @@
         <p class="eyebrow">Choose how to pay</p>
         <h2 id="payment-choice-title">Payment method</h2>
         <p>Your current credit: <strong id="payment-credit-balance">$0.00</strong></p>
-        <p>Pay with cash, or use your saved student credit (“change”).</p>
+        <p>Choose cash, saved student credit, or month-end billing if your account has been approved.</p>
         <div class="payment-choice-actions">
           <button type="button" class="submit-btn" data-payment-method="cash">Pay Cash</button>
           <button type="button" class="submit-btn" data-payment-method="credit">Use Student Credit</button>
+          <button type="button" class="submit-btn" data-payment-method="monthly" hidden>Charge to Monthly Account</button>
           <button type="button" class="admin-gate-cancel" id="cancel-payment-choice">Go Back</button>
         </div>
       </div>
@@ -238,7 +242,7 @@
         }
       }
     </script>
-    <script src="app.js?v=order-notifications-1"></script>
+    <script src="app.js?v=monthly-billing-1"></script>
     <script src="staff-dashboard-links.js?v=20261026-1"></script>
     <script src="feedback-chatbot.js?v=feedback-chat-1"></script>
   </body>

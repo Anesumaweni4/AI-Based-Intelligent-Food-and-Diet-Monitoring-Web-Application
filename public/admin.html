@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="styles.css?v=stock-alerts-1" />
+    <link rel="stylesheet" href="styles.css?v=daily-order-history-monthly-billing-1" />
   </head>
   <body class="dashboard-body">
     <header class="topbar dashboard-header">
@@ -167,10 +167,56 @@
         <p id="client-feedback-status" class="schedule-status" role="status" aria-live="polite"></p>
         <div id="client-feedback-list" class="order-list client-feedback-list"></div>
 
+        <section class="weekly-menu-section monthly-billing-section" aria-labelledby="monthly-billing-title">
+          <div class="section-title left">
+            <p class="eyebrow">Approved client accounts</p>
+            <h3 id="monthly-billing-title">Monthly Billing</h3>
+          </div>
+          <p class="schedule-help">Generate statements for a completed month. Only collected or delivered monthly-account orders are included. Unpaid statements can receive any later-completed orders for that month when generated again.</p>
+          <div class="monthly-billing-controls">
+            <div class="field-group">
+              <label for="monthly-billing-period">Billing month</label>
+              <input id="monthly-billing-period" type="month" required />
+            </div>
+            <button type="button" class="submit-btn" id="generate-monthly-invoices">Generate Statements</button>
+          </div>
+          <p id="monthly-billing-status" class="schedule-status" role="status" aria-live="polite"></p>
+          <div id="monthly-invoices" class="order-list monthly-invoices"></div>
+        </section>
+
         <div class="section-title left">
           <p class="eyebrow">Order activity</p>
           <h3>All Orders</h3>
         </div>
+        <p class="schedule-help order-history-help">Today's orders appear here by default. Choose another date to view saved orders from that day. The CSV download includes your complete order history.</p>
+        <div class="order-search-filters" aria-label="Search and filter orders">
+          <div class="field-group">
+            <label for="admin-order-search">Customer</label>
+            <input id="admin-order-search" type="search" placeholder="Search customer name or phone" autocomplete="off" />
+          </div>
+          <div class="field-group">
+            <label for="admin-order-date">Order date</label>
+            <input id="admin-order-date" type="date" />
+          </div>
+          <div class="field-group">
+            <label for="admin-order-status">Status</label>
+            <select id="admin-order-status">
+              <option value="">All statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="Preparing">Preparing</option>
+              <option value="Ready for Pickup">Ready for Pickup</option>
+              <option value="Out for Delivery">Out for Delivery</option>
+              <option value="Delivered">Delivered</option>
+              <option value="Collected">Collected</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div class="order-search-actions">
+            <button type="button" class="order-filter-clear" id="admin-order-filter-clear">Clear filters</button>
+            <button type="button" class="submit-btn order-history-download" id="download-order-history" disabled>Download full history (CSV)</button>
+          </div>
+        </div>
+        <p id="admin-order-results" class="order-results" role="status" aria-live="polite"></p>
         <div id="admin-orders" class="order-list"></div>
 
         <section class="admin-directory-section" aria-labelledby="admin-directory-title">
@@ -178,7 +224,7 @@
             <div>
               <p class="eyebrow">System users</p>
               <h3 id="admin-directory-title">Account directory</h3>
-              <p class="admin-directory-description">Select an account category to view accounts. Add each student's email in the recovery email column so they can reset their password.</p>
+              <p class="admin-directory-description">Select an account category to manage client recovery details and approve clients for month-end billing.</p>
             </div>
             <span class="admin-directory-live"><span aria-hidden="true"></span> Live overview</span>
           </div>
@@ -290,7 +336,7 @@
         nav.appendChild(cashierDeskLink);
       }
     </script>
-    <script src="admin.js?v=pending-orders-dialog-1"></script>
+    <script src="admin.js?v=daily-order-history-monthly-billing-1"></script>
     <script src="staff-dashboard-links.js?v=20261026-1"></script>
   </body>
 </html>

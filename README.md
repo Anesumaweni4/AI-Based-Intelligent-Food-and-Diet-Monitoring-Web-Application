@@ -17,6 +17,7 @@ This project is a simple web-based food ordering system designed for small and m
 - Restaurant dashboard to manage incoming orders
 - Delivery dashboard to mark orders as ready/out for delivery/delivered
 - Staff login and admin dashboard
+- Admin-approved clients can charge orders to a monthly account; administrators can generate month-end statements and record payments
 - Admin revenue card tracks collected orders for the current local day and resets at the next local midnight
 - Admins and cashiers can add received stock or remove used stock from the stock controls; each movement is audited and removals cannot reduce inventory below zero
 - Students can request password reset links by email; administrators can assign recovery email addresses to existing student accounts
@@ -167,6 +168,21 @@ npm.cmd start
 
 `ADMIN_PASSWORD` is only used to create an admin account or replace the insecure legacy default; it does not overwrite a password that has already been changed.
 Use HTTPS when deploying beyond a trusted local development network.
+
+## Monthly client billing
+
+Administrators can approve registered clients for monthly billing from **Admin
+Panel → Account directory → Clients**. Approved clients see **Charge to Monthly
+Account** at checkout, and their outstanding monthly balance appears with their
+student-credit balance. Other clients cannot select or submit monthly billing.
+
+At month-end, open **Admin Panel → Monthly Billing**, select a completed month,
+and choose **Generate Statements**. Statements include collected or delivered
+monthly-account orders that have not already been invoiced; cancelled or
+unfinished orders are excluded. Generate again after any late-completed orders
+are finalized to add them to an unpaid statement. Use **Mark as paid** only
+after payment is received. Existing unpaid statements and their order history
+are retained in the database.
 
 ## Student password reset
 

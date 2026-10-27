@@ -13,8 +13,11 @@ const deliveryUnavailableDialog = document.getElementById('delivery-unavailable-
 const closeDeliveryUnavailableDialog = document.getElementById('close-delivery-unavailable');
 const walletBalanceEl = document.getElementById('wallet-balance');
 const walletTransactionsEl = document.getElementById('wallet-transactions');
+const monthlyAccountBalanceEl = document.getElementById('monthly-account-balance');
+const monthlyAccountBalanceValueEl = document.getElementById('monthly-account-balance-value');
 const paymentChoiceDialog = document.getElementById('payment-choice-dialog');
 const paymentCreditBalanceEl = document.getElementById('payment-credit-balance');
+const monthlyPaymentButton = paymentChoiceDialog.querySelector('[data-payment-method="monthly"]');
 const studentOrdersEl = document.getElementById('student-orders');
 const orderUpdateMessageEl = document.getElementById('order-update-message');
 const enableOrderNotificationsButton = document.getElementById('enable-order-notifications');
@@ -68,6 +71,9 @@ async function loadWallet() {
     accountBalanceCents = Number(result.user.balanceCents);
     document.getElementById('customerName').value = result.user.fullName;
     walletBalanceEl.textContent = `Available: ${formatCredit(result.user.balanceCents)}`;
+    monthlyPaymentButton.hidden = !result.user.monthlyAccountEnabled;
+    monthlyAccountBalanceEl.hidden = !result.user.monthlyAccountEnabled && !Number(result.user.monthlyBalanceCents);
+    monthlyAccountBalanceValueEl.textContent = formatCredit(result.user.monthlyBalanceCents);
     const activityIsOpen = Boolean(walletTransactionsEl.querySelector('details[open]'));
     walletTransactionsEl.innerHTML = result.transactions.length
       ? `<details class="wallet-activity-dropdown" ${activityIsOpen ? 'open' : ''}>
@@ -494,7 +500,9 @@ async function placeOrder(paymentMethod) {
     renderCart();
     showToast(paymentMethod === 'credit'
       ? `Order placed. Remaining credit: ${formatCredit(accountBalanceCents)}`
-      : 'Order placed. Please pay cash when collecting your food.');
+      : paymentMethod === 'monthly'
+        ? 'Order placed on your monthly account. Your statement is due at month-end.'
+        : 'Order placed. Please pay cash when collecting your food.');
     if (result.order) notifyOrderStatus(result.order, 'Pending');
     await loadMenu();
     await loadWallet();

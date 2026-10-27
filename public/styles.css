@@ -856,7 +856,7 @@ nav {
   gap: 18px;
 }
 
-.restaurant-order-filters {
+.order-search-filters {
   display: grid;
   grid-template-columns: minmax(220px, 1.5fr) repeat(2, minmax(160px, 1fr)) auto;
   align-items: end;
@@ -869,13 +869,25 @@ nav {
   box-shadow: 0 8px 22px rgba(45, 27, 18, 0.05);
 }
 
-.restaurant-order-filters .field-group {
+.order-search-filters .field-group {
   min-width: 0;
   margin: 0;
 }
 
-.restaurant-order-filters input,
-.restaurant-order-filters select {
+.order-search-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.order-history-download {
+  width: auto;
+  margin: 0;
+}
+
+.order-search-filters input,
+.order-search-filters select {
   width: 100%;
   min-height: 46px;
   border: 1px solid var(--border);
@@ -885,13 +897,13 @@ nav {
   color: var(--text);
 }
 
-.restaurant-order-filters input:focus,
-.restaurant-order-filters select:focus {
+.order-search-filters input:focus,
+.order-search-filters select:focus {
   border-color: var(--primary);
   outline: 3px solid rgba(140, 66, 47, 0.14);
 }
 
-.restaurant-order-filter-clear {
+.order-filter-clear {
   min-height: 46px;
   padding: 10px 16px;
   border: 1px solid var(--border);
@@ -902,20 +914,20 @@ nav {
   cursor: pointer;
 }
 
-.restaurant-order-filter-clear:hover,
-.restaurant-order-filter-clear:focus-visible {
+.order-filter-clear:hover,
+.order-filter-clear:focus-visible {
   border-color: var(--primary);
   background: #fffaf2;
 }
 
-.restaurant-order-results {
+.order-results {
   min-height: 20px;
   margin: 0 0 12px;
   color: var(--muted);
   font-size: 0.9rem;
 }
 
-.restaurant-order-results.error {
+.order-results.error {
   color: #b42318;
 }
 
@@ -1591,6 +1603,20 @@ nav {
 .payment-choice-actions {
   display: grid;
   gap: 10px;
+}
+
+.payment-choice-actions [hidden],
+.monthly-account-balance[hidden] {
+  display: none;
+}
+
+.monthly-account-balance {
+  margin: 14px 0 0;
+  color: var(--muted);
+}
+
+.monthly-account-balance strong {
+  color: var(--text);
 }
 
 .admin-gate-cancel {
@@ -2355,6 +2381,86 @@ nav {
   font-size: 0.75rem;
 }
 
+.monthly-billing-controls {
+  display: flex;
+  align-items: end;
+  gap: 14px;
+  margin: 18px 0;
+}
+
+.monthly-billing-controls .field-group {
+  width: min(260px, 100%);
+  margin: 0;
+}
+
+.monthly-invoice-card {
+  display: grid;
+  gap: 14px;
+}
+
+.monthly-invoice-heading,
+.monthly-invoice-total,
+.monthly-invoice-order {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.monthly-invoice-heading > div {
+  display: grid;
+  gap: 4px;
+}
+
+.monthly-invoice-heading span,
+.monthly-invoice-order span {
+  color: var(--muted);
+}
+
+.monthly-invoice-status {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #fff0cf;
+  color: #885b10;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.monthly-invoice-status.paid {
+  background: #e7eee1;
+  color: #49613f;
+}
+
+.monthly-invoice-total {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.monthly-invoice-orders {
+  display: grid;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.monthly-invoice-orders summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.monthly-invoice-order {
+  padding-top: 8px;
+}
+
+.monthly-invoice-order > strong {
+  white-space: nowrap;
+}
+
+.monthly-invoice-pay {
+  justify-self: start;
+}
+
 .admin-user-table {
   width: 100%;
   min-width: 1100px;
@@ -2422,6 +2528,47 @@ nav {
   border: 1px solid var(--border);
   border-radius: 8px;
   background: white;
+}
+
+.admin-user-monthly-form {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) auto;
+  gap: 6px;
+  min-width: 220px;
+}
+
+.admin-user-monthly-form select {
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: white;
+  color: var(--text);
+}
+
+.admin-user-monthly-form button {
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--primary);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-user-monthly-form button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.admin-user-monthly-form [role="status"] {
+  grid-column: 1 / -1;
+  color: var(--success);
+  font-size: 0.8rem;
+}
+
+.admin-user-monthly-form [role="status"].error {
+  color: #b42318;
 }
 
 .admin-user-email-form button {
@@ -2534,24 +2681,44 @@ nav {
 }
 
 @media (max-width: 900px) {
-  .restaurant-order-filters {
+  .order-search-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 600px) {
-  .restaurant-order-filters {
+  .monthly-billing-controls,
+  .monthly-invoice-heading,
+  .monthly-invoice-total,
+  .monthly-invoice-order {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .monthly-billing-controls .field-group {
+    width: 100%;
+  }
+
+  .monthly-invoice-pay {
+    width: 100%;
+  }
+
+  .order-search-filters {
     grid-template-columns: 1fr 1fr;
     gap: 12px;
     padding: 14px;
   }
 
-  .restaurant-order-filters .field-group:first-child,
-  .restaurant-order-filter-clear {
+  .order-search-filters .field-group:first-child {
     grid-column: 1 / -1;
   }
 
-  .restaurant-order-filter-clear {
+  .order-search-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .order-search-actions button {
     width: 100%;
   }
 

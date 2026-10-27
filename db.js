@@ -34,7 +34,7 @@ function postgresSql(sql) {
 }
 
 function postgresRun(client, sql, params = []) {
-  const isInsertWithId = /^\s*INSERT\s+INTO\s+(?!"?menu_schedule\b)/i.test(sql);
+  const isInsertWithId = /^\s*INSERT\s+INTO\s+(?!"?(?:menu_schedule|monthly_invoice_orders)\b)/i.test(sql);
   const statement = isInsertWithId && !/\bRETURNING\b/i.test(sql)
     ? `${sql.trim().replace(/;$/, '')} RETURNING id`
     : sql;
@@ -344,6 +344,7 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
         weight DECIMAL(5,2),
         height DECIMAL(5,2),
         wallet_balance_cents BIGINT NOT NULL DEFAULT 0,
+        monthly_account_enabled BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -440,6 +441,8 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
         age INT,
         weight DECIMAL(5,2),
         height DECIMAL(5,2),
+        wallet_balance_cents BIGINT NOT NULL DEFAULT 0,
+        monthly_account_enabled TINYINT(1) NOT NULL DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -522,6 +525,7 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     await postgresPool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS weight DECIMAL(5,2)');
     await postgresPool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS height DECIMAL(5,2)');
     await postgresPool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS wallet_balance_cents BIGINT NOT NULL DEFAULT 0');
+    await postgresPool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS monthly_account_enabled BOOLEAN NOT NULL DEFAULT FALSE');
   } else if (sqliteDb) {
     const columns = await sqliteAll('PRAGMA table_info(users)');
     const existingColumns = new Set(columns.map((column) => column.name));
@@ -532,7 +536,8 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
       { name: 'session_version', sql: 'ALTER TABLE users ADD COLUMN session_version INTEGER NOT NULL DEFAULT 0' },
       { name: 'weight', sql: 'ALTER TABLE users ADD COLUMN weight DECIMAL(5,2)' },
       { name: 'height', sql: 'ALTER TABLE users ADD COLUMN height DECIMAL(5,2)' },
-      { name: 'wallet_balance_cents', sql: 'ALTER TABLE users ADD COLUMN wallet_balance_cents INTEGER NOT NULL DEFAULT 0' }
+      { name: 'wallet_balance_cents', sql: 'ALTER TABLE users ADD COLUMN wallet_balance_cents INTEGER NOT NULL DEFAULT 0' },
+      { name: 'monthly_account_enabled', sql: 'ALTER TABLE users ADD COLUMN monthly_account_enabled INTEGER NOT NULL DEFAULT 0' }
     ];
 
     for (const column of columnDefinitions) {
@@ -554,7 +559,9 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
       { name: 'recovery_whatsapp', sql: 'ALTER TABLE users ADD COLUMN recovery_whatsapp VARCHAR(20)' },
       { name: 'session_version', sql: 'ALTER TABLE users ADD COLUMN session_version INT NOT NULL DEFAULT 0' },
       { name: 'weight', sql: 'ALTER TABLE users ADD COLUMN weight DECIMAL(5,2)' },
-      { name: 'height', sql: 'ALTER TABLE users ADD COLUMN height DECIMAL(5,2)' }
+      { name: 'height', sql: 'ALTER TABLE users ADD COLUMN height DECIMAL(5,2)' },
+      { name: 'wallet_balance_cents', sql: 'ALTER TABLE users ADD COLUMN wallet_balance_cents BIGINT NOT NULL DEFAULT 0' },
+      { name: 'monthly_account_enabled', sql: 'ALTER TABLE users ADD COLUMN monthly_account_enabled TINYINT(1) NOT NULL DEFAULT 0' }
     ];
 
     for (const column of columnDefinitions) {
@@ -664,6 +671,81 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
         created_by INT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         INDEX idx_account_transactions_user_created (user_id, created_at)
+      )
+    `);
+  }
+
+  if (postgresPool) {
+    await postgresPool.query(`
+      CREATE TABLE IF NOT EXISTS monthly_invoices (
+        id BIGSERIAL PRIMARY KEY,
+        user_id BIGINT NOT NULL REFERENCES users(id),
+        billing_period CHAR(7) NOT NULL,
+        total_cents BIGINT NOT NULL DEFAULT 0,
+        status VARCHAR(16) NOT NULL DEFAULT 'unpaid',
+        created_by BIGINT,
+        paid_by BIGINT,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        paid_at TIMESTAMP
+      )
+    `);
+    await postgresPool.query(`
+      CREATE TABLE IF NOT EXISTS monthly_invoice_orders (
+        invoice_id BIGINT NOT NULL REFERENCES monthly_invoices(id),
+        order_id BIGINT NOT NULL UNIQUE REFERENCES orders(id),
+        PRIMARY KEY (invoice_id, order_id)
+      )
+    `);
+    await postgresPool.query(
+      'CREATE INDEX IF NOT EXISTS idx_monthly_invoices_period ON monthly_invoices (billing_period, status, user_id)'
+    );
+  } else if (sqliteDb) {
+    await sqliteRun(`
+      CREATE TABLE IF NOT EXISTS monthly_invoices (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        billing_period TEXT NOT NULL,
+        total_cents INTEGER NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'unpaid',
+        created_by INTEGER,
+        paid_by INTEGER,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        paid_at DATETIME
+      )
+    `);
+    await sqliteRun(`
+      CREATE TABLE IF NOT EXISTS monthly_invoice_orders (
+        invoice_id INTEGER NOT NULL REFERENCES monthly_invoices(id),
+        order_id INTEGER NOT NULL UNIQUE REFERENCES orders(id),
+        PRIMARY KEY (invoice_id, order_id)
+      )
+    `);
+    await sqliteRun(
+      'CREATE INDEX IF NOT EXISTS idx_monthly_invoices_period ON monthly_invoices (billing_period, status, user_id)'
+    );
+  } else {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS monthly_invoices (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        billing_period CHAR(7) NOT NULL,
+        total_cents BIGINT NOT NULL DEFAULT 0,
+        status VARCHAR(16) NOT NULL DEFAULT 'unpaid',
+        created_by INT NULL,
+        paid_by INT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        paid_at DATETIME NULL,
+        INDEX idx_monthly_invoices_period (billing_period, status, user_id),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS monthly_invoice_orders (
+        invoice_id INT NOT NULL,
+        order_id INT NOT NULL UNIQUE,
+        PRIMARY KEY (invoice_id, order_id),
+        FOREIGN KEY (invoice_id) REFERENCES monthly_invoices(id),
+        FOREIGN KEY (order_id) REFERENCES orders(id)
       )
     `);
   }
@@ -835,6 +917,8 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
       'menu_schedule',
       'orders',
       'order_items',
+      'monthly_invoices',
+      'monthly_invoice_orders',
       'users',
       'stock_movements',
       'account_transactions',
