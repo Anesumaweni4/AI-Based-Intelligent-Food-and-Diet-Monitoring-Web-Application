@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Restaurant Dashboard</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=restaurant-order-filters-1" />
   </head>
   <body class="dashboard-body">
     <header class="topbar dashboard-header">
@@ -29,6 +29,31 @@
           <p class="eyebrow">Incoming orders</p>
           <h3>Restaurant Dashboard</h3>
         </div>
+        <div class="restaurant-order-filters" aria-label="Search and filter orders">
+          <div class="field-group">
+            <label for="restaurant-order-search">Customer</label>
+            <input id="restaurant-order-search" type="search" placeholder="Search name or phone" autocomplete="off" />
+          </div>
+          <div class="field-group">
+            <label for="restaurant-order-date">Order date</label>
+            <input id="restaurant-order-date" type="date" />
+          </div>
+          <div class="field-group">
+            <label for="restaurant-order-status">Status</label>
+            <select id="restaurant-order-status">
+              <option value="">All statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="Preparing">Preparing</option>
+              <option value="Ready for Pickup">Ready for Pickup</option>
+              <option value="Out for Delivery">Out for Delivery</option>
+              <option value="Delivered">Delivered</option>
+              <option value="Collected">Collected</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+          </div>
+          <button type="button" class="restaurant-order-filter-clear" id="restaurant-order-filter-clear">Clear filters</button>
+        </div>
+        <p id="restaurant-order-results" class="restaurant-order-results" role="status" aria-live="polite"></p>
         <div id="restaurant-orders" class="order-list"></div>
       </div>
     </main>
@@ -59,7 +84,7 @@
         }
       }
     </script>
-    <script src="restaurant.js"></script>
+    <script src="restaurant.js?v=restaurant-order-filters-1"></script>
     <script src="staff-dashboard-links.js?v=20261026-1"></script>
   </body>
 </html>

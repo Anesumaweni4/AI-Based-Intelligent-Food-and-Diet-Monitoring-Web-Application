@@ -1,12 +1,48 @@
 const ordersContainer = document.getElementById('restaurant-orders');
+const orderSearchInput = document.getElementById('restaurant-order-search');
+const orderDateInput = document.getElementById('restaurant-order-date');
+const orderStatusSelect = document.getElementById('restaurant-order-status');
+const clearOrderFiltersButton = document.getElementById('restaurant-order-filter-clear');
+const orderResultsMessage = document.getElementById('restaurant-order-results');
+let restaurantOrders = [];
 
 function formatCurrency(value) {
   return `$${Number(value).toFixed(2)}`;
 }
 
-function renderRestaurantOrders(orders) {
+function getOrderLocalDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getFilteredRestaurantOrders() {
+  const customerSearch = orderSearchInput.value.trim().toLocaleLowerCase();
+  const selectedDate = orderDateInput.value;
+  const selectedStatus = orderStatusSelect.value;
+
+  return restaurantOrders.filter(order => {
+    const matchesCustomer = !customerSearch ||
+      `${order.customer_name} ${order.phone}`.toLocaleLowerCase().includes(customerSearch);
+    const matchesDate = !selectedDate || getOrderLocalDate(order.created_at) === selectedDate;
+    const matchesStatus = !selectedStatus || order.status === selectedStatus;
+    return matchesCustomer && matchesDate && matchesStatus;
+  });
+}
+
+function renderRestaurantOrders() {
+  const orders = getFilteredRestaurantOrders();
+  orderResultsMessage.textContent = restaurantOrders.length
+    ? `Showing ${orders.length} of ${restaurantOrders.length} order${restaurantOrders.length === 1 ? '' : 's'}.`
+    : '';
+
   if (!orders.length) {
-    ordersContainer.innerHTML = '<div class="empty-state">No orders yet. New restaurant orders will appear here.</div>';
+    ordersContainer.innerHTML = restaurantOrders.length
+      ? '<div class="empty-state">No orders match these filters. Try changing or clearing your filters.</div>'
+      : '<div class="empty-state">No orders yet. New restaurant orders will appear here.</div>';
     return;
   }
 
@@ -71,11 +107,27 @@ async function loadOrders() {
   try {
     const response = await fetch('/api/restaurant/orders');
     const orders = await response.json();
-    renderRestaurantOrders(orders);
+    if (!response.ok) throw new Error(orders.message || 'Unable to load restaurant orders.');
+    restaurantOrders = orders;
+    orderResultsMessage.classList.remove('error');
+    renderRestaurantOrders();
   } catch (error) {
-    console.error(error);
+    console.error('Error loading restaurant orders:', error);
+    orderResultsMessage.textContent = error.message;
+    orderResultsMessage.classList.add('error');
   }
 }
+
+orderSearchInput.addEventListener('input', renderRestaurantOrders);
+orderDateInput.addEventListener('change', renderRestaurantOrders);
+orderStatusSelect.addEventListener('change', renderRestaurantOrders);
+clearOrderFiltersButton.addEventListener('click', () => {
+  orderSearchInput.value = '';
+  orderDateInput.value = '';
+  orderStatusSelect.value = '';
+  renderRestaurantOrders();
+  orderSearchInput.focus();
+});
 
 loadOrders();
 setInterval(loadOrders, 5000);

@@ -856,6 +856,69 @@ nav {
   gap: 18px;
 }
 
+.restaurant-order-filters {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.5fr) repeat(2, minmax(160px, 1fr)) auto;
+  align-items: end;
+  gap: 14px;
+  margin: 0 0 10px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 8px 22px rgba(45, 27, 18, 0.05);
+}
+
+.restaurant-order-filters .field-group {
+  min-width: 0;
+  margin: 0;
+}
+
+.restaurant-order-filters input,
+.restaurant-order-filters select {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  padding: 10px 12px;
+  background: white;
+  color: var(--text);
+}
+
+.restaurant-order-filters input:focus,
+.restaurant-order-filters select:focus {
+  border-color: var(--primary);
+  outline: 3px solid rgba(140, 66, 47, 0.14);
+}
+
+.restaurant-order-filter-clear {
+  min-height: 46px;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: white;
+  color: var(--primary);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.restaurant-order-filter-clear:hover,
+.restaurant-order-filter-clear:focus-visible {
+  border-color: var(--primary);
+  background: #fffaf2;
+}
+
+.restaurant-order-results {
+  min-height: 20px;
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.restaurant-order-results.error {
+  color: #b42318;
+}
+
 .order-card {
   background: white;
   border: 1px solid var(--border);
@@ -2470,7 +2533,28 @@ nav {
   margin-top: 16px;
 }
 
+@media (max-width: 900px) {
+  .restaurant-order-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 600px) {
+  .restaurant-order-filters {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .restaurant-order-filters .field-group:first-child,
+  .restaurant-order-filter-clear {
+    grid-column: 1 / -1;
+  }
+
+  .restaurant-order-filter-clear {
+    width: 100%;
+  }
+
   .credit-account-summary,
   .credit-account-transaction {
     align-items: flex-start;
