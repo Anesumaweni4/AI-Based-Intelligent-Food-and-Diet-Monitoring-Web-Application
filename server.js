@@ -1580,7 +1580,7 @@ app.post('/api/orders', requireStudentApi, async (req, res) => {
        WHERE ms.day_of_week = ?`,
       [today.dayOfWeek]
     );
-    const menuMap = new Map(menuItems.map(item => [item.id, item]));
+    const menuMap = new Map(menuItems.map(item => [Number(item.id), item]));
 
     let totalCents = isDelivery ? 350 : 0;
     const orderItems = [];
