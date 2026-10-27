@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="styles.css?v=daily-order-history-monthly-billing-1" />
+    <link rel="stylesheet" href="styles.css?v=cashier-create-dropdown-1" />
   </head>
   <body class="dashboard-body">
     <header class="topbar dashboard-header">
@@ -49,30 +49,35 @@
           </form>
         </section>
 
-        <section class="weekly-menu-section">
-          <div class="section-title left">
-            <p class="eyebrow">Staff permissions</p>
-            <h3>Create Cashier Account</h3>
+        <details class="weekly-menu-section cashier-create-dropdown">
+          <summary class="cashier-create-summary">
+            <span>
+              <span class="eyebrow">Staff permissions</span>
+              <strong>Create Cashier Account</strong>
+            </span>
+            <span class="cashier-create-chevron" aria-hidden="true"></span>
+          </summary>
+          <div class="cashier-create-content">
+            <p class="schedule-help">Cashier accounts can record student deposits and manage order status, but cannot access the admin dashboard.</p>
+            <form id="cashier-create-form" class="admin-password-form">
+              <div class="field-group">
+                <label for="cashier-full-name">Cashier name</label>
+                <input id="cashier-full-name" type="text" maxlength="255" required />
+              </div>
+              <div class="field-group">
+                <label for="cashier-username">Username</label>
+                <input id="cashier-username" type="text" maxlength="100" required />
+              </div>
+              <div class="field-group">
+                <label for="cashier-password">Temporary password (at least 14 characters)</label>
+                <input id="cashier-password" type="password" minlength="14" required />
+              </div>
+              <button type="submit" class="submit-btn">Create Cashier</button>
+              <p id="cashier-create-status" class="schedule-status" role="status"></p>
+            </form>
+            <a class="submit-btn cashier-desk-link" href="cashier.html">Open Cashier Desk</a>
           </div>
-          <p class="schedule-help">Cashier accounts can record student deposits and manage order status, but cannot access the admin dashboard.</p>
-          <form id="cashier-create-form" class="admin-password-form">
-            <div class="field-group">
-              <label for="cashier-full-name">Cashier name</label>
-              <input id="cashier-full-name" type="text" maxlength="255" required />
-            </div>
-            <div class="field-group">
-              <label for="cashier-username">Username</label>
-              <input id="cashier-username" type="text" maxlength="100" required />
-            </div>
-            <div class="field-group">
-              <label for="cashier-password">Temporary password (at least 14 characters)</label>
-              <input id="cashier-password" type="password" minlength="14" required />
-            </div>
-            <button type="submit" class="submit-btn">Create Cashier</button>
-            <p id="cashier-create-status" class="schedule-status" role="status"></p>
-          </form>
-          <a class="submit-btn cashier-desk-link" href="cashier.html">Open Cashier Desk</a>
-        </section>
+        </details>
 
         <section class="weekly-menu-section">
           <div class="section-title left">
