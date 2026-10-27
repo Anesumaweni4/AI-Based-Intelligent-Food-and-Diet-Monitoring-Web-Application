@@ -772,6 +772,25 @@ app.get('/api/account/orders', requireStudentApi, async (req, res) => {
        LIMIT 20`,
       [req.accountUser.id]
     );
+    if (orders.length) {
+      const orderItems = await all(
+        `SELECT oi.order_id, oi.quantity, oi.unit_price, mi.name AS item_name
+         FROM order_items oi
+         JOIN menu_items mi ON mi.id = oi.menu_item_id
+         WHERE oi.order_id IN (${orders.map(() => '?').join(', ')})
+         ORDER BY oi.id`,
+        orders.map(order => order.id)
+      );
+      const itemsByOrderId = new Map();
+      orderItems.forEach(item => {
+        const items = itemsByOrderId.get(Number(item.order_id)) || [];
+        items.push(item);
+        itemsByOrderId.set(Number(item.order_id), items);
+      });
+      orders.forEach(order => {
+        order.items = itemsByOrderId.get(Number(order.id)) || [];
+      });
+    }
     res.json(orders);
   } catch (error) {
     console.error('Error loading student orders:', error);

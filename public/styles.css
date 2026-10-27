@@ -922,6 +922,26 @@ nav {
   margin-top: 14px;
 }
 
+.student-order-items {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.student-order-items li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--muted);
+}
+
+.student-order-items li strong {
+  flex-shrink: 0;
+  color: var(--text);
+}
+
 .admin-order-card {
   padding: 0;
   overflow: hidden;

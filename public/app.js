@@ -202,6 +202,14 @@ function renderStudentOrders(orders) {
       </summary>
       <div class="student-order-details">
         <p class="order-status-message">${escapeHtml(getOrderUpdateMessage(order.status))}</p>
+        <ul class="student-order-items">
+          ${(order.items || []).map(item => `
+            <li>
+              <span>${Number(item.quantity)} × ${escapeHtml(item.item_name)}</span>
+              <strong>${formatCurrency(Number(item.unit_price) * Number(item.quantity))}</strong>
+            </li>
+          `).join('')}
+        </ul>
       </div>
     </details>
   `).join('');
