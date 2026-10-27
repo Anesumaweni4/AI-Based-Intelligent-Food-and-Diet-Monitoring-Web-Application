@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="styles.css?v=cashier-create-dropdown-1" />
+    <link rel="stylesheet" href="styles.css?v=admin-settings-dropdowns-1" />
   </head>
   <body class="dashboard-body">
     <header class="topbar dashboard-header">
@@ -29,35 +29,40 @@
       <div class="container">
         <div class="admin-summary" id="admin-summary"></div>
 
-        <section class="security-section weekly-menu-section">
-          <div class="section-title left">
-            <p class="eyebrow">Account security</p>
-            <h3>Change Admin Password</h3>
+        <details class="weekly-menu-section admin-collapse-dropdown security-section">
+          <summary class="admin-collapse-summary">
+            <span>
+              <span class="eyebrow">Account security</span>
+              <strong>Change Admin Password</strong>
+            </span>
+            <span class="admin-collapse-chevron" aria-hidden="true"></span>
+          </summary>
+          <div class="admin-collapse-content">
+            <p>Use a unique password with at least 14 characters. Changing it signs out other admin sessions.</p>
+            <form id="admin-password-form" class="admin-password-form">
+              <div class="field-group">
+                <label for="current-admin-password">Current password</label>
+                <input id="current-admin-password" type="password" autocomplete="current-password" required />
+              </div>
+              <div class="field-group">
+                <label for="new-admin-password">New password</label>
+                <input id="new-admin-password" type="password" minlength="14" autocomplete="new-password" required />
+              </div>
+              <button type="submit" class="submit-btn">Update Admin Password</button>
+              <p id="admin-password-status" class="schedule-status" role="status"></p>
+            </form>
           </div>
-          <p>Use a unique password with at least 14 characters. Changing it signs out other admin sessions.</p>
-          <form id="admin-password-form" class="admin-password-form">
-            <div class="field-group">
-              <label for="current-admin-password">Current password</label>
-              <input id="current-admin-password" type="password" autocomplete="current-password" required />
-            </div>
-            <div class="field-group">
-              <label for="new-admin-password">New password</label>
-              <input id="new-admin-password" type="password" minlength="14" autocomplete="new-password" required />
-            </div>
-            <button type="submit" class="submit-btn">Update Admin Password</button>
-            <p id="admin-password-status" class="schedule-status" role="status"></p>
-          </form>
-        </section>
+        </details>
 
-        <details class="weekly-menu-section cashier-create-dropdown">
-          <summary class="cashier-create-summary">
+        <details class="weekly-menu-section admin-collapse-dropdown">
+          <summary class="admin-collapse-summary">
             <span>
               <span class="eyebrow">Staff permissions</span>
               <strong>Create Cashier Account</strong>
             </span>
-            <span class="cashier-create-chevron" aria-hidden="true"></span>
+            <span class="admin-collapse-chevron" aria-hidden="true"></span>
           </summary>
-          <div class="cashier-create-content">
+          <div class="admin-collapse-content">
             <p class="schedule-help">Cashier accounts can record student deposits and manage order status, but cannot access the admin dashboard.</p>
             <form id="cashier-create-form" class="admin-password-form">
               <div class="field-group">

@@ -221,12 +221,12 @@ nav {
   box-shadow: var(--shadow);
 }
 
-.cashier-create-dropdown {
+.admin-collapse-dropdown {
   padding: 0;
   overflow: hidden;
 }
 
-.cashier-create-summary {
+.admin-collapse-summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -236,24 +236,24 @@ nav {
   list-style: none;
 }
 
-.cashier-create-summary::-webkit-details-marker {
+.admin-collapse-summary::-webkit-details-marker {
   display: none;
 }
 
-.cashier-create-summary > span:first-child {
+.admin-collapse-summary > span:first-child {
   display: grid;
   gap: 8px;
 }
 
-.cashier-create-summary .eyebrow {
+.admin-collapse-summary .eyebrow {
   margin: 0;
 }
 
-.cashier-create-summary strong {
+.admin-collapse-summary strong {
   font-size: 1.5rem;
 }
 
-.cashier-create-chevron {
+.admin-collapse-chevron {
   width: 14px;
   height: 14px;
   flex: 0 0 14px;
@@ -263,15 +263,15 @@ nav {
   transition: transform 0.18s ease;
 }
 
-.cashier-create-dropdown[open] .cashier-create-chevron {
+.admin-collapse-dropdown[open] .admin-collapse-chevron {
   transform: rotate(225deg) translate(-2px, -1px);
 }
 
-.cashier-create-content {
+.admin-collapse-content {
   padding: 0 26px 26px;
 }
 
-.cashier-create-content .schedule-help {
+.admin-collapse-content .schedule-help {
   margin-top: 0;
 }
 
