@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>THE KITCHEN | Home</title>
-    <link rel="stylesheet" href="styles.css?v=client-feedback-1" />
+    <link rel="stylesheet" href="styles.css?v=home-redesign-1" />
   </head>
-  <body>
+  <body class="home-page">
     <header class="topbar">
       <div class="container nav">
         <div class="brand">
@@ -29,32 +29,36 @@
     </header>
 
     <main>
-      <section class="hero">
+      <section class="hero home-hero">
         <div class="container hero-inner">
-          <div>
+          <div class="home-hero-copy">
             <p class="eyebrow">Fresh meals delivered</p>
-            <h2>Order delicious food in minutes</h2>
+            <h2>Good food, right when you want it.</h2>
             <p>
-              A simple food ordering system built for Zimbabwean restaurants and busy customers.
+              Fresh favourites, simple ordering, and helpful updates from our kitchen to you.
             </p>
-            <a class="cta" href="#menu">Browse Menu</a>
+            <a class="cta" href="#menu">Explore today's menu <span aria-hidden="true">→</span></a>
           </div>
-          <div class="hero-card">
-            <h3>Why it works</h3>
+          <div class="hero-card home-hero-card">
+            <p class="eyebrow">The Kitchen experience</p>
+            <h3>A better way to enjoy your favourites.</h3>
+            <p class="home-hero-card-copy">Everything you need for a smoother, tastier mealtime.</p>
             <ul>
-              <li>Simple online ordering</li>
-              <li>Restaurant updates in real time</li>
-              <li>Delivery tracking from kitchen to door</li>
+              <li><span aria-hidden="true">✓</span> Simple online ordering</li>
+              <li><span aria-hidden="true">✓</span> Live restaurant updates</li>
+              <li><span aria-hidden="true">✓</span> Easy order tracking</li>
             </ul>
+            <div class="home-hero-card-footer"><span aria-hidden="true">✦</span> Made fresh. Served with care.</div>
           </div>
         </div>
       </section>
 
-      <section id="menu" class="menu-section">
+      <section id="menu" class="menu-section home-menu-section">
         <div class="container">
           <div class="section-title">
             <p class="eyebrow" id="menu-date">Meals available today</p>
-            <h3>Today's Menu</h3>
+            <h3>Find your new favourite.</h3>
+            <p class="home-menu-intro">Take a look at what's cooking today and make it yours.</p>
           </div>
           <div id="menu-grid" class="menu-grid"></div>
         </div>
