@@ -18,6 +18,7 @@ const tableOrder = [
   'diet_profiles',
   'diet_meal_logs',
   'diet_feedback',
+  'fitbit_connections',
   'client_feedback',
   'password_reset_tokens'
 ];

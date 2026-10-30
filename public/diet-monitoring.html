@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Diet Monitoring | THE KITCHEN</title>
-    <link rel="stylesheet" href="styles.css?v=health-wellness-panel-1" />
+    <link rel="stylesheet" href="styles.css?v=fitbit-health-dashboard-1" />
   </head>
   <body>
     <header class="topbar">
@@ -65,6 +65,35 @@
               </article>
             </div>
             <p class="diet-wellness-note">These are general wellbeing tips, not personal medical advice. Choose what works for you.</p>
+          </section>
+
+          <section class="diet-panel fitbit-panel" aria-labelledby="fitbit-title">
+            <div class="diet-panel-heading">
+              <div>
+                <p class="eyebrow">From your Fitbit</p>
+                <h3 id="fitbit-title">Daily activity</h3>
+              </div>
+              <div class="fitbit-actions">
+                <button type="button" class="diet-insights-button" id="fitbit-connect">Connect Fitbit</button>
+                <button type="button" class="diet-activity-dismiss" id="fitbit-disconnect" hidden>Disconnect</button>
+              </div>
+            </div>
+            <p id="fitbit-status" class="fitbit-status" role="status" aria-live="polite">
+              Connect Fitbit to view your activity information here.
+            </p>
+            <div class="fitbit-metrics" aria-live="polite">
+              <article class="fitbit-metric">
+                <span>Steps today</span>
+                <strong id="fitbit-steps">—</strong>
+              </article>
+              <article class="fitbit-metric">
+                <span>Resting heart rate</span>
+                <strong id="fitbit-heart-rate">—</strong>
+                <small>beats per minute · daily summary, not live</small>
+              </article>
+            </div>
+            <p id="fitbit-date" class="fitbit-date"></p>
+            <p class="diet-wellness-note">Data comes from Fitbit and may be delayed or unavailable if your device has not synced. This is general wellness information, not medical monitoring.</p>
           </section>
 
           <aside class="diet-activity-reminder" aria-label="Hourly activity reminder">
@@ -196,6 +225,6 @@
       </section>
       <p class="diet-insights-note">Nutrition values are estimates for general information, not medical or dietary advice. Menu availability may vary.</p>
     </dialog>
-    <script src="diet-monitoring.js?v=nutrition-order-insights-1"></script>
+    <script src="diet-monitoring.js?v=fitbit-health-dashboard-1"></script>
   </body>
 </html>

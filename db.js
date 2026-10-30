@@ -874,6 +874,42 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
 
   if (postgresPool) {
     await postgresPool.query(`
+      CREATE TABLE IF NOT EXISTS fitbit_connections (
+        user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        fitbit_user_id VARCHAR(128) NOT NULL,
+        access_token TEXT NOT NULL,
+        refresh_token TEXT NOT NULL,
+        token_expires_at BIGINT NOT NULL,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+  } else if (sqliteDb) {
+    await sqliteRun(`
+      CREATE TABLE IF NOT EXISTS fitbit_connections (
+        user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        fitbit_user_id TEXT NOT NULL,
+        access_token TEXT NOT NULL,
+        refresh_token TEXT NOT NULL,
+        token_expires_at INTEGER NOT NULL,
+        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+  } else {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS fitbit_connections (
+        user_id INT PRIMARY KEY,
+        fitbit_user_id VARCHAR(128) NOT NULL,
+        access_token TEXT NOT NULL,
+        refresh_token TEXT NOT NULL,
+        token_expires_at BIGINT NOT NULL,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+  }
+
+  if (postgresPool) {
+    await postgresPool.query(`
       CREATE TABLE IF NOT EXISTS client_feedback (
         id BIGSERIAL PRIMARY KEY,
         user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -926,6 +962,7 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
       'diet_profiles',
       'diet_meal_logs',
       'diet_feedback',
+      'fitbit_connections',
       'client_feedback'
     ];
     for (const table of tables) {

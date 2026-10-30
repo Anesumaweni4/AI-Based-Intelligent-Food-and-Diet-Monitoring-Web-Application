@@ -13,6 +13,9 @@ const ADMIN_SESSION_COOKIE = 'foodieAdminSession';
 const ACCOUNT_SESSION_COOKIE = 'foodieAccountSession';
 const ADMIN_SESSION_DURATION_MS = 8 * 60 * 60 * 1000;
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
+const FITBIT_STATE_COOKIE = 'fitbitOAuthState';
+const FITBIT_OAUTH_STATE_DURATION_MS = 10 * 60 * 1000;
+const fitbitRefreshRequests = new Map();
 const PASSWORD_RESET_DURATION_MS = 60 * 60 * 1000;
 const passwordResetRequests = new Map();
 const CLIENT_FEEDBACK_CATEGORIES = new Set(['food', 'order', 'service', 'website', 'other']);
@@ -28,6 +31,209 @@ function normalizeEmail(value) {
 
 function isValidEmail(email) {
   return email.length <= 255 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function getFitbitConfig() {
+  const clientId = process.env.FITBIT_CLIENT_ID;
+  const clientSecret = process.env.FITBIT_CLIENT_SECRET;
+  const redirectUri = process.env.FITBIT_REDIRECT_URI;
+  const encryptionSecret = process.env.FITBIT_TOKEN_ENCRYPTION_KEY;
+  if (!clientId || !clientSecret || !redirectUri || !encryptionSecret || encryptionSecret.length < 32) {
+    return null;
+  }
+
+  let redirectUrl;
+  try {
+    redirectUrl = new URL(redirectUri);
+  } catch {
+    return null;
+  }
+  const isLocalHttp = redirectUrl.protocol === 'http:' &&
+    ['localhost', '127.0.0.1'].includes(redirectUrl.hostname);
+  if (redirectUrl.protocol !== 'https:' && !isLocalHttp) return null;
+  if (redirectUrl.username || redirectUrl.password || redirectUrl.hash) return null;
+
+  return {
+    clientId,
+    clientSecret,
+    redirectUri: redirectUrl.toString(),
+    encryptionKey: crypto.createHash('sha256').update(encryptionSecret).digest()
+  };
+}
+
+function encryptFitbitToken(token, encryptionKey) {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', encryptionKey, iv);
+  const ciphertext = Buffer.concat([cipher.update(token, 'utf8'), cipher.final()]);
+  return [iv, cipher.getAuthTag(), ciphertext].map((part) => part.toString('base64url')).join('.');
+}
+
+function decryptFitbitToken(encryptedToken, encryptionKey) {
+  const [encodedIv, encodedTag, encodedCiphertext, ...unexpectedParts] = encryptedToken.split('.');
+  if (!encodedIv || !encodedTag || !encodedCiphertext || unexpectedParts.length) {
+    throw new Error('Stored Fitbit credentials are invalid.');
+  }
+  const decipher = crypto.createDecipheriv('aes-256-gcm', encryptionKey, Buffer.from(encodedIv, 'base64url'));
+  decipher.setAuthTag(Buffer.from(encodedTag, 'base64url'));
+  return Buffer.concat([
+    decipher.update(Buffer.from(encodedCiphertext, 'base64url')),
+    decipher.final()
+  ]).toString('utf8');
+}
+
+function createFitbitOAuthState(userId) {
+  const payload = Buffer.from(JSON.stringify({
+    userId: Number(userId),
+    expiresAt: Date.now() + FITBIT_OAUTH_STATE_DURATION_MS,
+    nonce: crypto.randomBytes(24).toString('base64url')
+  })).toString('base64url');
+  const signature = crypto.createHmac('sha256', SESSION_SECRET).update(payload).digest('base64url');
+  return `${payload}.${signature}`;
+}
+
+function verifyFitbitOAuthState(state) {
+  if (typeof state !== 'string') return null;
+  const [payload, providedSignature, ...unexpectedParts] = state.split('.');
+  if (!payload || !providedSignature || unexpectedParts.length) return null;
+  const expectedSignature = Buffer.from(
+    crypto.createHmac('sha256', SESSION_SECRET).update(payload).digest('base64url')
+  );
+  const actualSignature = Buffer.from(providedSignature);
+  if (actualSignature.length !== expectedSignature.length ||
+      !crypto.timingSafeEqual(actualSignature, expectedSignature)) {
+    return null;
+  }
+  try {
+    const stateData = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    if (!Number.isSafeInteger(stateData.userId) || stateData.userId <= 0 ||
+        !Number.isFinite(stateData.expiresAt) || stateData.expiresAt <= Date.now() ||
+        typeof stateData.nonce !== 'string') {
+      return null;
+    }
+    return stateData;
+  } catch {
+    return null;
+  }
+}
+
+function finishFitbitAuthorization(res, result) {
+  const destination = `/diet-monitoring.html?fitbit=${encodeURIComponent(result)}`;
+  res.type('html').send(
+    '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+    '<title>Fitbit connection</title></head><body>' +
+    '<p>Fitbit connection finished. Returning to Diet Monitoring…</p>' +
+    `<p><a href="${destination}">Continue to Diet Monitoring</a></p>` +
+    `<script>window.location.replace(${JSON.stringify(destination)});</script>` +
+    '</body></html>'
+  );
+}
+
+async function requestFitbitToken(config, parameters) {
+  const response = await fetch('https://api.fitbit.com/oauth2/token', {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64')}`,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: new URLSearchParams(parameters),
+    signal: AbortSignal.timeout(10000)
+  });
+  if (!response.ok) {
+    const error = new Error(`Fitbit token endpoint returned HTTP ${response.status}.`);
+    error.statusCode = response.status;
+    throw error;
+  }
+
+  const token = await response.json();
+  if (typeof token.access_token !== 'string' || typeof token.refresh_token !== 'string' ||
+      typeof token.user_id !== 'string' || !Number.isFinite(Number(token.expires_in)) ||
+      Number(token.expires_in) <= 0) {
+    throw new Error('Fitbit returned an incomplete token response.');
+  }
+  return token;
+}
+
+async function storeFitbitTokens(userId, fitbitUserId, accessToken, refreshToken, expiresIn, config) {
+  const expiresAt = Date.now() + Number(expiresIn) * 1000;
+  await withTransaction(async (transaction) => {
+    const result = await transaction.run(
+      `UPDATE fitbit_connections
+       SET fitbit_user_id = ?, access_token = ?, refresh_token = ?, token_expires_at = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE user_id = ?`,
+      [
+        fitbitUserId,
+        encryptFitbitToken(accessToken, config.encryptionKey),
+        encryptFitbitToken(refreshToken, config.encryptionKey),
+        expiresAt,
+        userId
+      ]
+    );
+    if (result.changes === 0) {
+      await transaction.run(
+        `INSERT INTO fitbit_connections
+         (user_id, fitbit_user_id, access_token, refresh_token, token_expires_at)
+         VALUES (?, ?, ?, ?, ?)`,
+        [
+          userId,
+          fitbitUserId,
+          encryptFitbitToken(accessToken, config.encryptionKey),
+          encryptFitbitToken(refreshToken, config.encryptionKey),
+          expiresAt
+        ]
+      );
+    }
+  });
+}
+
+async function refreshFitbitTokens(userId, connection, config) {
+  const refreshToken = decryptFitbitToken(connection.refresh_token, config.encryptionKey);
+  const token = await requestFitbitToken(config, {
+    grant_type: 'refresh_token',
+    refresh_token: refreshToken
+  });
+  await storeFitbitTokens(
+    userId,
+    token.user_id || connection.fitbit_user_id,
+    token.access_token,
+    token.refresh_token,
+    token.expires_in,
+    config
+  );
+  return token.access_token;
+}
+
+async function getFitbitAccessToken(userId, config) {
+  const connection = await get(
+    'SELECT fitbit_user_id, access_token, refresh_token, token_expires_at FROM fitbit_connections WHERE user_id = ?',
+    [userId]
+  );
+  if (!connection) return null;
+
+  if (Number(connection.token_expires_at) > Date.now() + 60000) {
+    return decryptFitbitToken(connection.access_token, config.encryptionKey);
+  }
+
+  if (!fitbitRefreshRequests.has(String(userId))) {
+    fitbitRefreshRequests.set(
+      String(userId),
+      refreshFitbitTokens(userId, connection, config).finally(() => fitbitRefreshRequests.delete(String(userId)))
+    );
+  }
+  return fitbitRefreshRequests.get(String(userId));
+}
+
+async function fetchFitbitDailyResource(accessToken, resource) {
+  const response = await fetch(`https://api.fitbit.com/1/user/-/${resource}/date/today/1d.json`, {
+    headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+    signal: AbortSignal.timeout(10000)
+  });
+  if (!response.ok) {
+    const error = new Error(`Fitbit data endpoint returned HTTP ${response.status}.`);
+    error.statusCode = response.status;
+    throw error;
+  }
+  return response.json();
 }
 
 function getPasswordResetBaseUrl() {
@@ -873,6 +1079,146 @@ app.post('/api/feedback', requireStudentApi, async (req, res) => {
   } catch (error) {
     console.error('Error saving client feedback:', error);
     res.status(500).json({ message: 'Unable to send your feedback right now.' });
+  }
+});
+
+app.get('/api/diet/fitbit/connect', requireStudentApi, (req, res) => {
+  const config = getFitbitConfig();
+  if (!config) {
+    return res.status(503).json({
+      message: 'Fitbit connection is not configured yet. Add the Fitbit app credentials in the server environment.'
+    });
+  }
+
+  const state = createFitbitOAuthState(req.accountUser.id);
+  res.cookie(FITBIT_STATE_COOKIE, state, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/api/diet/fitbit/callback',
+    maxAge: FITBIT_OAUTH_STATE_DURATION_MS
+  });
+
+  const authorizationUrl = new URL('https://www.fitbit.com/oauth2/authorize');
+  authorizationUrl.search = new URLSearchParams({
+    response_type: 'code',
+    client_id: config.clientId,
+    redirect_uri: config.redirectUri,
+    scope: 'activity heartrate',
+    state
+  }).toString();
+  res.json({ authorizationUrl: authorizationUrl.toString() });
+});
+
+app.get('/api/diet/fitbit/callback', async (req, res) => {
+  const state = typeof req.query.state === 'string' ? req.query.state : '';
+  const oauthState = verifyFitbitOAuthState(state);
+  res.clearCookie(FITBIT_STATE_COOKIE, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/api/diet/fitbit/callback'
+  });
+
+  if (!oauthState || getCookie(req, FITBIT_STATE_COOKIE) !== state) {
+    return finishFitbitAuthorization(res, 'invalid-state');
+  }
+  if (typeof req.query.error === 'string') {
+    return finishFitbitAuthorization(res, 'denied');
+  }
+  if (typeof req.query.code !== 'string' || !req.query.code) {
+    return finishFitbitAuthorization(res, 'failed');
+  }
+
+  const config = getFitbitConfig();
+  if (!config) {
+    return finishFitbitAuthorization(res, 'not-configured');
+  }
+  try {
+    const token = await requestFitbitToken(config, {
+      grant_type: 'authorization_code',
+      code: req.query.code,
+      redirect_uri: config.redirectUri
+    });
+    await storeFitbitTokens(
+      oauthState.userId,
+      token.user_id,
+      token.access_token,
+      token.refresh_token,
+      token.expires_in,
+      config
+    );
+    finishFitbitAuthorization(res, 'connected');
+  } catch (error) {
+    console.error('Error completing Fitbit authorization:', error.message);
+    finishFitbitAuthorization(res, 'failed');
+  }
+});
+
+app.get('/api/diet/fitbit/data', requireStudentApi, async (req, res) => {
+  const config = getFitbitConfig();
+  if (!config) {
+    return res.json({
+      configured: false,
+      connected: false,
+      message: 'Fitbit is not configured on this server yet.'
+    });
+  }
+
+  try {
+    const connection = await get(
+      'SELECT fitbit_user_id FROM fitbit_connections WHERE user_id = ?',
+      [req.accountUser.id]
+    );
+    if (!connection) return res.json({ configured: true, connected: false });
+
+    const accessToken = await getFitbitAccessToken(req.accountUser.id, config);
+    if (!accessToken) return res.json({ configured: true, connected: false });
+    const [stepsData, heartData] = await Promise.all([
+      fetchFitbitDailyResource(accessToken, 'activities/steps'),
+      fetchFitbitDailyResource(accessToken, 'activities/heart')
+    ]);
+    const stepEntry = Array.isArray(stepsData['activities-steps'])
+      ? stepsData['activities-steps'][0]
+      : null;
+    const heartEntry = Array.isArray(heartData['activities-heart'])
+      ? heartData['activities-heart'][0]
+      : null;
+    const parsedSteps = stepEntry && /^\d+$/.test(String(stepEntry.value))
+      ? Number(stepEntry.value)
+      : null;
+    const restingHeartRateValue = heartEntry && heartEntry.value
+      ? heartEntry.value.restingHeartRate
+      : null;
+    const restingHeartRate = restingHeartRateValue !== null &&
+      Number.isSafeInteger(Number(restingHeartRateValue)) && Number(restingHeartRateValue) > 0
+      ? Number(restingHeartRateValue)
+      : null;
+
+    res.json({
+      configured: true,
+      connected: true,
+      date: stepEntry && typeof stepEntry.dateTime === 'string' ? stepEntry.dateTime : null,
+      steps: Number.isSafeInteger(parsedSteps) ? parsedSteps : null,
+      restingHeartRate
+    });
+  } catch (error) {
+    console.error('Error loading Fitbit health metrics:', error.message);
+    res.status(502).json({
+      message: 'Unable to retrieve Fitbit data right now. Check your Fitbit connection and try again.'
+    });
+  }
+});
+
+app.delete('/api/diet/fitbit/connection', requireStudentApi, async (req, res) => {
+  try {
+    await run('DELETE FROM fitbit_connections WHERE user_id = ?', [req.accountUser.id]);
+    res.json({
+      message: 'Fitbit was disconnected from this account. You can also remove this app from your Fitbit account’s connected apps.'
+    });
+  } catch (error) {
+    console.error('Error disconnecting Fitbit:', error);
+    res.status(500).json({ message: 'Unable to disconnect Fitbit right now.' });
   }
 });
 

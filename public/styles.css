@@ -353,6 +353,66 @@ nav {
   line-height: 1.4;
 }
 
+.fitbit-panel {
+  margin-bottom: 18px;
+}
+
+.fitbit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.fitbit-actions [hidden] {
+  display: none;
+}
+
+.fitbit-status {
+  margin: 0 0 14px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.fitbit-status.error {
+  color: #a33120;
+}
+
+.fitbit-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.fitbit-metric {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fffaf2;
+}
+
+.fitbit-metric > span,
+.fitbit-metric small,
+.fitbit-date {
+  color: var(--muted);
+}
+
+.fitbit-metric > strong {
+  color: var(--primary-dark);
+  font-size: 1.5rem;
+}
+
+.fitbit-metric small {
+  font-size: 0.78rem;
+}
+
+.fitbit-date {
+  margin: 10px 0 0;
+  font-size: 0.82rem;
+}
+
 .diet-monitoring-link {
   display: inline-flex;
   align-items: center;
@@ -3001,6 +3061,10 @@ nav {
 @media (max-width: 600px) {
   .diet-wellness-tips {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fitbit-panel .diet-panel-heading {
+    flex-direction: column;
   }
   .monthly-billing-controls,
   .monthly-invoice-heading,

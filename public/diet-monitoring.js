@@ -13,6 +13,12 @@ const dietModelDescription = document.getElementById('diet-model-description');
 const dietActivityDialog = document.getElementById('diet-activity-dialog');
 const dietInsightsDialog = document.getElementById('diet-insights-dialog');
 const dietOrderIdeasList = document.getElementById('diet-order-ideas-list');
+const fitbitStatus = document.getElementById('fitbit-status');
+const fitbitConnectButton = document.getElementById('fitbit-connect');
+const fitbitDisconnectButton = document.getElementById('fitbit-disconnect');
+const fitbitSteps = document.getElementById('fitbit-steps');
+const fitbitHeartRate = document.getElementById('fitbit-heart-rate');
+const fitbitDate = document.getElementById('fitbit-date');
 const ACTIVITY_REMINDER_INTERVAL_MS = 60 * 60 * 1000;
 const ACTIVITY_REMINDER_STORAGE_KEY = 'dietActivityReminderLastShown';
 let dietData = null;
@@ -251,6 +257,39 @@ async function loadDietData() {
   renderDietData(data);
 }
 
+async function loadFitbitData() {
+  fitbitStatus.classList.remove('error');
+  fitbitStatus.textContent = 'Checking Fitbit connection…';
+  fitbitConnectButton.disabled = true;
+  fitbitDisconnectButton.hidden = true;
+  try {
+    const data = await requestDietApi('/api/diet/fitbit/data');
+    if (!data.configured) {
+      fitbitStatus.textContent = 'Fitbit needs to be configured by the app administrator before it can be connected.';
+      fitbitConnectButton.hidden = true;
+      return;
+    }
+    if (!data.connected) {
+      fitbitStatus.textContent = 'Connect your Fitbit account to see your daily steps and resting heart rate.';
+      fitbitConnectButton.hidden = false;
+      return;
+    }
+    fitbitSteps.textContent = data.steps === null ? 'Not available' : Number(data.steps).toLocaleString();
+    fitbitHeartRate.textContent = data.restingHeartRate === null
+      ? 'Not available'
+      : `${Number(data.restingHeartRate)} bpm`;
+    fitbitDate.textContent = data.date ? `Fitbit summary for ${data.date}` : '';
+    fitbitStatus.textContent = 'Fitbit connected. Your latest daily summary is shown below.';
+    fitbitConnectButton.hidden = true;
+    fitbitDisconnectButton.hidden = false;
+  } catch (error) {
+    fitbitStatus.textContent = error.message;
+    fitbitStatus.classList.add('error');
+  } finally {
+    fitbitConnectButton.disabled = false;
+  }
+}
+
 dietGoalForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const button = dietGoalForm.querySelector('button[type="submit"]');
@@ -301,6 +340,38 @@ document.getElementById('diet-insights-close').addEventListener('click', () => {
   dietInsightsDialog.close();
 });
 
+fitbitConnectButton.addEventListener('click', async () => {
+  fitbitConnectButton.disabled = true;
+  fitbitStatus.classList.remove('error');
+  fitbitStatus.textContent = 'Opening Fitbit authorization…';
+  try {
+    const result = await requestDietApi('/api/diet/fitbit/connect');
+    window.location.assign(result.authorizationUrl);
+  } catch (error) {
+    fitbitStatus.textContent = error.message;
+    fitbitStatus.classList.add('error');
+    fitbitConnectButton.disabled = false;
+  }
+});
+
+fitbitDisconnectButton.addEventListener('click', async () => {
+  fitbitDisconnectButton.disabled = true;
+  try {
+    const result = await requestDietApi('/api/diet/fitbit/connection', { method: 'DELETE' });
+    fitbitSteps.textContent = '—';
+    fitbitHeartRate.textContent = '—';
+    fitbitDate.textContent = '';
+    fitbitStatus.textContent = result.message;
+    fitbitDisconnectButton.hidden = true;
+    fitbitConnectButton.hidden = false;
+  } catch (error) {
+    fitbitStatus.textContent = error.message;
+    fitbitStatus.classList.add('error');
+  } finally {
+    fitbitDisconnectButton.disabled = false;
+  }
+});
+
 dietRecommendations.addEventListener('click', async (event) => {
   const button = event.target.closest('button[data-food-id][data-rating]');
   if (!button) return;
@@ -343,6 +414,19 @@ document.getElementById('diet-logout').addEventListener('click', async (event) =
 
 initializeActivityReminder();
 showActivityReminderIfDue();
+const fitbitCallbackResult = new URLSearchParams(window.location.search).get('fitbit');
+if (fitbitCallbackResult) {
+  const messages = {
+    connected: 'Fitbit connected successfully.',
+    denied: 'Fitbit connection was cancelled.',
+    failed: 'Fitbit could not be connected. Please try again.',
+    'invalid-state': 'Fitbit connection expired or could not be verified. Please try again.',
+    'not-configured': 'Fitbit is not configured on this server yet.'
+  };
+  fitbitStatus.textContent = messages[fitbitCallbackResult] || messages.failed;
+  window.history.replaceState({}, document.title, window.location.pathname);
+}
+loadFitbitData();
 setInterval(showActivityReminderIfDue, 60 * 1000);
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) showActivityReminderIfDue();

@@ -24,6 +24,7 @@ This project is a simple web-based food ordering system designed for small and m
 - Diet Monitoring highlights an hourly activity check-in and prompts the signed-in student while the page is open
 - Diet Monitoring explains nutrition estimates and suggests meal ideas based on each student's non-cancelled orders from the last 30 days
 - Diet Monitoring includes general wellbeing tips for balanced meals, hydration, movement, and rest
+- Students can connect Fitbit to view daily steps and resting heart rate in Diet Monitoring
 - Students can request password reset links by email; administrators can assign recovery email addresses to existing student accounts
 
 ## Tech Stack
@@ -63,6 +64,27 @@ Neon automatically; export and migrate them separately if you need to preserve
 them. If `DATABASE_URL` is unset, the app continues to use the existing MySQL
 then SQLite behavior.
 
+### Fitbit activity and heart-rate data
+
+Create a Fitbit Web API application and configure its callback URL to exactly
+match `FITBIT_REDIRECT_URI`, for example
+`https://your-app.onrender.com/api/diet/fitbit/callback`. Add these environment
+variables to Render (and use a matching local URL when testing locally):
+
+- `FITBIT_CLIENT_ID`
+- `FITBIT_CLIENT_SECRET`
+- `FITBIT_REDIRECT_URI`
+- `FITBIT_TOKEN_ENCRYPTION_KEY` — use a persistent random secret with at least
+  32 characters. Keep it private and do not change it after students connect,
+  because it encrypts their stored Fitbit tokens.
+
+The app requests Fitbit's `activity` and `heartrate` permissions. Students
+connect from Diet Monitoring and can remove the saved connection there. The
+dashboard reads Fitbit's daily steps total and daily resting-heart-rate
+summary; resting heart rate is not a live pulse reading. Fitbit data may be
+unavailable until a compatible device has synced. Never use these estimates for
+medical monitoring or diagnosis.
+
 To migrate the current SQLite database to an empty Neon database, first stop
 the app, set `DATABASE_URL` to your Neon connection string, and run:
 
@@ -74,8 +96,10 @@ npm.cmd run migrate:neon
 By default, the migration reads `data/food-ordering-app.db`; set
 `SQLITE_DB_PATH` first if your current database is elsewhere. The migration
 preserves row IDs and related records, including orders, account activity,
-feedback, and diet-monitoring data; checks row counts; and stops if it finds
-existing data in the Neon tables rather than overwriting it. User account
+feedback, diet-monitoring data, and encrypted Fitbit connections; checks row
+counts; and stops if it finds existing data in the Neon tables rather than
+overwriting it. Keep the same `FITBIT_TOKEN_ENCRYPTION_KEY` configured when
+migrating connected Fitbit accounts. User account
 password hashes are included so migrated accounts can continue to sign in.
 Keep the connection string private, and rotate it if it has been shared.
 
