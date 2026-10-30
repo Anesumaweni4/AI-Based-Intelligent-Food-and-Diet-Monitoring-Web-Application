@@ -34,7 +34,7 @@ function postgresSql(sql) {
 }
 
 function postgresRun(client, sql, params = []) {
-  const isInsertWithId = /^\s*INSERT\s+INTO\s+(?!"?(?:menu_schedule|monthly_invoice_orders)\b)/i.test(sql);
+  const isInsertWithId = /^\s*INSERT\s+INTO\s+(?!"?(?:menu_schedule|monthly_invoice_orders|client_feedback_photos)\b)/i.test(sql);
   const statement = isInsertWithId && !/\bRETURNING\b/i.test(sql)
     ? `${sql.trim().replace(/;$/, '')} RETURNING id`
     : sql;
@@ -947,6 +947,36 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     `);
   }
 
+  if (postgresPool) {
+    await postgresPool.query(`
+      CREATE TABLE IF NOT EXISTS client_feedback_photos (
+        feedback_id BIGINT PRIMARY KEY REFERENCES client_feedback(id) ON DELETE CASCADE,
+        mime_type VARCHAR(32) NOT NULL,
+        photo_data BYTEA NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+  } else if (sqliteDb) {
+    await sqliteRun(`
+      CREATE TABLE IF NOT EXISTS client_feedback_photos (
+        feedback_id INTEGER PRIMARY KEY REFERENCES client_feedback(id) ON DELETE CASCADE,
+        mime_type TEXT NOT NULL,
+        photo_data BLOB NOT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+  } else {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS client_feedback_photos (
+        feedback_id INT PRIMARY KEY,
+        mime_type VARCHAR(32) NOT NULL,
+        photo_data LONGBLOB NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (feedback_id) REFERENCES client_feedback(id) ON DELETE CASCADE
+      )
+    `);
+  }
+
   if (requireEmpty) {
     const tables = [
       'menu_items',
@@ -963,7 +993,8 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
       'diet_meal_logs',
       'diet_feedback',
       'fitbit_connections',
-      'client_feedback'
+      'client_feedback',
+      'client_feedback_photos'
     ];
     for (const table of tables) {
       const rows = await all(`SELECT COUNT(*) AS count FROM ${table}`);

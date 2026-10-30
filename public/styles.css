@@ -1840,6 +1840,7 @@ nav {
 }
 
 .feedback-chat-form textarea {
+  grid-column: 1 / -1;
   width: 100%;
   min-height: 44px;
   max-height: 140px;
@@ -1851,7 +1852,44 @@ nav {
   color: var(--text);
 }
 
+.feedback-photo-label,
+.feedback-photo-input,
+.feedback-photo-help,
+.feedback-photo-preview {
+  grid-column: 1 / -1;
+}
+
+.feedback-photo-label {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.feedback-photo-input {
+  width: 100%;
+  font: inherit;
+}
+
+.feedback-photo-help {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.feedback-photo-preview {
+  width: min(100%, 240px);
+  max-height: 180px;
+  justify-self: start;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.feedback-photo-preview[hidden] {
+  display: none;
+}
+
 .feedback-chat-form .submit-btn {
+  grid-column: 2;
   width: auto;
   margin: 0;
   padding: 11px 14px;
@@ -1935,6 +1973,29 @@ nav {
   line-height: 1.55;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
+}
+
+.client-feedback-photo-link {
+  display: inline-grid;
+  justify-items: start;
+  gap: 6px;
+  margin: 0 0 16px;
+  color: var(--primary-dark);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.client-feedback-photo-link:hover {
+  text-decoration: underline;
+}
+
+.client-feedback-photo {
+  display: block;
+  width: min(100%, 320px);
+  max-height: 240px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  object-fit: cover;
 }
 
 .client-feedback-status-form {

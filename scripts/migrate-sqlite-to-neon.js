@@ -20,6 +20,7 @@ const tableOrder = [
   'diet_feedback',
   'fitbit_connections',
   'client_feedback',
+  'client_feedback_photos',
   'password_reset_tokens'
 ];
 const requiredTables = ['menu_items', 'orders', 'order_items', 'users'];

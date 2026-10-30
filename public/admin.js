@@ -1156,6 +1156,12 @@ function renderClientFeedback(feedback) {
               <span class="badge client-feedback-badge">${escapeHtml(entry.status)}</span>
             </div>
             <p class="client-feedback-message">${escapeHtml(entry.message)}</p>
+            ${entry.has_photo ? `
+              <a class="client-feedback-photo-link" href="/api/admin/feedback/${Number(entry.id)}/photo" target="_blank" rel="noopener noreferrer">
+                <img class="client-feedback-photo" src="/api/admin/feedback/${Number(entry.id)}/photo" alt="Photo attached to ${escapeHtml(categoryLabels[entry.category] || 'client')} feedback" loading="lazy" />
+                <span>View attached photo</span>
+              </a>
+            ` : ''}
             <form class="client-feedback-status-form" data-feedback-id="${Number(entry.id)}">
               <label for="feedback-status-${Number(entry.id)}">Review status</label>
               <select id="feedback-status-${Number(entry.id)}" name="status">

@@ -262,7 +262,7 @@ Nutrition values in `diet-model.js` are illustrative estimates per serving, not 
 
 ## Client feedback chatbot
 
-Signed-in students can open **Give feedback** on the home page, choose a topic, and send a message of up to 2,000 characters. The guided chatbot stores feedback against the student's account, shows recent submissions and their review status, and does not send messages to an external AI service. Administrators can review submissions in **Admin Panel → Client Feedback** and mark them new, reviewing, or resolved. Feedback tables are created automatically at startup.
+Signed-in students can open **Give feedback** on the home page, choose a topic, and send a message of up to 2,000 characters. They may also take or attach an optional JPEG, PNG, or WebP photo (up to 15 MB before browser-side resizing; stored photos are limited to 5 MB). Feedback and photos are stored in the configured database, shown in recent submissions, and are not sent to an external AI service. Administrators can review submissions and attached photos in **Admin Panel → Client Feedback**, then mark feedback new, reviewing, or resolved. Feedback tables are created automatically at startup.
 
 ## Example Flow
 

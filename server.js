@@ -20,6 +20,7 @@ const PASSWORD_RESET_DURATION_MS = 60 * 60 * 1000;
 const passwordResetRequests = new Map();
 const CLIENT_FEEDBACK_CATEGORIES = new Set(['food', 'order', 'service', 'website', 'other']);
 const CLIENT_FEEDBACK_STATUSES = new Set(['new', 'reviewing', 'resolved']);
+const MAX_CLIENT_FEEDBACK_PHOTO_SIZE = 5 * 1024 * 1024;
 
 if (SESSION_SECRET.length < 32) {
   throw new Error('SESSION_SECRET must be at least 32 characters long.');
@@ -658,7 +659,20 @@ async function requireStudentApi(req, res, next) {
   }
 }
 
-app.use(express.json());
+const jsonBodyParser = express.json();
+const feedbackJsonBodyParser = express.json({ limit: '7mb' });
+app.use((req, res, next) => {
+  const isFeedbackSubmission = req.method === 'POST' && req.path === '/api/feedback';
+  const parser = isFeedbackSubmission
+    ? feedbackJsonBodyParser
+    : jsonBodyParser;
+  parser(req, res, (error) => {
+    if (error && isFeedbackSubmission && error.status === 413) {
+      return res.status(413).json({ message: 'Feedback photo request is too large. Please choose a smaller photo.' });
+    }
+    next(error);
+  });
+});
 app.get('/cashier-login.html', (req, res) => {
   res.redirect('/login.html');
 });
@@ -1043,10 +1057,13 @@ app.get('/api/account/orders', requireStudentApi, async (req, res) => {
 app.get('/api/feedback', requireStudentApi, async (req, res) => {
   try {
     const feedback = await all(
-      `SELECT id, category, message, status, created_at
-       FROM client_feedback
-       WHERE user_id = ?
-       ORDER BY id DESC
+      `SELECT f.id, f.category, f.message, f.status, f.created_at,
+              EXISTS (
+                SELECT 1 FROM client_feedback_photos p WHERE p.feedback_id = f.id
+              ) AS has_photo
+       FROM client_feedback f
+       WHERE f.user_id = ?
+       ORDER BY f.id DESC
        LIMIT 20`,
       [req.accountUser.id]
     );
@@ -1054,6 +1071,32 @@ app.get('/api/feedback', requireStudentApi, async (req, res) => {
   } catch (error) {
     console.error('Error loading client feedback:', error);
     res.status(500).json({ message: 'Unable to load your feedback history.' });
+  }
+});
+
+app.get('/api/feedback/:id/photo', requireStudentApi, async (req, res) => {
+  const feedbackId = Number(req.params.id);
+  if (!Number.isSafeInteger(feedbackId) || feedbackId <= 0) {
+    return res.status(400).json({ message: 'Choose a valid feedback item.' });
+  }
+  try {
+    const photo = await get(
+      `SELECT p.mime_type, p.photo_data
+       FROM client_feedback_photos p
+       JOIN client_feedback f ON f.id = p.feedback_id
+       WHERE f.id = ? AND f.user_id = ?`,
+      [feedbackId, req.accountUser.id]
+    );
+    if (!photo) return res.status(404).json({ message: 'No photo was found for that feedback.' });
+    res.set({
+      'Cache-Control': 'private, no-store',
+      'Content-Disposition': 'inline',
+      'X-Content-Type-Options': 'nosniff'
+    });
+    res.type(photo.mime_type).send(photo.photo_data);
+  } catch (error) {
+    console.error('Error loading client feedback photo:', error);
+    res.status(500).json({ message: 'Unable to load that feedback photo.' });
   }
 });
 
@@ -1067,14 +1110,55 @@ app.post('/api/feedback', requireStudentApi, async (req, res) => {
     return res.status(400).json({ message: 'Write feedback of up to 2,000 characters.' });
   }
 
+  let photo = null;
+  if (req.body.photo !== undefined && req.body.photo !== null) {
+    if (typeof req.body.photo !== 'string') {
+      return res.status(400).json({ message: 'The attached photo must be a JPEG, PNG, or WebP image.' });
+    }
+    const match = req.body.photo.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/]+={0,2})$/);
+    if (!match) {
+      return res.status(400).json({ message: 'The attached photo must be a JPEG, PNG, or WebP image.' });
+    }
+    const [, mimeType, encodedPhoto] = match;
+    const photoData = Buffer.from(encodedPhoto, 'base64');
+    if (
+      photoData.length === 0 ||
+      photoData.length > MAX_CLIENT_FEEDBACK_PHOTO_SIZE ||
+      photoData.toString('base64') !== encodedPhoto
+    ) {
+      return res.status(400).json({ message: 'The attached photo must be smaller than 5 MB.' });
+    }
+    const isJpeg = photoData[0] === 0xff && photoData[1] === 0xd8 && photoData[2] === 0xff;
+    const isPng = photoData.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+    const isWebp = photoData.toString('ascii', 0, 4) === 'RIFF' &&
+      photoData.toString('ascii', 8, 12) === 'WEBP';
+    if (
+      (mimeType === 'image/jpeg' && !isJpeg) ||
+      (mimeType === 'image/png' && !isPng) ||
+      (mimeType === 'image/webp' && !isWebp)
+    ) {
+      return res.status(400).json({ message: 'The photo contents do not match the selected image type.' });
+    }
+    photo = { mimeType, photoData };
+  }
+
   try {
-    const result = await run(
-      'INSERT INTO client_feedback (user_id, category, message) VALUES (?, ?, ?)',
-      [req.accountUser.id, category, message]
-    );
+    const result = await withTransaction(async (transaction) => {
+      const feedback = await transaction.run(
+        'INSERT INTO client_feedback (user_id, category, message) VALUES (?, ?, ?)',
+        [req.accountUser.id, category, message]
+      );
+      if (photo) {
+        await transaction.run(
+          'INSERT INTO client_feedback_photos (feedback_id, mime_type, photo_data) VALUES (?, ?, ?)',
+          [feedback.id, photo.mimeType, photo.photoData]
+        );
+      }
+      return feedback;
+    });
     res.status(201).json({
       message: 'Thank you for sharing your feedback. The team will review it.',
-      feedback: { id: result.id, category, message, status: 'new' }
+      feedback: { id: result.id, category, message, status: 'new', has_photo: Boolean(photo) }
     });
   } catch (error) {
     console.error('Error saving client feedback:', error);
@@ -1412,7 +1496,10 @@ app.get('/api/admin/feedback', async (req, res) => {
   try {
     const feedback = await all(
       `SELECT f.id, f.category, f.message, f.status, f.created_at,
-              u.full_name, u.username
+              u.full_name, u.username,
+              EXISTS (
+                SELECT 1 FROM client_feedback_photos p WHERE p.feedback_id = f.id
+              ) AS has_photo
        FROM client_feedback f
        JOIN users u ON u.id = f.user_id
        ORDER BY CASE f.status WHEN 'new' THEN 0 WHEN 'reviewing' THEN 1 ELSE 2 END, f.id DESC
@@ -1422,6 +1509,29 @@ app.get('/api/admin/feedback', async (req, res) => {
   } catch (error) {
     console.error('Error loading submitted client feedback:', error);
     res.status(500).json({ message: 'Unable to load submitted client feedback.' });
+  }
+});
+
+app.get('/api/admin/feedback/:id/photo', async (req, res) => {
+  const feedbackId = Number(req.params.id);
+  if (!Number.isSafeInteger(feedbackId) || feedbackId <= 0) {
+    return res.status(400).json({ message: 'Choose a valid feedback item.' });
+  }
+  try {
+    const photo = await get(
+      'SELECT mime_type, photo_data FROM client_feedback_photos WHERE feedback_id = ?',
+      [feedbackId]
+    );
+    if (!photo) return res.status(404).json({ message: 'No photo was found for that feedback.' });
+    res.set({
+      'Cache-Control': 'private, no-store',
+      'Content-Disposition': 'inline',
+      'X-Content-Type-Options': 'nosniff'
+    });
+    res.type(photo.mime_type).send(photo.photo_data);
+  } catch (error) {
+    console.error('Error loading submitted client feedback photo:', error);
+    res.status(500).json({ message: 'Unable to load that feedback photo.' });
   }
 });
 

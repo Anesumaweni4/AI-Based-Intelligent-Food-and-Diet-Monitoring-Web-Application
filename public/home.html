@@ -196,6 +196,17 @@
         <form id="feedback-chat-form" class="feedback-chat-form" hidden>
           <label class="sr-only" for="feedback-chat-input">Your feedback</label>
           <textarea id="feedback-chat-input" maxlength="2000" rows="3" placeholder="Type your feedback…" required></textarea>
+          <label class="feedback-photo-label" for="feedback-chat-photo">Attach a food photo (optional)</label>
+          <input
+            id="feedback-chat-photo"
+            class="feedback-photo-input"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            capture="environment"
+            aria-describedby="feedback-photo-help"
+          />
+          <span id="feedback-photo-help" class="feedback-photo-help">Take a photo with your camera or choose an image (up to 15 MB).</span>
+          <img id="feedback-photo-preview" class="feedback-photo-preview" alt="Preview of the feedback photo" hidden />
           <button type="submit" class="submit-btn">Send</button>
         </form>
         <p id="feedback-chat-status" class="feedback-chat-status" role="status" aria-live="polite"></p>
