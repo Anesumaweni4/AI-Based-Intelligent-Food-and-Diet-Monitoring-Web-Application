@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Diet Monitoring | THE KITCHEN</title>
-    <link rel="stylesheet" href="styles.css?v=activity-reminder-1" />
+    <link rel="stylesheet" href="styles.css?v=nutrition-order-insights-1" />
   </head>
   <body>
     <header class="topbar">
@@ -72,6 +72,9 @@
                 <p class="eyebrow">Food diary</p>
                 <h3 id="diet-today-title">Today's nutrition estimates</h3>
               </div>
+              <button type="button" class="diet-insights-button" id="diet-insights-open">
+                Nutrition &amp; meal ideas
+              </button>
             </div>
             <div id="diet-totals" class="diet-totals" aria-live="polite"></div>
           </section>
@@ -145,6 +148,25 @@
         <button type="button" class="diet-activity-dismiss" data-activity-answer="not-yet">Not yet</button>
       </div>
     </dialog>
-    <script src="diet-monitoring.js?v=activity-reminder-1"></script>
+    <dialog id="diet-insights-dialog" class="diet-activity-dialog diet-insights-dialog" aria-labelledby="diet-insights-title">
+      <button type="button" class="diet-insights-close" id="diet-insights-close" aria-label="Close nutrition and meal ideas">×</button>
+      <p class="eyebrow">Your nutrition guide</p>
+      <h2 id="diet-insights-title">Why these nutrients matter</h2>
+      <div class="diet-nutrient-explanations">
+        <article><strong>Protein</strong><p>Helps your body build and repair muscles and other tissues.</p></article>
+        <article><strong>Carbohydrates</strong><p>Provide energy for your body and brain.</p></article>
+        <article><strong>Fat</strong><p>Supports energy storage and helps your body absorb some vitamins.</p></article>
+        <article><strong>Fiber</strong><p>Supports digestion and can help you feel satisfied after eating.</p></article>
+        <article><strong>Calories</strong><p>Estimate the energy food provides; needs vary from person to person.</p></article>
+      </div>
+      <section class="diet-order-ideas" aria-labelledby="diet-order-ideas-title">
+        <h3 id="diet-order-ideas-title">Meal ideas from your orders (last 30 days)</h3>
+        <div id="diet-order-ideas-list" aria-live="polite">
+          <p class="diet-empty">Loading ideas from your recent orders…</p>
+        </div>
+      </section>
+      <p class="diet-insights-note">Nutrition values are estimates for general information, not medical or dietary advice. Menu availability may vary.</p>
+    </dialog>
+    <script src="diet-monitoring.js?v=nutrition-order-insights-1"></script>
   </body>
 </html>

@@ -900,6 +900,16 @@ app.get('/api/diet', requireStudentApi, async (req, res) => {
       'SELECT rating, calories, protein, carbohydrates, fat, fiber FROM diet_feedback WHERE user_id = ?',
       [req.accountUser.id]
     );
+    const orderStart = getLocalDayRange(29).start;
+    const orderEnd = getLocalDayRange().end;
+    const orderedFoods = await all(
+      `SELECT oi.menu_item_id, SUM(oi.quantity) AS purchase_count, MAX(o.created_at) AS last_ordered_at
+       FROM orders o
+       JOIN order_items oi ON oi.order_id = o.id
+       WHERE o.user_id = ? AND o.status <> 'Cancelled' AND o.created_at >= ? AND o.created_at < ?
+       GROUP BY oi.menu_item_id`,
+      [req.accountUser.id, orderStart, orderEnd]
+    );
     const todayTotals = sumDietNutrition(todayMeals);
     const dailyTotals = {
       ...todayTotals,
@@ -923,6 +933,22 @@ app.get('/api/diet', requireStudentApi, async (req, res) => {
       goal: profile ? profile.goal : 'balanced',
       dailyTotals
     });
+    const menuItemsById = new Map(menuItems.map((item) => [Number(item.id), item]));
+    const purchasedMenuItems = orderedFoods
+      .map((orderedFood) => {
+        const menuItem = menuItemsById.get(Number(orderedFood.menu_item_id));
+        return menuItem ? { ...menuItem, purchaseCount: Number(orderedFood.purchase_count), lastOrderedAt: orderedFood.last_ordered_at } : null;
+      })
+      .filter(Boolean);
+    const orderRecommendation = recommendFoods({
+      foods: purchasedMenuItems,
+      feedback,
+      goal: profile ? profile.goal : 'balanced',
+      dailyTotals
+    });
+    const purchasedFoodsById = new Map(
+      purchasedMenuItems.map((item) => [Number(item.id), item])
+    );
 
     res.json({
       goal: profile ? profile.goal : 'balanced',
@@ -931,6 +957,14 @@ app.get('/api/diet', requireStudentApi, async (req, res) => {
       totals: todayTotals,
       weekly: Array.from(groupedDays.values()),
       recommendations: recommendation.items,
+      mealIdeas: orderRecommendation.items.map((food) => {
+        const purchase = purchasedFoodsById.get(Number(food.id));
+        return {
+          ...food,
+          purchaseCount: purchase.purchaseCount,
+          lastOrderedAt: purchase.lastOrderedAt
+        };
+      }),
       model: recommendation.model
     });
   } catch (error) {

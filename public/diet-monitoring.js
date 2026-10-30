@@ -11,6 +11,8 @@ const dietWeek = document.getElementById('diet-week');
 const dietRecommendations = document.getElementById('diet-recommendations');
 const dietModelDescription = document.getElementById('diet-model-description');
 const dietActivityDialog = document.getElementById('diet-activity-dialog');
+const dietInsightsDialog = document.getElementById('diet-insights-dialog');
+const dietOrderIdeasList = document.getElementById('diet-order-ideas-list');
 const ACTIVITY_REMINDER_INTERVAL_MS = 60 * 60 * 1000;
 const ACTIVITY_REMINDER_STORAGE_KEY = 'dietActivityReminderLastShown';
 let dietData = null;
@@ -99,6 +101,11 @@ function formatMealDate(value) {
   const normalized = String(value).replace(' ', 'T');
   const date = new Date(normalized);
   return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatOrderDate(value) {
+  const date = new Date(String(value).replace(' ', 'T'));
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString();
 }
 
 function renderFoodOptions() {
@@ -217,8 +224,26 @@ function renderDietData(data) {
   renderMeals(data.meals);
   renderWeek(data.weekly);
   renderRecommendations(data.recommendations);
+  renderMealIdeas(data.mealIdeas);
   dietModelDescription.textContent =
     `${data.model.name} · ${data.model.feedbackCount} feedback record(s). ${data.model.trainingHint}`;
+}
+
+function renderMealIdeas(mealIdeas = []) {
+  if (!mealIdeas.length) {
+    dietOrderIdeasList.innerHTML = '<p class="diet-empty">No recent orders to use for meal ideas yet. Place an order and your familiar choices will appear here.</p>';
+    return;
+  }
+  dietOrderIdeasList.innerHTML = mealIdeas.map((food) => `
+    <article class="diet-order-idea">
+      <div>
+        <strong>${escapeHtml(food.name)}</strong>
+        <span>${Number(food.purchaseCount)} serving(s) ordered · last ordered ${escapeHtml(formatOrderDate(food.lastOrderedAt))}</span>
+      </div>
+      <p>${escapeHtml(food.reason)}</p>
+      <span>${formatAmount(food.calories, ' kcal')} · ${formatAmount(food.protein, ' g')} protein · ${formatAmount(food.fiber, ' g')} fiber per serving</span>
+    </article>
+  `).join('');
 }
 
 async function loadDietData() {
@@ -268,6 +293,13 @@ dietMealForm.addEventListener('submit', async (event) => {
 
 dietFoodSelect.addEventListener('change', updateFoodEstimate);
 dietServingsInput.addEventListener('input', updateFoodEstimate);
+
+document.getElementById('diet-insights-open').addEventListener('click', () => {
+  dietInsightsDialog.showModal();
+});
+document.getElementById('diet-insights-close').addEventListener('click', () => {
+  dietInsightsDialog.close();
+});
 
 dietRecommendations.addEventListener('click', async (event) => {
   const button = event.target.closest('button[data-food-id][data-rating]');
