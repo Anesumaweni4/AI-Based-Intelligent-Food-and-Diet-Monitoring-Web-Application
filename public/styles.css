@@ -693,27 +693,41 @@ nav {
 }
 
 .diet-log-guide {
-  margin-top: 20px;
-  padding: 14px 16px;
-  border: 1px solid #e6d6bb;
-  border-left: 4px solid var(--accent);
-  border-radius: 12px;
-  background: #fffaf0;
+  display: grid;
+  gap: 7px;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid #d5e0cb;
+  border-left: 5px solid var(--success);
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f3f7ed, #fffaf0);
+}
+
+.diet-log-guide-label {
+  color: var(--success);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
 }
 
 .diet-log-guide > strong {
   color: var(--primary-dark);
-  font-size: 0.92rem;
+  font-size: 1rem;
 }
 
-.diet-log-guide ul {
-  display: grid;
-  gap: 7px;
-  margin: 10px 0 0;
-  padding-left: 20px;
+.diet-log-guide p,
+.diet-log-guide small {
+  margin: 0;
   color: var(--muted);
-  font-size: 0.86rem;
   line-height: 1.45;
+}
+
+.diet-log-guide p {
+  font-size: 0.9rem;
+}
+
+.diet-log-guide small {
+  font-size: 0.78rem;
 }
 
 .diet-model-description {
