@@ -282,6 +282,77 @@ nav {
   line-height: 1.6;
 }
 
+.diet-wellness-panel {
+  margin: 0 0 18px;
+  padding: 20px;
+  border: 1px solid #e6d6bb;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fffaf0, #f8f2e7);
+}
+
+.diet-wellness-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.diet-wellness-icon {
+  display: grid;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 12px;
+  background: #e8efdf;
+  color: var(--success);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.diet-wellness-heading .eyebrow {
+  margin: 0 0 4px;
+  color: var(--success);
+  font-weight: 700;
+}
+
+.diet-wellness-heading h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.diet-wellness-tips {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.diet-wellness-tips article {
+  padding: 12px;
+  border: 1px solid rgba(227, 213, 197, 0.8);
+  border-radius: 12px;
+  background: rgba(255, 253, 248, 0.8);
+}
+
+.diet-wellness-tips strong {
+  color: var(--primary-dark);
+  font-size: 0.92rem;
+}
+
+.diet-wellness-tips p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.diet-wellness-note {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
 .diet-monitoring-link {
   display: inline-flex;
   align-items: center;
@@ -2928,6 +2999,9 @@ nav {
 }
 
 @media (max-width: 600px) {
+  .diet-wellness-tips {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .monthly-billing-controls,
   .monthly-invoice-heading,
   .monthly-invoice-total,
@@ -3004,6 +3078,12 @@ nav {
 
   .cashier-stock-receipt time {
     text-align: left;
+  }
+}
+
+@media (max-width: 420px) {
+  .diet-wellness-tips {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -23,6 +23,7 @@ This project is a simple web-based food ordering system designed for small and m
 - Placed customer orders automatically deduct ordered quantities from stock, and admin and cashier inventory refreshes every 12 seconds
 - Diet Monitoring highlights an hourly activity check-in and prompts the signed-in student while the page is open
 - Diet Monitoring explains nutrition estimates and suggests meal ideas based on each student's non-cancelled orders from the last 30 days
+- Diet Monitoring includes general wellbeing tips for balanced meals, hydration, movement, and rest
 - Students can request password reset links by email; administrators can assign recovery email addresses to existing student accounts
 
 ## Tech Stack
