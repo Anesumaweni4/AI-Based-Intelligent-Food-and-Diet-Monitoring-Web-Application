@@ -24,6 +24,7 @@ This project is a simple web-based food ordering system designed for small and m
 - Diet Monitoring highlights an hourly activity check-in and prompts the signed-in student while the page is open
 - Diet Monitoring explains nutrition estimates and suggests meal ideas based on each student's non-cancelled orders from the last 30 days
 - Diet Monitoring includes general wellbeing tips for balanced meals, hydration, movement, and rest
+- Diet Monitoring explains how to log eaten meals and adjust servings for nutrition estimates
 - Students can connect Fitbit to view daily steps and resting heart rate in Diet Monitoring
 - Students can request password reset links by email; administrators can assign recovery email addresses to existing student accounts
 

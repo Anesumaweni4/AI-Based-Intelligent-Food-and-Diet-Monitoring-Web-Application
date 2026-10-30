@@ -692,6 +692,30 @@ nav {
   line-height: 1.5;
 }
 
+.diet-log-guide {
+  margin-top: 20px;
+  padding: 14px 16px;
+  border: 1px solid #e6d6bb;
+  border-left: 4px solid var(--accent);
+  border-radius: 12px;
+  background: #fffaf0;
+}
+
+.diet-log-guide > strong {
+  color: var(--primary-dark);
+  font-size: 0.92rem;
+}
+
+.diet-log-guide ul {
+  display: grid;
+  gap: 7px;
+  margin: 10px 0 0;
+  padding-left: 20px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
 .diet-model-description {
   margin: -4px 0 14px;
   color: var(--muted);
