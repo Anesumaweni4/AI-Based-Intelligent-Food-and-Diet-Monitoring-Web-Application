@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Diet Monitoring | THE KITCHEN</title>
-    <link rel="stylesheet" href="styles.css?v=diet-model-1" />
+    <link rel="stylesheet" href="styles.css?v=activity-reminder-1" />
   </head>
   <body>
     <header class="topbar">
@@ -18,7 +18,9 @@
         </div>
         <nav>
           <a href="home.html#my-orders">My Orders</a>
-          <a href="diet-monitoring.html" aria-current="page">Diet Monitoring</a>
+          <a href="diet-monitoring.html" aria-current="page" class="diet-monitoring-link">
+            Diet Monitoring <span class="activity-reminder-badge">Hourly check-in</span>
+          </a>
           <a href="#" id="diet-logout">Logout</a>
         </nav>
       </div>
@@ -35,6 +37,11 @@
             Keep a simple food diary and explore menu suggestions. Nutrition values are estimates for demonstration,
             not medical or dietary advice.
           </p>
+
+          <aside class="diet-activity-reminder" aria-label="Hourly activity reminder">
+            <strong>Hourly activity check-in</strong>
+            <span>We’ll remind you to take a moment and check whether you’ve been active.</span>
+          </aside>
 
           <p id="diet-status" class="schedule-status" role="status" aria-live="polite"></p>
 
@@ -129,6 +136,15 @@
         </section>
       </div>
     </main>
-    <script src="diet-monitoring.js?v=diet-model-1"></script>
+    <dialog id="diet-activity-dialog" class="diet-activity-dialog" aria-labelledby="diet-activity-title">
+      <p class="eyebrow">Hourly activity check-in</p>
+      <h2 id="diet-activity-title">Have you run or done any physical activity in the last hour?</h2>
+      <p>A short movement break can be a good way to check in with yourself.</p>
+      <div class="diet-activity-actions">
+        <button type="button" class="submit-btn" data-activity-answer="yes">Yes, I have</button>
+        <button type="button" class="diet-activity-dismiss" data-activity-answer="not-yet">Not yet</button>
+      </div>
+    </dialog>
+    <script src="diet-monitoring.js?v=activity-reminder-1"></script>
   </body>
 </html>

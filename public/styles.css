@@ -282,6 +282,99 @@ nav {
   line-height: 1.6;
 }
 
+.diet-monitoring-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary-dark);
+}
+
+.activity-reminder-badge {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #f7e3bd;
+  color: var(--primary-dark);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.diet-activity-reminder {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border: 1px solid #e6c77e;
+  border-left: 5px solid var(--accent);
+  border-radius: 12px;
+  background: #fff8e8;
+  color: var(--text);
+}
+
+.diet-activity-reminder span {
+  color: var(--muted);
+}
+
+.diet-activity-dialog {
+  width: min(480px, calc(100% - 32px));
+  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+.diet-activity-dialog::backdrop {
+  background: rgba(41, 38, 36, 0.48);
+  backdrop-filter: blur(3px);
+}
+
+.diet-activity-dialog .eyebrow {
+  margin: 0 0 8px;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.diet-activity-dialog h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  line-height: 1.35;
+}
+
+.diet-activity-dialog > p:not(.eyebrow) {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.diet-activity-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.diet-activity-actions .submit-btn {
+  width: auto;
+  margin: 0;
+}
+
+.diet-activity-dismiss {
+  padding: 11px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.diet-activity-dismiss:hover,
+.diet-activity-dismiss:focus-visible {
+  background: var(--bg);
+}
+
 .diet-page > .section-title h2 {
   margin: 0;
 }

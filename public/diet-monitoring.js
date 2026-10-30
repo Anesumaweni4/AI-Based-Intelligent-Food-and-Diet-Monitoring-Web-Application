@@ -10,7 +10,47 @@ const dietMeals = document.getElementById('diet-meals');
 const dietWeek = document.getElementById('diet-week');
 const dietRecommendations = document.getElementById('diet-recommendations');
 const dietModelDescription = document.getElementById('diet-model-description');
+const dietActivityDialog = document.getElementById('diet-activity-dialog');
+const ACTIVITY_REMINDER_INTERVAL_MS = 60 * 60 * 1000;
+const ACTIVITY_REMINDER_STORAGE_KEY = 'dietActivityReminderLastShown';
 let dietData = null;
+let lastActivityReminderAt;
+let activityReminderStorageKey = ACTIVITY_REMINDER_STORAGE_KEY;
+
+function initializeActivityReminder() {
+  const now = Date.now();
+  try {
+    const user = JSON.parse(localStorage.getItem('foodieUser') || 'null');
+    const userId = Number(user && user.id);
+    if (Number.isSafeInteger(userId) && userId > 0) {
+      activityReminderStorageKey = `${ACTIVITY_REMINDER_STORAGE_KEY}:${userId}`;
+    }
+    const storedTime = localStorage.getItem(activityReminderStorageKey);
+    const parsedTime = storedTime === null ? now : Number(storedTime);
+    lastActivityReminderAt = Number.isFinite(parsedTime) && parsedTime > 0 && parsedTime <= now
+      ? parsedTime
+      : now;
+    if (storedTime === null || lastActivityReminderAt !== parsedTime) {
+      localStorage.setItem(activityReminderStorageKey, String(lastActivityReminderAt));
+    }
+  } catch (error) {
+    console.error('Unable to persist the diet activity reminder time:', error);
+    lastActivityReminderAt = now;
+    showDietStatus('Hourly reminders will work while this page stays open, but may restart if you reload.', true);
+  }
+}
+
+function showActivityReminderIfDue() {
+  if (dietActivityDialog.open || Date.now() - lastActivityReminderAt < ACTIVITY_REMINDER_INTERVAL_MS) return;
+
+  lastActivityReminderAt = Date.now();
+  try {
+    localStorage.setItem(activityReminderStorageKey, String(lastActivityReminderAt));
+  } catch (error) {
+    console.error('Unable to save the diet activity reminder time:', error);
+  }
+  dietActivityDialog.showModal();
+}
 
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (character) => ({
@@ -249,6 +289,15 @@ dietRecommendations.addEventListener('click', async (event) => {
   }
 });
 
+dietActivityDialog.addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-activity-answer]');
+  if (!button) return;
+  showDietStatus(button.dataset.activityAnswer === 'yes'
+    ? 'Thanks for checking in with your activity today.'
+    : 'That’s okay—take a movement break when it works for you.');
+  dietActivityDialog.close();
+});
+
 document.getElementById('diet-logout').addEventListener('click', async (event) => {
   event.preventDefault();
   try {
@@ -258,6 +307,13 @@ document.getElementById('diet-logout').addEventListener('click', async (event) =
   } catch (error) {
     showDietStatus(error.message, true);
   }
+});
+
+initializeActivityReminder();
+showActivityReminderIfDue();
+setInterval(showActivityReminderIfDue, 60 * 1000);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) showActivityReminderIfDue();
 });
 
 loadDietData().catch((error) => {
