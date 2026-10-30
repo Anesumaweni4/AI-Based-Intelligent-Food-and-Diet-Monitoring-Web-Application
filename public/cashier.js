@@ -253,3 +253,4 @@ document.getElementById('cashier-logout').addEventListener('click', async (event
 
 loadTransactions();
 loadInventory();
+setInterval(loadInventory, 12000);

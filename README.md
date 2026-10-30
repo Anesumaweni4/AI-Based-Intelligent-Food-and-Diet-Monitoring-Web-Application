@@ -20,6 +20,7 @@ This project is a simple web-based food ordering system designed for small and m
 - Admin-approved clients can charge orders to a monthly account; administrators can generate month-end statements and record payments
 - Admin revenue card tracks collected orders for the current local day and resets at the next local midnight
 - Admins and cashiers can add received stock or remove used stock from the stock controls; each movement is audited and removals cannot reduce inventory below zero
+- Placed customer orders automatically deduct ordered quantities from stock, and admin and cashier inventory refreshes every 12 seconds
 - Students can request password reset links by email; administrators can assign recovery email addresses to existing student accounts
 
 ## Tech Stack
