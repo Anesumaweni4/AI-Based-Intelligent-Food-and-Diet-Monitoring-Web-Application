@@ -373,7 +373,7 @@ async function loadMenu() {
             <div class="menu-card-content">
               <span class="menu-category">Drink</span>
               <h4>Choose a drink</h4>
-              <p>Minute Maid, Pepsi, Coke, and Fruit Smoothie.</p>
+              <p>Juices, soft drinks, and smoothies.</p>
               <div class="meta-row">
                 <span class="price">From ${formatCurrency(Math.min(...drinkItems.map(drink => Number(drink.price))))}</span>
                 <button type="button" class="add-btn" data-action="choose-drink" ${drinkItems.every(drink => Number(drink.stock_quantity) === 0) ? 'disabled' : ''}>Choose</button>

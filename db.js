@@ -1106,7 +1106,6 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     ['Sadza and T-Bone', 'Sadza served with grilled T-bone steak.', 3.00, 'https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=900&q=80'],
     ['Sadza Pork', 'Sadza served with pork.', 2.50, 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'],
     ['Sadza + Haifiridzi', 'Sadza served with haifiridzi.', 2.00, 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'],
-    ['Sadza + Chicken Offals', 'Sadza served with chicken offals.', 2.00, 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=900&q=80'],
     ['Salad and T-Bone', 'Grilled T-bone steak served with salad.', 3.00, 'https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=900&q=80']
   ];
   const traditionalMealIds = [];
@@ -1144,24 +1143,94 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     }
   }
 
+  const offals = await get('SELECT id FROM menu_items WHERE name = ? LIMIT 1', ['Offals']);
+  const legacyOffals = await get('SELECT id FROM menu_items WHERE name = ? LIMIT 1', ['Sadza + Chicken Offals']);
+  let offalsId;
+  if (offals) {
+    offalsId = Number(offals.id);
+    await run(
+      'UPDATE menu_items SET description = ?, price = ?, category = ?, image = ? WHERE id = ?',
+      ['Chicken offals.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=900&q=80', offalsId]
+    );
+    if (legacyOffals) {
+      await run('DELETE FROM menu_schedule WHERE menu_item_id = ?', [legacyOffals.id]);
+      await run('UPDATE menu_items SET category = ? WHERE id = ?', ['Archived', legacyOffals.id]);
+    }
+  } else if (legacyOffals) {
+    offalsId = Number(legacyOffals.id);
+    await run(
+      'UPDATE menu_items SET name = ?, description = ?, price = ?, category = ?, image = ? WHERE id = ?',
+      ['Offals', 'Chicken offals.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=900&q=80', offalsId]
+    );
+  } else {
+    const result = await run(
+      'INSERT INTO menu_items (name, description, price, category, image) VALUES (?, ?, ?, ?, ?)',
+      ['Offals', 'Chicken offals.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=900&q=80']
+    );
+    offalsId = Number(result.id);
+  }
+  for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek += 1) {
+    const scheduled = await get(
+      'SELECT menu_item_id FROM menu_schedule WHERE day_of_week = ? AND menu_item_id = ?',
+      [dayOfWeek, offalsId]
+    );
+    if (!scheduled) {
+      await run(
+        'INSERT INTO menu_schedule (day_of_week, menu_item_id) VALUES (?, ?)',
+        [dayOfWeek, offalsId]
+      );
+    }
+  }
+
+  const legacyMinuteMaid = await get('SELECT id FROM menu_items WHERE name = ? LIMIT 1', ['Minute Maid']);
+  const minuteMaidOrange = await get('SELECT id FROM menu_items WHERE name = ? LIMIT 1', ['Minute Maid Orange']);
+  if (legacyMinuteMaid) {
+    if (minuteMaidOrange) {
+      await run('DELETE FROM menu_schedule WHERE menu_item_id = ?', [legacyMinuteMaid.id]);
+      await run('UPDATE menu_items SET category = ? WHERE id = ?', ['Archived', legacyMinuteMaid.id]);
+    } else {
+      await run('UPDATE menu_items SET name = ? WHERE id = ?', ['Minute Maid Orange', legacyMinuteMaid.id]);
+    }
+  }
+
   const drinkOptions = [
-    ['Minute Maid', 'Chilled Minute Maid fruit juice.', 2.00],
+    ['Minute Maid Berry', 'Chilled Minute Maid berry juice.', 1.00],
+    ['Minute Maid Lemon', 'Chilled Minute Maid lemon juice.', 1.00],
+    ['Minute Maid Orange', 'Chilled Minute Maid orange juice.', 1.00],
+    ['Miranda Green Apple', 'Chilled Miranda green apple soft drink.', 0.50],
+    ['Miranda Grape', 'Chilled Miranda grape soft drink.', 0.50],
+    ['Miranda Orange', 'Chilled Miranda orange soft drink.', 0.50],
+    ['Miranda Pineapple', 'Chilled Miranda pineapple soft drink.', 0.50],
     ['Pepsi', 'Chilled Pepsi soft drink.', 1.50],
     ['Coca-Cola', 'Chilled Coke soft drink.', 1.50]
   ];
   for (const [name, description, price] of drinkOptions) {
     const existingDrink = await get('SELECT id FROM menu_items WHERE name = ? LIMIT 1', [name]);
-    if (existingDrink) continue;
-
-    const result = await run(
-      'INSERT INTO menu_items (name, description, price, category, image) VALUES (?, ?, ?, ?, ?)',
-      [name, description, price, 'Drink', '/drinks-assortment.jpg']
-    );
-    for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek += 1) {
+    let drinkId;
+    if (existingDrink) {
+      drinkId = Number(existingDrink.id);
       await run(
-        'INSERT INTO menu_schedule (day_of_week, menu_item_id) VALUES (?, ?)',
-        [dayOfWeek, result.id]
+        'UPDATE menu_items SET description = ?, price = ?, category = ?, image = ? WHERE id = ?',
+        [description, price, 'Drink', '/drinks-assortment.jpg', drinkId]
       );
+    } else {
+      const result = await run(
+        'INSERT INTO menu_items (name, description, price, category, image) VALUES (?, ?, ?, ?, ?)',
+        [name, description, price, 'Drink', '/drinks-assortment.jpg']
+      );
+      drinkId = Number(result.id);
+    }
+    for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek += 1) {
+      const scheduled = await get(
+        'SELECT menu_item_id FROM menu_schedule WHERE day_of_week = ? AND menu_item_id = ?',
+        [dayOfWeek, drinkId]
+      );
+      if (!scheduled) {
+        await run(
+          'INSERT INTO menu_schedule (day_of_week, menu_item_id) VALUES (?, ?)',
+          [dayOfWeek, drinkId]
+        );
+      }
     }
   }
 }
