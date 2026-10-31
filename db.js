@@ -1201,7 +1201,7 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     ['Miranda Grape', 'Chilled Miranda grape soft drink.', 0.50],
     ['Miranda Orange', 'Chilled Miranda orange soft drink.', 0.50],
     ['Miranda Pineapple', 'Chilled Miranda pineapple soft drink.', 0.50],
-    ['Pepsi', 'Chilled Pepsi soft drink.', 1.50],
+    ['Pepsi', 'Chilled Pepsi soft drink.', 0.50],
     ['Coca-Cola', 'Chilled Coke soft drink.', 1.50]
   ];
   for (const [name, description, price] of drinkOptions) {
@@ -1301,7 +1301,14 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     ['Hotdog', 'Hotdog in a soft roll.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=900&q=80'],
     ['Hotdog and chips', 'Hotdog served with chips.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=900&q=80'],
     ['Juice 2Go', 'Chilled Juice 2Go.', 0.75, 'Drink', '/drinks-assortment.jpg'],
-    ['Mince', 'Seasoned minced beef.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80']
+    ['Mince', 'Seasoned minced beef.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'],
+    ['Pasta and chicken', 'Pasta served with chicken.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&w=900&q=80'],
+    ['Pasta and mince', 'Pasta served with minced beef sauce.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1551892374-ecf8754cf8b0?auto=format&fit=crop&w=900&q=80'],
+    ['Pasta and pork', 'Pasta served with pork.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1551892374-ecf8754cf8b0?auto=format&fit=crop&w=900&q=80'],
+    ['Pork', 'Seasoned pork.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'],
+    ['Pork and chips', 'Pork served with chips.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=900&q=80'],
+    ['Pork bones', 'Slow-cooked pork bones.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'],
+    ['Pork trotters', 'Slow-cooked pork trotters.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80']
   ];
   const legacyRiceAndRussian = await get('SELECT id FROM menu_items WHERE name = ? LIMIT 1', ['Rice + Russian']);
   const riceAndRussian = await get('SELECT id FROM menu_items WHERE name = ? LIMIT 1', ['Rice and Russian']);
