@@ -1233,6 +1233,47 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
       }
     }
   }
+
+  const additionalMenuItems = [
+    ['Sprite', 'Chilled Sprite soft drink.', 1.00, 'Drink', '/drinks-assortment.jpg'],
+    ['Stoney 350ml', 'Chilled Stoney ginger beer, 350ml.', 0.75, 'Drink', '/drinks-assortment.jpg'],
+    ['Water - $0.25', 'Bottled water.', 0.25, 'Drink', '/drinks-assortment.jpg'],
+    ['Water - $0.50', 'Bottled water.', 0.50, 'Drink', '/drinks-assortment.jpg'],
+    ['Stir fry and chips', 'Stir-fried chicken served with chips.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=900&q=80'],
+    ['Stirfry', 'Stir-fried chicken and vegetables.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=900&q=80'],
+    ['T-Bone and Rice', 'Grilled T-bone steak served with rice.', 2.50, 'Meals', 'https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=900&q=80'],
+    ['T-Bone', 'Grilled T-bone steak.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=900&q=80']
+  ];
+  for (const [name, description, price, category, image] of additionalMenuItems) {
+    const existingItem = await get('SELECT id FROM menu_items WHERE name = ? LIMIT 1', [name]);
+    let menuItemId;
+    if (existingItem) {
+      menuItemId = Number(existingItem.id);
+      await run(
+        'UPDATE menu_items SET description = ?, price = ?, category = ?, image = ? WHERE id = ?',
+        [description, price, category, image, menuItemId]
+      );
+    } else {
+      const result = await run(
+        'INSERT INTO menu_items (name, description, price, category, image) VALUES (?, ?, ?, ?, ?)',
+        [name, description, price, category, image]
+      );
+      menuItemId = Number(result.id);
+    }
+
+    for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek += 1) {
+      const scheduled = await get(
+        'SELECT menu_item_id FROM menu_schedule WHERE day_of_week = ? AND menu_item_id = ?',
+        [dayOfWeek, menuItemId]
+      );
+      if (!scheduled) {
+        await run(
+          'INSERT INTO menu_schedule (day_of_week, menu_item_id) VALUES (?, ?)',
+          [dayOfWeek, menuItemId]
+        );
+      }
+    }
+  }
 }
 
 async function replaceMenuSchedule(entries) {
