@@ -1339,7 +1339,15 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     ['Chicken and wedges', 'Chicken served with potato wedges.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1606755962773-d324e0a13086?auto=format&fit=crop&w=900&q=80'],
     ['Chicken curry', 'Chicken curry.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=900&q=80'],
     ['Chicken Curry and Chips', 'Chicken curry served with chips.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=900&q=80'],
-    ['Chicken curry and rice', 'Chicken curry served with rice.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80']
+    ['Chicken curry and rice', 'Chicken curry served with rice.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80'],
+    ['Chicken curry and vegetables', 'Chicken curry served with vegetables.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=900&q=80'],
+    ['Chicken pasta', 'Pasta served with chicken.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&w=900&q=80'],
+    ['Chicken stirfry', 'Chicken stir-fry.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80'],
+    ['Chicken stirfry and chips', 'Chicken stir-fry served with chips.', 3.00, 'Meals', 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=900&q=80'],
+    ['Chicken stirfry and rice', 'Chicken stir-fry served with rice.', 3.00, 'Meals', 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80'],
+    ['Chips', 'Golden fried chips.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=900&q=80'],
+    ['Chips + chicken offals', 'Chips served with chicken offals.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=900&q=80'],
+    ['Chips and beef', 'Chips served with beef.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80']
   ];
   const legacyRiceAndRussian = await get('SELECT id FROM menu_items WHERE name = ? LIMIT 1', ['Rice + Russian']);
   const riceAndRussian = await get('SELECT id FROM menu_items WHERE name = ? LIMIT 1', ['Rice and Russian']);
