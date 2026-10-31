@@ -1279,7 +1279,15 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     ['Fruta Apple', 'Chilled Fruta apple drink.', 0.50, 'Drink', '/drinks-assortment.jpg'],
     ['Fruta orange', 'Chilled Fruta orange drink.', 0.50, 'Drink', '/drinks-assortment.jpg'],
     ['Fruta Pineapple', 'Chilled Fruta pineapple drink.', 0.50, 'Drink', '/drinks-assortment.jpg'],
-    ['Fruticana mango', 'Chilled Fruticana mango drink.', 0.75, 'Drink', '/drinks-assortment.jpg']
+    ['Fruticana mango', 'Chilled Fruticana mango drink.', 0.75, 'Drink', '/drinks-assortment.jpg'],
+    ['Chips and beef bones', 'Chips served with beef bones.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'],
+    ['Chips and pork', 'Chips served with pork.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'],
+    ['Chips and pork bones', 'Chips served with pork bones.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'],
+    ['Chips and T-bone', 'Chips served with grilled T-bone steak.', 3.00, 'Meals', 'https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=900&q=80'],
+    ['Coke', 'Chilled Coke soft drink.', 1.00, 'Drink', '/drinks-assortment.jpg'],
+    ['Coke 350ml', 'Chilled Coke soft drink, 350ml.', 0.75, 'Drink', '/drinks-assortment.jpg'],
+    ['Coleslaw', 'Fresh cabbage coleslaw.', 0.50, 'Meals', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=80'],
+    ['Cream soda', 'Chilled cream soda.', 1.00, 'Drink', '/drinks-assortment.jpg']
   ];
   for (const [name, description, price, category, image] of additionalMenuItems) {
     const existingItem = await get('SELECT id FROM menu_items WHERE name = ? LIMIT 1', [name]);
