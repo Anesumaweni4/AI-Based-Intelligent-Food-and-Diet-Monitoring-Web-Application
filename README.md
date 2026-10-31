@@ -19,8 +19,8 @@ This project is a simple web-based food ordering system designed for small and m
 - Staff login and admin dashboard
 - Admin-approved clients can charge orders to a monthly account; administrators can generate month-end statements and record payments
 - Admin revenue card tracks collected orders for the current local day and resets at the next local midnight
-- Admins and cashiers can add received stock or remove used stock from the stock controls; each movement is audited and removals cannot reduce inventory below zero
-- Placed customer orders automatically deduct ordered quantities from stock, and admin and cashier inventory refreshes every 12 seconds
+- Admins and cashiers track ingredient inventory separately from menu items in a daily Date / Item / Opening / Used / Added / Closing ledger; rice and mealie meal are measured in kilograms
+- Ingredient receipts and usage are recorded manually, and customer orders do not change ingredient stock; admin and cashier inventory refreshes every 12 seconds
 - Diet Monitoring highlights an hourly activity check-in and prompts the signed-in student while the page is open
 - Diet Monitoring explains nutrition estimates and suggests meal ideas based on each student's non-cancelled orders from the last 30 days
 - Diet Monitoring includes general wellbeing tips for balanced meals, hydration, movement, and rest
@@ -111,15 +111,16 @@ database, set `DATABASE_URL` and preview the changes first:
 npm.cmd run sync:stock:neon
 ```
 
-The preview matches menu items by name and refuses to proceed if names are
-missing or ambiguous. If the preview is correct, apply it with:
+The preview matches ingredient inventory items by name and unit, and refuses
+to proceed if names are missing or ambiguous. If the preview is correct, apply
+it with:
 
 ```powershell
 npm.cmd run sync:stock:neon -- --apply
 ```
 
-This updates only `menu_items.stock_quantity`; it does not change Neon orders,
-accounts, or stock-movement history. By default, the source is
+This updates only `inventory_items.current_quantity`; it does not change menu
+items, orders, accounts, or stock-movement history. By default, the source is
 `data/food-ordering-app.db`; set `SQLITE_DB_PATH` if the stock data is in a
 different SQLite file.
 

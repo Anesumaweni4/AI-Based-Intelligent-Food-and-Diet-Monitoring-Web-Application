@@ -7,13 +7,11 @@ const depositAmount = document.getElementById('deposit-amount');
 const cashierStatus = document.getElementById('cashier-status');
 const transactionsContainer = document.getElementById('credit-transactions');
 const stockReceiptForm = document.getElementById('stock-receipt-form');
-const stockMenuItem = document.getElementById('stock-menu-item');
+const stockItemSelect = document.getElementById('inventory-item-select');
 const stockQuantity = document.getElementById('stock-quantity');
+const stockUnit = document.getElementById('stock-unit');
 const stockStatus = document.getElementById('stock-status');
-const inventoryContainer = document.getElementById('cashier-inventory');
-const stockAlertsContainer = document.getElementById('stock-alerts');
-const stockReceiptsContainer = document.getElementById('stock-receipts');
-const STOCK_ALERT_THRESHOLD = 0;
+const stockLedgerBody = document.getElementById('stock-ledger-body');
 let selectedStudent = null;
 
 function escapeHtml(value) {
@@ -28,6 +26,10 @@ function escapeHtml(value) {
 
 function formatCurrency(cents) {
   return `$${(Number(cents) / 100).toFixed(2)}`;
+}
+
+function formatStockQuantity(quantity) {
+  return Number(quantity).toLocaleString(undefined, { maximumFractionDigits: 3 });
 }
 
 async function readApiResponse(response) {
@@ -92,50 +94,36 @@ async function loadInventory() {
     const result = await readApiResponse(response);
     if (!response.ok) throw new Error(result.message || 'Unable to load stock inventory.');
 
-    stockMenuItem.innerHTML = result.items.length
-      ? `<option value="">Choose a menu item</option>${result.items.map((item) => `
-          <option value="${Number(item.id)}">${escapeHtml(item.name)}</option>
+    stockItemSelect.innerHTML = result.items.length
+      ? `<option value="">Choose a stock item</option>${result.items.map((item) => `
+          <option value="${Number(item.id)}" data-unit="${escapeHtml(item.unit)}">${escapeHtml(item.name)} (${escapeHtml(item.unit)})</option>
         `).join('')}`
-      : '<option value="">No menu items available</option>';
-    stockMenuItem.disabled = !result.items.length;
-    const outOfStockItems = result.items.filter((item) => Number(item.stock_quantity) <= STOCK_ALERT_THRESHOLD);
-    const alertContent = outOfStockItems.length
-      ? `<strong>Out of stock alert: ${outOfStockItems.length} item${outOfStockItems.length === 1 ? '' : 's'} need restocking.</strong>
-         <ul>${outOfStockItems.map((item) => `<li>${escapeHtml(item.name)}</li>`).join('')}</ul>`
-      : '';
-    stockAlertsContainer.hidden = outOfStockItems.length === 0;
-    if (stockAlertsContainer.innerHTML !== alertContent) {
-      stockAlertsContainer.innerHTML = alertContent;
-    }
-    inventoryContainer.innerHTML = result.items.length
-      ? result.items.map((item) => `
-          <article class="cashier-inventory-card ${Number(item.stock_quantity) <= STOCK_ALERT_THRESHOLD ? 'out-of-stock' : ''}">
-            <span>${escapeHtml(item.category || 'Menu item')}</span>
-            <strong>${escapeHtml(item.name)}</strong>
-            ${Number(item.stock_quantity) <= STOCK_ALERT_THRESHOLD ? '<span class="stock-alert-badge">Out of stock</span>' : ''}
-            <b>${Number(item.stock_quantity)} <small>in stock</small></b>
-          </article>
+      : '<option value="">No stock items available</option>';
+    stockItemSelect.disabled = !result.items.length;
+    stockLedgerBody.innerHTML = result.ledger.length
+      ? result.ledger.map((entry) => `
+          <tr>
+            <td>${escapeHtml(entry.date)}</td>
+            <th scope="row">${escapeHtml(entry.item_name)}</th>
+            <td>${formatStockQuantity(entry.opening)} ${escapeHtml(entry.unit)}</td>
+            <td>${formatStockQuantity(entry.used)} ${escapeHtml(entry.unit)}</td>
+            <td>${formatStockQuantity(entry.added)} ${escapeHtml(entry.unit)}</td>
+            <td>${formatStockQuantity(entry.closing)} ${escapeHtml(entry.unit)}</td>
+          </tr>
         `).join('')
-      : '<div class="empty-state">No menu items are available.</div>';
-    stockReceiptsContainer.innerHTML = result.receipts.length
-      ? result.receipts.map((receipt) => `
-          <article class="cashier-stock-receipt">
-            <div><strong>${Number(receipt.quantity_change) > 0 ? '+' : '−'}${Math.abs(Number(receipt.quantity_change))} ${escapeHtml(receipt.item_name)}</strong>
-              <span>${receipt.type === 'used' ? 'Used' : 'Received'} by ${escapeHtml(receipt.received_by || 'staff')}</span></div>
-            <time>${escapeHtml(new Date(receipt.created_at).toLocaleString())}</time>
-          </article>
-        `).join('')
-      : '<div class="empty-state">No stock activity has been recorded yet.</div>';
+      : '<tr><td colspan="6">No stock activity has been recorded yet.</td></tr>';
     stockStatus.textContent = '';
   } catch (error) {
     stockStatus.textContent = error.message;
     stockStatus.classList.add('error');
-    stockAlertsContainer.hidden = true;
-    stockAlertsContainer.innerHTML = '';
-    inventoryContainer.innerHTML = '<div class="empty-state">Unable to load stock levels.</div>';
-    stockReceiptsContainer.innerHTML = '';
+    stockLedgerBody.innerHTML = '<tr><td colspan="6">Unable to load the stock ledger.</td></tr>';
   }
 }
+
+stockItemSelect.addEventListener('change', () => {
+  const selectedOption = stockItemSelect.selectedOptions[0];
+  stockUnit.textContent = selectedOption?.dataset.unit || 'kg';
+});
 
 stockReceiptForm.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -151,7 +139,7 @@ stockReceiptForm.addEventListener('submit', async (event) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        menuItemId: stockMenuItem.value,
+        inventoryItemId: stockItemSelect.value,
         quantity: stockQuantity.value
       })
     });

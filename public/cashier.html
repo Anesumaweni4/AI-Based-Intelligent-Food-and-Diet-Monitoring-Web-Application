@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Student Credit | THE KITCHEN</title>
-    <link rel="stylesheet" href="styles.css?v=stock-alerts-1" />
+    <link rel="stylesheet" href="styles.css?v=ingredient-stock-ledger-1" />
   </head>
   <body class="dashboard-body">
     <header class="topbar dashboard-header">
@@ -31,33 +31,42 @@
             <p class="eyebrow">Inventory control</p>
             <h3>Stock Control</h3>
           </div>
-          <p class="schedule-help">Select an item and quantity, then add stock received or remove stock used. Customer orders automatically reduce the available stock.</p>
+          <p class="schedule-help">Track ingredients separately from the customer menu. Record stock added and used in kilograms; customer orders do not change these balances.</p>
           <form id="stock-receipt-form" class="cashier-stock-form">
             <div class="field-group">
-              <label for="stock-menu-item">Menu item</label>
-              <select id="stock-menu-item" required>
-                <option value="">Loading menu items…</option>
+              <label for="inventory-item-select">Stock item</label>
+              <select id="inventory-item-select" required>
+                <option value="">Loading stock items…</option>
               </select>
             </div>
             <div class="field-group">
-              <label for="stock-quantity">Quantity</label>
-              <input id="stock-quantity" type="number" min="1" max="1000000" step="1" required />
+              <label for="stock-quantity">Quantity (<span id="stock-unit">kg</span>)</label>
+              <input id="stock-quantity" type="number" min="0.001" max="1000000" step="0.001" required />
             </div>
             <div class="cashier-stock-actions">
-              <button class="submit-btn" type="submit" name="stockAction" value="received">Add to Stock</button>
-              <button class="cashier-stock-remove-button" type="submit" name="stockAction" value="used">Remove from Stock</button>
+              <button class="submit-btn" type="submit" name="stockAction" value="received">Record Added</button>
+              <button class="cashier-stock-remove-button" type="submit" name="stockAction" value="used">Record Used</button>
             </div>
           </form>
           <p id="stock-status" class="schedule-status" role="status" aria-live="polite"></p>
-          <div id="stock-alerts" class="stock-alerts" role="status" aria-live="polite" hidden></div>
-          <div class="cashier-inventory-wrap">
-            <h4>Current stock</h4>
-            <div id="cashier-inventory" class="cashier-inventory-grid"></div>
+          <div class="cashier-stock-ledger-wrap">
+            <h4>Stock ledger</h4>
+            <div class="schedule-table-wrap">
+              <table class="schedule-table cashier-stock-ledger">
+                <thead>
+                  <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col">Item</th>
+                    <th scope="col">Opening</th>
+                    <th scope="col">Used</th>
+                    <th scope="col">Added</th>
+                    <th scope="col">Closing</th>
+                  </tr>
+                </thead>
+                <tbody id="stock-ledger-body"></tbody>
+              </table>
+            </div>
           </div>
-          <details class="cashier-stock-history">
-            <summary>Recent stock activity</summary>
-            <div id="stock-receipts" class="order-list cashier-stock-history-list"></div>
-          </details>
         </section>
 
         <section class="weekly-menu-section">
@@ -97,7 +106,7 @@
         </section>
       </div>
     </main>
-    <script src="cashier.js?v=credit-account-summary-2"></script>
+    <script src="cashier.js?v=ingredient-stock-ledger-1"></script>
     <script src="staff-dashboard-links.js?v=20261026-1"></script>
   </body>
 </html>

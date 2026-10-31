@@ -34,7 +34,7 @@ function normalizeName(name) {
 
 async function main() {
   if (!process.env.DATABASE_URL) {
-    throw new Error('Set DATABASE_URL to your Neon PostgreSQL connection string before syncing stock.');
+    throw new Error('Set DATABASE_URL to your Neon PostgreSQL connection string before syncing ingredient inventory.');
   }
 
   let source;
@@ -44,23 +44,25 @@ async function main() {
     source = await openSqliteReadOnly(sourcePath);
     const sourceItems = await sqliteAll(
       source,
-      'SELECT id, name, stock_quantity FROM menu_items ORDER BY id'
+      'SELECT id, name, unit, current_quantity FROM inventory_items ORDER BY id'
     );
     if (sourceItems.length === 0) {
-      throw new Error(`No menu items were found in the SQLite source: ${sourcePath}`);
+      throw new Error(`No ingredient inventory items were found in the SQLite source: ${sourcePath}`);
     }
 
     const sourceNames = new Set();
     for (const item of sourceItems) {
       if (typeof item.name !== 'string' || !item.name.trim()) {
-        throw new Error(`SQLite menu item ${item.id} has no valid name.`);
+        throw new Error(`SQLite inventory item ${item.id} has no valid name.`);
       }
-      if (!Number.isSafeInteger(item.stock_quantity) || item.stock_quantity < 0) {
-        throw new Error(`SQLite stock quantity for "${item.name}" must be a nonnegative whole number.`);
+      const quantity = Number(item.current_quantity);
+      if (!item.unit || !Number.isFinite(quantity) || quantity < 0 ||
+          quantity > 999999999.999 || Math.abs(quantity * 1000 - Math.round(quantity * 1000)) > 1e-7) {
+        throw new Error(`SQLite inventory quantity for "${item.name}" must be nonnegative and use at most three decimal places.`);
       }
       const name = normalizeName(item.name);
       if (sourceNames.has(name)) {
-        throw new Error(`SQLite has more than one menu item named "${item.name}".`);
+        throw new Error(`SQLite has more than one inventory item named "${item.name}".`);
       }
       sourceNames.add(name);
     }
@@ -74,13 +76,13 @@ async function main() {
     transactionStarted = true;
 
     const targetResult = await client.query(
-      'SELECT id, name, stock_quantity FROM menu_items ORDER BY id FOR UPDATE'
+      'SELECT id, name, unit, current_quantity FROM inventory_items ORDER BY id FOR UPDATE'
     );
     const targetByName = new Map();
     for (const item of targetResult.rows) {
       const name = normalizeName(item.name);
       if (targetByName.has(name)) {
-        throw new Error(`Neon has more than one menu item named "${item.name}"; no stock was changed.`);
+        throw new Error(`Neon has more than one inventory item named "${item.name}"; no stock was changed.`);
       }
       targetByName.set(name, item);
     }
@@ -88,7 +90,7 @@ async function main() {
     const missingItems = sourceItems.filter((item) => !targetByName.has(normalizeName(item.name)));
     if (missingItems.length) {
       throw new Error(
-        `These SQLite menu items are missing from Neon: ${missingItems.map(({ name }) => name).join(', ')}. No stock was changed.`
+        `These SQLite inventory items are missing from Neon: ${missingItems.map(({ name }) => name).join(', ')}. No stock was changed.`
       );
     }
 
@@ -97,14 +99,18 @@ async function main() {
       target: targetByName.get(normalizeName(item.name))
     }));
     for (const { source: sourceItem, target } of updates) {
-      console.log(`${sourceItem.name}: Neon ${Number(target.stock_quantity)} -> SQLite ${sourceItem.stock_quantity}`);
+      if (target.unit !== sourceItem.unit) {
+        throw new Error(`Inventory unit mismatch for "${sourceItem.name}": SQLite uses ${sourceItem.unit}, Neon uses ${target.unit}. No stock was changed.`);
+      }
+      const quantity = Number(sourceItem.current_quantity);
+      console.log(`${sourceItem.name} (${sourceItem.unit}): Neon ${Number(target.current_quantity)} -> SQLite ${quantity}`);
       if (applyChanges) {
         const result = await client.query(
-          'UPDATE menu_items SET stock_quantity = $1 WHERE id = $2 RETURNING stock_quantity',
-          [sourceItem.stock_quantity, target.id]
+          'UPDATE inventory_items SET current_quantity = $1 WHERE id = $2 RETURNING current_quantity',
+          [quantity, target.id]
         );
-        if (result.rowCount !== 1 || Number(result.rows[0].stock_quantity) !== sourceItem.stock_quantity) {
-          throw new Error(`Stock verification failed for "${sourceItem.name}".`);
+        if (result.rowCount !== 1 || Number(result.rows[0].current_quantity) !== quantity) {
+          throw new Error(`Inventory verification failed for "${sourceItem.name}".`);
         }
       }
     }
@@ -112,11 +118,11 @@ async function main() {
     if (applyChanges) {
       await client.query('COMMIT');
       transactionStarted = false;
-      console.log(`Stock sync complete for ${updates.length} menu items. Neon orders and accounts were not changed.`);
+      console.log(`Ingredient inventory sync complete for ${updates.length} items. Menu items, orders, and accounts were not changed.`);
     } else {
       await client.query('ROLLBACK');
       transactionStarted = false;
-      console.log(`Preview only: ${updates.length} menu items matched. Re-run with -- --apply to update Neon stock.`);
+      console.log(`Preview only: ${updates.length} ingredient items matched. Re-run with -- --apply to update Neon inventory.`);
     }
   } catch (error) {
     if (client && transactionStarted) {
@@ -138,6 +144,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error('Neon stock sync failed:', error.message);
+  console.error('Neon ingredient inventory sync failed:', error.message);
   process.exitCode = 1;
 });

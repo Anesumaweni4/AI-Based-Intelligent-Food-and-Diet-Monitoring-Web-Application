@@ -518,6 +518,78 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
   }
 
   if (postgresPool) {
+    await postgresPool.query(`
+      CREATE TABLE IF NOT EXISTS inventory_items (
+        id BIGSERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL UNIQUE,
+        unit VARCHAR(20) NOT NULL,
+        current_quantity DECIMAL(12,3) NOT NULL DEFAULT 0
+      )
+    `);
+    await postgresPool.query(`
+      CREATE TABLE IF NOT EXISTS inventory_movements (
+        id BIGSERIAL PRIMARY KEY,
+        inventory_item_id BIGINT NOT NULL REFERENCES inventory_items(id),
+        movement_date DATE NOT NULL,
+        quantity DECIMAL(12,3) NOT NULL,
+        type VARCHAR(16) NOT NULL,
+        created_by BIGINT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await postgresPool.query(`
+      CREATE INDEX IF NOT EXISTS idx_inventory_movements_item_date
+      ON inventory_movements (inventory_item_id, movement_date, id)
+    `);
+  } else if (sqliteDb) {
+    await sqliteRun(`
+      CREATE TABLE IF NOT EXISTS inventory_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        unit TEXT NOT NULL,
+        current_quantity DECIMAL(12,3) NOT NULL DEFAULT 0
+      )
+    `);
+    await sqliteRun(`
+      CREATE TABLE IF NOT EXISTS inventory_movements (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inventory_item_id INTEGER NOT NULL REFERENCES inventory_items(id),
+        movement_date DATE NOT NULL,
+        quantity DECIMAL(12,3) NOT NULL,
+        type TEXT NOT NULL,
+        created_by INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await sqliteRun(`
+      CREATE INDEX IF NOT EXISTS idx_inventory_movements_item_date
+      ON inventory_movements (inventory_item_id, movement_date, id)
+    `);
+  } else {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS inventory_items (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) NOT NULL UNIQUE,
+        unit VARCHAR(20) NOT NULL,
+        current_quantity DECIMAL(12,3) NOT NULL DEFAULT 0
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS inventory_movements (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        inventory_item_id INT NOT NULL,
+        movement_date DATE NOT NULL,
+        quantity DECIMAL(12,3) NOT NULL,
+        type VARCHAR(16) NOT NULL,
+        created_by INT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_inventory_movements_item_date (inventory_item_id, movement_date, id),
+        FOREIGN KEY (inventory_item_id) REFERENCES inventory_items(id)
+      )
+    `);
+  }
+
+  if (postgresPool) {
     await postgresPool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS age INTEGER');
     await postgresPool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255)');
     await postgresPool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS recovery_whatsapp VARCHAR(20)');
@@ -987,6 +1059,8 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
       'monthly_invoice_orders',
       'users',
       'stock_movements',
+      'inventory_items',
+      'inventory_movements',
       'account_transactions',
       'password_reset_tokens',
       'diet_profiles',
@@ -1005,6 +1079,16 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
   }
 
   if (!seedData) return;
+
+  for (const [name, unit] of [['Rice', 'kg'], ['Mealie meal', 'kg']]) {
+    const existingItem = await get('SELECT id FROM inventory_items WHERE name = ? LIMIT 1', [name]);
+    if (!existingItem) {
+      await run(
+        'INSERT INTO inventory_items (name, unit, current_quantity) VALUES (?, ?, ?)',
+        [name, unit, 0]
+      );
+    }
+  }
 
   const adminUser = await get('SELECT * FROM users WHERE username = ?', ['admin']);
   const configuredAdminPassword = process.env.ADMIN_PASSWORD;

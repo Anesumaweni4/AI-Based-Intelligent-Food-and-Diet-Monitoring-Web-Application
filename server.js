@@ -363,6 +363,15 @@ function getCurrentMenuDay() {
   return { dayOfWeek, date, dayName: WEEKDAY_NAMES[dayOfWeek] };
 }
 
+function parseInventoryQuantity(value) {
+  const quantity = Number(value);
+  if (!Number.isFinite(quantity) || quantity <= 0 || quantity > 1000000 ||
+      Math.abs(quantity * 1000 - Math.round(quantity * 1000)) > 1e-7) {
+    return null;
+  }
+  return Number(quantity.toFixed(3));
+}
+
 function getCurrentRevenueDayRange() {
   const now = new Date();
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -1867,128 +1876,155 @@ app.post('/api/admin/cashiers', async (req, res) => {
 
 app.get('/api/cashier/inventory', requireCashierOrAdminApi, async (req, res) => {
   try {
-    const items = await all('SELECT id, name, category, stock_quantity FROM menu_items ORDER BY category, name');
-    const receipts = await all(
-      `SELECT m.id, m.menu_item_id, m.quantity_change, m.type, m.created_at,
-              i.name AS item_name, u.full_name AS received_by
-       FROM stock_movements m
-       JOIN menu_items i ON i.id = m.menu_item_id
-       LEFT JOIN users u ON u.id = m.created_by
-       WHERE m.type IN ('received', 'used')
-       ORDER BY m.id DESC
-       LIMIT 20`
+    const items = await all(
+      'SELECT id, name, unit, current_quantity FROM inventory_items ORDER BY name'
     );
-    res.json({ items, receipts });
+    const movements = await all(
+      `SELECT m.id, m.inventory_item_id, m.movement_date, m.quantity, m.type,
+              i.name AS item_name, i.unit, u.full_name AS recorded_by
+       FROM inventory_movements m
+       JOIN inventory_items i ON i.id = m.inventory_item_id
+       LEFT JOIN users u ON u.id = m.created_by
+       ORDER BY m.movement_date, m.id`
+    );
+    const balances = new Map(items.map((item) => [
+      Number(item.id),
+      Math.round(Number(item.current_quantity) * 1000)
+    ]));
+    for (const movement of movements) {
+      const itemId = Number(movement.inventory_item_id);
+      const quantity = Math.round(Number(movement.quantity) * 1000);
+      const currentOpening = balances.get(itemId);
+      if (currentOpening === undefined) continue;
+      balances.set(
+        itemId,
+        currentOpening + (movement.type === 'used' ? quantity : movement.type === 'received' ? -quantity : 0)
+      );
+    }
+
+    const ledgerByDay = new Map();
+    for (const movement of movements) {
+      const itemId = Number(movement.inventory_item_id);
+      const movementDate = movement.movement_date;
+      const date = movement.movement_date instanceof Date
+        ? [
+          movementDate.getFullYear(),
+          String(movementDate.getMonth() + 1).padStart(2, '0'),
+          String(movementDate.getDate()).padStart(2, '0')
+        ].join('-')
+        : String(movementDate).slice(0, 10);
+      const key = `${date}:${itemId}`;
+      let ledger = ledgerByDay.get(key);
+      if (!ledger) {
+        const opening = balances.get(itemId);
+        if (opening === undefined) continue;
+        ledger = {
+          date,
+          item_name: movement.item_name,
+          unit: movement.unit,
+          opening,
+          used: 0,
+          added: 0,
+          closing: opening
+        };
+        ledgerByDay.set(key, ledger);
+      }
+
+      const quantity = Math.round(Number(movement.quantity) * 1000);
+      if (movement.type === 'used') {
+        ledger.used += quantity;
+        ledger.closing -= quantity;
+      } else if (movement.type === 'received') {
+        ledger.added += quantity;
+        ledger.closing += quantity;
+      }
+      balances.set(itemId, ledger.closing);
+    }
+
+    const ledger = Array.from(ledgerByDay.values(), (entry) => ({
+      ...entry,
+      opening: entry.opening / 1000,
+      used: entry.used / 1000,
+      added: entry.added / 1000,
+      closing: entry.closing / 1000
+    }))
+      .sort((left, right) => right.date.localeCompare(left.date) || left.item_name.localeCompare(right.item_name));
+    res.json({ items, ledger });
   } catch (error) {
     console.error('Error loading stock inventory:', error);
     res.status(500).json({ message: 'Unable to load stock inventory.' });
   }
 });
 
-app.post('/api/cashier/stock-usage', requireCashierOrAdminApi, async (req, res) => {
+async function recordInventoryMovement(req, res, type) {
   try {
-    const menuItemId = Number(req.body.menuItemId);
-    const quantity = Number(req.body.quantity);
-    if (!Number.isSafeInteger(menuItemId) || menuItemId <= 0 ||
-        !Number.isSafeInteger(quantity) || quantity <= 0 || quantity > 1000000) {
-      return res.status(400).json({ message: 'Select a menu item and enter a whole-number quantity used.' });
+    const inventoryItemId = Number(req.body.inventoryItemId);
+    const quantity = parseInventoryQuantity(req.body.quantity);
+    if (!Number.isSafeInteger(inventoryItemId) || inventoryItemId <= 0 || quantity === null) {
+      return res.status(400).json({ message: 'Select a stock item and enter a quantity up to three decimal places.' });
     }
 
     const item = await withTransaction(async (transaction) => {
       const existing = await transaction.get(
-        'SELECT id, name, stock_quantity FROM menu_items WHERE id = ?',
-        [menuItemId]
+        'SELECT id, name, unit, current_quantity FROM inventory_items WHERE id = ?',
+        [inventoryItemId]
       );
       if (!existing) {
-        const error = new Error('That menu item could not be found.');
+        const error = new Error('That stock item could not be found.');
         error.statusCode = 404;
         throw error;
       }
 
-      const update = await transaction.run(
-        'UPDATE menu_items SET stock_quantity = stock_quantity - ? WHERE id = ? AND stock_quantity >= ?',
-        [quantity, menuItemId, quantity]
-      );
+      const update = type === 'used'
+        ? await transaction.run(
+          'UPDATE inventory_items SET current_quantity = current_quantity - ? WHERE id = ? AND current_quantity >= ?',
+          [quantity, inventoryItemId, quantity]
+        )
+        : await transaction.run(
+          'UPDATE inventory_items SET current_quantity = current_quantity + ? WHERE id = ? AND current_quantity <= ?',
+          [quantity, inventoryItemId, 999999999.999 - quantity]
+        );
       if (update.changes !== 1) {
-        const error = new Error(`Only ${Number(existing.stock_quantity)} ${existing.name} are currently in stock.`);
-        error.statusCode = 409;
+        const error = type === 'used'
+          ? new Error(`Only ${Number(existing.current_quantity)} ${existing.unit} of ${existing.name} are currently in stock.`)
+          : new Error('The resulting stock quantity is too large to save.');
+        error.statusCode = type === 'used' ? 409 : 400;
         throw error;
       }
 
       await transaction.run(
-        `INSERT INTO stock_movements (menu_item_id, quantity_change, type, created_by)
-         VALUES (?, ?, 'used', ?)`,
-        [menuItemId, -quantity, req.accountUser.id]
+        `INSERT INTO inventory_movements
+          (inventory_item_id, movement_date, quantity, type, created_by)
+         VALUES (?, ?, ?, ?, ?)`,
+        [inventoryItemId, getCurrentMenuDay().date, quantity, type, req.accountUser.id]
       );
       return transaction.get(
-        'SELECT id, name, stock_quantity FROM menu_items WHERE id = ?',
-        [menuItemId]
+        'SELECT id, name, unit, current_quantity FROM inventory_items WHERE id = ?',
+        [inventoryItemId]
       );
     });
 
     res.status(201).json({
-      message: `Removed ${quantity} ${item.name} from stock.`,
+      message: type === 'used'
+        ? `Recorded ${quantity} ${item.unit} of ${item.name} used.`
+        : `Added ${quantity} ${item.unit} of ${item.name} to stock.`,
       item
     });
   } catch (error) {
     if (error.statusCode) {
       return res.status(error.statusCode).json({ message: error.message });
     }
-    console.error('Error recording used stock:', error);
-    res.status(500).json({ message: 'Unable to subtract used stock.' });
+    console.error(`Error recording inventory ${type}:`, error);
+    res.status(500).json({ message: 'Unable to update stock inventory.' });
   }
+}
+
+app.post('/api/cashier/stock-usage', requireCashierOrAdminApi, (req, res) => {
+  return recordInventoryMovement(req, res, 'used');
 });
 
-app.post('/api/cashier/stock-receipts', requireCashierOrAdminApi, async (req, res) => {
-  try {
-    const menuItemId = Number(req.body.menuItemId);
-    const quantity = Number(req.body.quantity);
-    if (!Number.isSafeInteger(menuItemId) || menuItemId <= 0 ||
-        !Number.isSafeInteger(quantity) || quantity <= 0 || quantity > 1000000) {
-      return res.status(400).json({ message: 'Select a menu item and enter a whole-number quantity received.' });
-    }
-
-    const item = await withTransaction(async (transaction) => {
-      const existing = await transaction.get(
-        'SELECT id, name, stock_quantity FROM menu_items WHERE id = ?',
-        [menuItemId]
-      );
-      if (!existing) {
-        const error = new Error('That menu item could not be found.');
-        error.statusCode = 404;
-        throw error;
-      }
-      const update = await transaction.run(
-        'UPDATE menu_items SET stock_quantity = stock_quantity + ? WHERE id = ? AND stock_quantity <= ?',
-        [quantity, menuItemId, 2147483647 - quantity]
-      );
-      if (update.changes !== 1) {
-        const error = new Error('The resulting stock quantity is too large to save.');
-        error.statusCode = 400;
-        throw error;
-      }
-      await transaction.run(
-        `INSERT INTO stock_movements (menu_item_id, quantity_change, type, created_by)
-         VALUES (?, ?, 'received', ?)`,
-        [menuItemId, quantity, req.accountUser.id]
-      );
-      const updated = await transaction.get(
-        'SELECT id, name, stock_quantity FROM menu_items WHERE id = ?',
-        [menuItemId]
-      );
-      return updated;
-    });
-    res.status(201).json({
-      message: `Added ${quantity} ${item.name} to stock.`,
-      item
-    });
-  } catch (error) {
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({ message: error.message });
-    }
-    console.error('Error recording received stock:', error);
-    res.status(500).json({ message: 'Unable to record received stock.' });
-  }
+app.post('/api/cashier/stock-receipts', requireCashierOrAdminApi, (req, res) => {
+  return recordInventoryMovement(req, res, 'received');
 });
 
 app.get('/api/cashier/students', requireCashierOrAdminApi, async (req, res) => {
@@ -2180,7 +2216,7 @@ app.get('/api/menu', async (req, res) => {
   try {
     const today = getCurrentMenuDay();
     const menuItems = await all(
-      `SELECT mi.*
+      `SELECT mi.id, mi.name, mi.description, mi.price, mi.category, mi.image
        FROM menu_items mi
        JOIN menu_schedule ms ON ms.menu_item_id = mi.id
        WHERE ms.day_of_week = ?
@@ -2196,7 +2232,9 @@ app.get('/api/menu', async (req, res) => {
 
 app.get('/api/admin/menu-schedule', async (req, res) => {
   try {
-    const menuItems = await all('SELECT * FROM menu_items ORDER BY category, id');
+    const menuItems = await all(
+      'SELECT id, name, description, price, category, image FROM menu_items ORDER BY category, id'
+    );
     const schedule = await all('SELECT day_of_week, menu_item_id FROM menu_schedule');
     res.json({
       weekdays: WEEKDAY_NAMES,
@@ -2305,7 +2343,7 @@ app.post('/api/orders', requireStudentApi, async (req, res) => {
 
     const today = getCurrentMenuDay();
     const menuItems = await all(
-      `SELECT mi.*
+      `SELECT mi.id, mi.name, mi.description, mi.price, mi.category, mi.image
        FROM menu_items mi
        JOIN menu_schedule ms ON ms.menu_item_id = mi.id
        WHERE ms.day_of_week = ?`,
@@ -2369,28 +2407,6 @@ app.post('/api/orders', requireStudentApi, async (req, res) => {
         ]
       );
       for (const orderItem of orderItems) {
-        const stockUpdate = await transaction.run(
-          'UPDATE menu_items SET stock_quantity = stock_quantity - ? WHERE id = ? AND stock_quantity >= ?',
-          [orderItem.quantity, orderItem.menu_item_id, orderItem.quantity]
-        );
-        if (stockUpdate.changes !== 1) {
-          const menuItem = await transaction.get(
-            'SELECT name, stock_quantity FROM menu_items WHERE id = ?',
-            [orderItem.menu_item_id]
-          );
-          const error = new Error(
-            menuItem
-              ? `Not enough ${menuItem.name} in stock. Only ${Number(menuItem.stock_quantity)} available.`
-              : 'A menu item in this order is no longer available.'
-          );
-          error.statusCode = 409;
-          throw error;
-        }
-        await transaction.run(
-          `INSERT INTO stock_movements (menu_item_id, quantity_change, type, order_id)
-           VALUES (?, ?, 'sale', ?)`,
-          [orderItem.menu_item_id, -orderItem.quantity, orderResult.id]
-        );
         await transaction.run(
           'INSERT INTO order_items (order_id, menu_item_id, quantity, unit_price) VALUES (?, ?, ?, ?)',
           [orderResult.id, orderItem.menu_item_id, orderItem.quantity, orderItem.unit_price]
@@ -2501,26 +2517,6 @@ app.patch('/api/orders/:id/status', requireCashierOrAdminApi, async (req, res) =
         const error = new Error('The order changed before this update. Refresh and try again.');
         error.statusCode = 409;
         throw error;
-      }
-      if (status === 'Cancelled') {
-        const soldStock = await transaction.all(
-          `SELECT menu_item_id, quantity_change
-           FROM stock_movements
-           WHERE order_id = ? AND type = 'sale'`,
-          [order.id]
-        );
-        for (const movement of soldStock) {
-          const returnedQuantity = -Number(movement.quantity_change);
-          await transaction.run(
-            'UPDATE menu_items SET stock_quantity = stock_quantity + ? WHERE id = ?',
-            [returnedQuantity, movement.menu_item_id]
-          );
-          await transaction.run(
-            `INSERT INTO stock_movements (menu_item_id, quantity_change, type, order_id, created_by)
-             VALUES (?, ?, 'return', ?, ?)`,
-            [movement.menu_item_id, returnedQuantity, order.id, req.accountUser.id]
-          );
-        }
       }
       if (status === 'Cancelled' && order.user_id && order.payment_method === 'credit') {
         const refundCents = Math.round(Number(order.total) * 100);

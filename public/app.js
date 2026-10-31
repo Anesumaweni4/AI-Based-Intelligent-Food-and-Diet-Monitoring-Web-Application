@@ -283,7 +283,7 @@ function renderCart() {
       <div class="qty-controls">
         <button type="button" data-action="decrease" data-id="${item.id}">-</button>
         <span>${item.quantity}</span>
-        <button type="button" data-action="increase" data-id="${item.id}" ${item.quantity >= Number(item.stock_quantity) ? 'disabled' : ''}>+</button>
+        <button type="button" data-action="increase" data-id="${item.id}">+</button>
       </div>
       <div>${formatCurrency(item.price * item.quantity)}</div>
       <button type="button" class="remove-btn" data-action="remove" data-id="${item.id}">Remove</button>
@@ -298,10 +298,6 @@ function addToCart(menuId) {
   if (!selected) return;
 
   const existing = getCartItem(menuId);
-  if (Number(existing ? existing.quantity : 0) >= Number(selected.stock_quantity)) {
-    showToast(`Only ${Number(selected.stock_quantity)} ${selected.name} available in stock`);
-    return;
-  }
   if (existing) {
     existing.quantity += 1;
   } else {
@@ -316,10 +312,6 @@ function changeQuantity(menuId, delta) {
   const item = getCartItem(menuId);
   if (!item) return;
 
-  if (delta > 0 && item.quantity >= Number(item.stock_quantity)) {
-    showToast(`Only ${Number(item.stock_quantity)} ${item.name} available in stock`);
-    return;
-  }
   item.quantity += delta;
   if (item.quantity <= 0) {
     cart = cart.filter(entry => entry.id !== menuId);
@@ -350,8 +342,7 @@ async function loadMenu() {
   if (!response.ok) throw new Error(result.message || 'Failed to load menu');
   menu = result.items.map(item => ({
     ...item,
-    id: Number(item.id),
-    stock_quantity: Number(item.stock_quantity)
+    id: Number(item.id)
   }));
   menuDateEl.textContent = `${result.dayName}, ${result.date} — today's meals`;
 
@@ -376,7 +367,7 @@ async function loadMenu() {
               <p>Juices, soft drinks, and smoothies.</p>
               <div class="meta-row">
                 <span class="price">From ${formatCurrency(Math.min(...drinkItems.map(drink => Number(drink.price))))}</span>
-                <button type="button" class="add-btn" data-action="choose-drink" ${drinkItems.every(drink => Number(drink.stock_quantity) === 0) ? 'disabled' : ''}>Choose</button>
+                <button type="button" class="add-btn" data-action="choose-drink">Choose</button>
               </div>
             </div>
           </article>
@@ -407,10 +398,7 @@ async function loadMenu() {
           ` : ''}
           <div class="meta-row">
             <span class="price" ${isBeefBurger ? 'data-burger-price' : ''}>${formatCurrency(item.price)}</span>
-            <span class="menu-stock" ${isBeefBurger ? 'data-burger-stock' : ''}${Number(item.stock_quantity) === 0 ? ' hidden' : ''}>
-              ${Number(item.stock_quantity) === 0 ? '' : `${Number(item.stock_quantity)} available`}
-            </span>
-            <button type="button" class="add-btn" data-id="${Number(item.id)}" ${Number(item.stock_quantity) === 0 ? 'disabled' : ''}>Add</button>
+            <button type="button" class="add-btn" data-id="${Number(item.id)}">Add</button>
           </div>
         </div>
       </article>
@@ -426,13 +414,7 @@ async function loadMenu() {
       const card = select.closest('.menu-card');
       card.querySelector('[data-burger-price]').textContent = formatCurrency(selected.price);
       const addButton = card.querySelector('.add-btn');
-      const stockLabel = card.querySelector('[data-burger-stock]');
       addButton.dataset.id = String(selected.id);
-      addButton.disabled = Number(selected.stock_quantity) === 0;
-      stockLabel.textContent = Number(selected.stock_quantity) > 0
-        ? `${Number(selected.stock_quantity)} available`
-        : '';
-      stockLabel.hidden = Number(selected.stock_quantity) === 0;
     });
   });
 
@@ -452,12 +434,9 @@ function openDrinkPicker() {
       <div>
         <strong>${escapeHtml(item.name)}</strong>
         <span>${escapeHtml(item.description || '')}</span>
-        <span class="menu-stock"${Number(item.stock_quantity) === 0 ? ' hidden' : ''}>
-          ${Number(item.stock_quantity) > 0 ? `${Number(item.stock_quantity)} available` : ''}
-        </span>
       </div>
       <strong class="drink-picker-price">${formatCurrency(item.price)}</strong>
-      <button type="button" class="add-btn" data-id="${Number(item.id)}" ${Number(item.stock_quantity) === 0 ? 'disabled' : ''}>Add</button>
+      <button type="button" class="add-btn" data-id="${Number(item.id)}">Add</button>
     </div>
   `).join('');
   drinkPickerOptions.querySelectorAll('.add-btn').forEach(button => {
