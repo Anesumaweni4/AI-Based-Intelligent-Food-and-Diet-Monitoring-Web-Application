@@ -1257,7 +1257,13 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     ['Sadza and chicken curry', 'Sadza served with chicken curry.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=900&q=80'],
     ['Sadza and chicken stew', 'Sadza served with chicken stew.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'],
     ['Sadza and chicken stirfry', 'Sadza served with chicken stir-fry.', 3.00, 'Meals', 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80'],
-    ['Sadza and Guru', 'Sadza served with guru.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80']
+    ['Sadza and Guru', 'Sadza served with guru.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'],
+    ['Spaghetti and meatballs', 'Spaghetti served with meatballs.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1551892374-ecf8754cf8b0?auto=format&fit=crop&w=900&q=80'],
+    ['Spaghetti and mince', 'Spaghetti served with minced beef sauce.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1551892374-ecf8754cf8b0?auto=format&fit=crop&w=900&q=80'],
+    ['Spaghetti and Pork', 'Spaghetti served with pork.', 2.50, 'Meals', 'https://images.unsplash.com/photo-1551892374-ecf8754cf8b0?auto=format&fit=crop&w=900&q=80'],
+    ['Spar letta Cherry', 'Chilled Sparletta cherry soft drink.', 1.00, 'Drink', '/drinks-assortment.jpg'],
+    ['Sparletta cherry 350 ml', 'Chilled Sparletta cherry soft drink, 350 ml.', 0.75, 'Drink', '/drinks-assortment.jpg'],
+    ['Sparletta cream soda', 'Chilled Sparletta cream soda.', 0.75, 'Drink', '/drinks-assortment.jpg']
   ];
   for (const [name, description, price, category, image] of additionalMenuItems) {
     const existingItem = await get('SELECT id FROM menu_items WHERE name = ? LIMIT 1', [name]);
