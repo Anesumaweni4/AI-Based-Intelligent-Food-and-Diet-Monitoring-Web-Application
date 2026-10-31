@@ -1294,7 +1294,14 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     ['Rice dovi and beef', 'Rice served with beef and dovi sauce.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80'],
     ['Rice dovi and chicken', 'Rice served with chicken and dovi sauce.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=900&q=80'],
     ['Rice dovi and Guru', 'Rice served with guru and dovi sauce.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'],
-    ['Rice dovi and T-bone', 'Rice served with grilled T-bone and dovi sauce.', 2.50, 'Meals', 'https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=900&q=80']
+    ['Rice dovi and T-bone', 'Rice served with grilled T-bone and dovi sauce.', 2.50, 'Meals', 'https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=900&q=80'],
+    ['Fruticana Pineapple', 'Chilled Fruticana pineapple drink.', 0.75, 'Drink', '/drinks-assortment.jpg'],
+    ['Garden salad', 'Fresh garden salad.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=80'],
+    ['Guru', 'Cooked guru.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'],
+    ['Hotdog', 'Hotdog in a soft roll.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=900&q=80'],
+    ['Hotdog and chips', 'Hotdog served with chips.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=900&q=80'],
+    ['Juice 2Go', 'Chilled Juice 2Go.', 0.75, 'Drink', '/drinks-assortment.jpg'],
+    ['Mince', 'Seasoned minced beef.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80']
   ];
   const legacyRiceAndRussian = await get('SELECT id FROM menu_items WHERE name = ? LIMIT 1', ['Rice + Russian']);
   const riceAndRussian = await get('SELECT id FROM menu_items WHERE name = ? LIMIT 1', ['Rice and Russian']);
