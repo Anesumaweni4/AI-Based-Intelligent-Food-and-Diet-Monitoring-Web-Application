@@ -1080,7 +1080,25 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
 
   if (!seedData) return;
 
-  for (const [name, unit] of [['Rice', 'kg'], ['Mealie meal', 'kg']]) {
+  const starterInventoryItems = [
+    ['Rice', 'kg'],
+    ['Mealie meal', 'kg'],
+    ['Potatoes', 'kg'],
+    ['Cooking oil', 'L'],
+    ['Russian sausages', 'pieces'],
+    ['Pepsi', 'bottles'],
+    ['Coca-Cola', 'bottles'],
+    ['Fanta', 'bottles'],
+    ['Sprite', 'bottles'],
+    ['Cream soda', 'bottles'],
+    ['Bottled water', 'bottles'],
+    ['Schweppes Lemon', 'bottles'],
+    ['Stoney', 'bottles'],
+    ['Sparletta cherry', 'bottles'],
+    ['Juice 2Go', 'units']
+  ];
+
+  for (const [name, unit] of starterInventoryItems) {
     const existingItem = await get('SELECT id FROM inventory_items WHERE name = ? LIMIT 1', [name]);
     if (!existingItem) {
       await run(
