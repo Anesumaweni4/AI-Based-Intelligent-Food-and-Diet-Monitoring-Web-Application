@@ -1083,9 +1083,13 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
   const starterInventoryItems = [
     ['Rice', 'kg'],
     ['Mealie meal', 'kg'],
-    ['Potatoes', 'kg'],
+    ['Potatoes', 'packets'],
     ['Cooking oil', 'L'],
+    ['Sausages', 'kg'],
+    ['Burgers', 'pieces'],
+    ['Burger patties', 'pieces'],
     ['Russian sausages', 'pieces'],
+    ['Hotdogs', 'pieces'],
     ['Pepsi', 'bottles'],
     ['Coca-Cola', 'bottles'],
     ['Fanta', 'bottles'],
@@ -1097,6 +1101,28 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     ['Sparletta cherry', 'bottles'],
     ['Juice 2Go', 'units']
   ];
+
+  const existingPotatoes = await get(
+    'SELECT id, unit, current_quantity FROM inventory_items WHERE name = ? LIMIT 1',
+    ['Potatoes']
+  );
+  if (existingPotatoes && existingPotatoes.unit !== 'packets') {
+    const movementCount = await get(
+      'SELECT COUNT(*) AS count FROM inventory_movements WHERE inventory_item_id = ?',
+      [existingPotatoes.id]
+    );
+    if (Number(existingPotatoes.current_quantity) > 0 || Number(movementCount.count) > 0) {
+      await run(
+        'UPDATE inventory_items SET name = ? WHERE id = ?',
+        [`Potatoes (${existingPotatoes.unit} - previous stock #${existingPotatoes.id})`, existingPotatoes.id]
+      );
+    } else {
+      await run(
+        'UPDATE inventory_items SET unit = ? WHERE id = ?',
+        ['packets', existingPotatoes.id]
+      );
+    }
+  }
 
   for (const [name, unit] of starterInventoryItems) {
     const existingItem = await get('SELECT id FROM inventory_items WHERE name = ? LIMIT 1', [name]);
@@ -1519,7 +1545,7 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     if (!existingInventoryItem) {
       await run(
         'INSERT INTO inventory_items (name, unit, current_quantity) VALUES (?, ?, ?)',
-        [inventoryName, inventoryName === 'Fruit Smoothie' ? 'servings' : 'units', 0]
+        [inventoryName, drink.name === 'Fruit Smoothie' ? 'servings' : 'bottles', 0]
       );
     }
   }
