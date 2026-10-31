@@ -407,8 +407,8 @@ async function loadMenu() {
           ` : ''}
           <div class="meta-row">
             <span class="price" ${isBeefBurger ? 'data-burger-price' : ''}>${formatCurrency(item.price)}</span>
-            <span class="menu-stock ${Number(item.stock_quantity) === 0 ? 'out-of-stock' : ''}" ${isBeefBurger ? 'data-burger-stock' : ''}>
-              ${Number(item.stock_quantity) === 0 ? 'Out of stock' : `${Number(item.stock_quantity)} available`}
+            <span class="menu-stock" ${isBeefBurger ? 'data-burger-stock' : ''}${Number(item.stock_quantity) === 0 ? ' hidden' : ''}>
+              ${Number(item.stock_quantity) === 0 ? '' : `${Number(item.stock_quantity)} available`}
             </span>
             <button type="button" class="add-btn" data-id="${Number(item.id)}" ${Number(item.stock_quantity) === 0 ? 'disabled' : ''}>Add</button>
           </div>
@@ -429,10 +429,10 @@ async function loadMenu() {
       const stockLabel = card.querySelector('[data-burger-stock]');
       addButton.dataset.id = String(selected.id);
       addButton.disabled = Number(selected.stock_quantity) === 0;
-      stockLabel.textContent = Number(selected.stock_quantity) === 0
-        ? 'Out of stock'
-        : `${Number(selected.stock_quantity)} available`;
-      stockLabel.classList.toggle('out-of-stock', Number(selected.stock_quantity) === 0);
+      stockLabel.textContent = Number(selected.stock_quantity) > 0
+        ? `${Number(selected.stock_quantity)} available`
+        : '';
+      stockLabel.hidden = Number(selected.stock_quantity) === 0;
     });
   });
 
@@ -452,8 +452,8 @@ function openDrinkPicker() {
       <div>
         <strong>${escapeHtml(item.name)}</strong>
         <span>${escapeHtml(item.description || '')}</span>
-        <span class="menu-stock ${Number(item.stock_quantity) === 0 ? 'out-of-stock' : ''}">
-          ${Number(item.stock_quantity) === 0 ? 'Out of stock' : `${Number(item.stock_quantity)} available`}
+        <span class="menu-stock"${Number(item.stock_quantity) === 0 ? ' hidden' : ''}>
+          ${Number(item.stock_quantity) > 0 ? `${Number(item.stock_quantity)} available` : ''}
         </span>
       </div>
       <strong class="drink-picker-price">${formatCurrency(item.price)}</strong>
