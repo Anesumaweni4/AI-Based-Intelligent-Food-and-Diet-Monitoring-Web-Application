@@ -1506,6 +1506,23 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
       }
     }
   }
+
+  const menuDrinks = await all(
+    "SELECT name FROM menu_items WHERE LOWER(category) = 'drink' ORDER BY name"
+  );
+  for (const drink of menuDrinks) {
+    const inventoryName = /^water\b/i.test(drink.name) ? 'Bottled water' : drink.name;
+    const existingInventoryItem = await get(
+      'SELECT id FROM inventory_items WHERE name = ? LIMIT 1',
+      [inventoryName]
+    );
+    if (!existingInventoryItem) {
+      await run(
+        'INSERT INTO inventory_items (name, unit, current_quantity) VALUES (?, ?, ?)',
+        [inventoryName, inventoryName === 'Fruit Smoothie' ? 'servings' : 'units', 0]
+      );
+    }
+  }
 }
 
 async function replaceMenuSchedule(entries) {

@@ -20,6 +20,7 @@ This project is a simple web-based food ordering system designed for small and m
 - Admin-approved clients can charge orders to a monthly account; administrators can generate month-end statements and record payments
 - Admin revenue card tracks collected orders for the current local day and resets at the next local midnight
 - Admins and cashiers track ingredients separately from prepared menu items in a daily Date / Item / Opening / Used / Added / Closing ledger; potatoes and staple foods are measured in kilograms, cooking oil in litres, packaged drinks by the bottle, and Russian sausages by the piece
+- Every drink on the menu, including water, is available in stock control as a countable item; both water price options share one bottled-water balance
 - Ingredient receipts and usage are recorded manually, and customer orders do not change ingredient stock; admin and cashier inventory refreshes every 12 seconds
 - Diet Monitoring highlights an hourly activity check-in and prompts the signed-in student while the page is open
 - Diet Monitoring explains nutrition estimates and suggests meal ideas based on each student's non-cancelled orders from the last 30 days
