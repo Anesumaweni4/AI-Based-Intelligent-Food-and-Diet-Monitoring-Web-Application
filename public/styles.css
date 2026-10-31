@@ -928,6 +928,20 @@ nav {
   font-weight: 400;
 }
 
+.schedule-search {
+  max-width: 420px;
+  margin: 18px 0 8px;
+}
+
+.schedule-search-empty {
+  margin: 8px 0 16px;
+  color: var(--muted);
+}
+
+.schedule-search-empty[hidden] {
+  display: none;
+}
+
 .schedule-checkbox input {
   width: 18px;
   height: 18px;

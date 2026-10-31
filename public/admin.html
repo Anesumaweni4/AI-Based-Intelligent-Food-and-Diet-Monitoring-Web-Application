@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="styles.css?v=admin-settings-dropdowns-1" />
+    <link rel="stylesheet" href="styles.css?v=admin-weekly-menu-search-1" />
   </head>
   <body class="dashboard-body">
     <header class="topbar dashboard-header">
@@ -160,6 +160,11 @@
             <h3>Weekly Menu Schedule</h3>
           </div>
           <p class="schedule-help">Choose which days each meal is served. The customer menu updates automatically for the current date.</p>
+          <div class="field-group schedule-search">
+            <label for="menu-schedule-search">Search meals</label>
+            <input id="menu-schedule-search" type="search" placeholder="Type a meal name" autocomplete="off" aria-controls="menu-schedule-body" />
+          </div>
+          <p id="menu-schedule-search-empty" class="schedule-search-empty" role="status" hidden>No meals match your search.</p>
           <div id="menu-schedule-status" class="schedule-status" role="status"></div>
           <div class="schedule-table-wrap">
             <table class="schedule-table">
@@ -346,7 +351,7 @@
         nav.appendChild(cashierDeskLink);
       }
     </script>
-    <script src="admin.js?v=daily-order-history-monthly-billing-1"></script>
+    <script src="admin.js?v=admin-weekly-menu-search-1"></script>
     <script src="staff-dashboard-links.js?v=20261026-1"></script>
   </body>
 </html>

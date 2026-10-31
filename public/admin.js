@@ -32,6 +32,8 @@ const accountDialogTitle = document.getElementById('account-dialog-title');
 const scheduleHead = document.getElementById('menu-schedule-head');
 const scheduleBody = document.getElementById('menu-schedule-body');
 const scheduleStatus = document.getElementById('menu-schedule-status');
+const scheduleSearchInput = document.getElementById('menu-schedule-search');
+const scheduleSearchEmpty = document.getElementById('menu-schedule-search-empty');
 const saveScheduleButton = document.getElementById('save-menu-schedule');
 const adminPasswordForm = document.getElementById('admin-password-form');
 const adminPasswordStatus = document.getElementById('admin-password-status');
@@ -476,13 +478,14 @@ async function loadMenuSchedule() {
 
     if (!data.menuItems.length) {
       scheduleBody.innerHTML = '<tr><td colspan="8">No menu items are available to schedule.</td></tr>';
+      scheduleSearchEmpty.hidden = true;
       saveScheduleButton.disabled = true;
       return;
     }
 
     const assignedMeals = new Set(data.schedule.map((entry) => `${entry.dayOfWeek}:${entry.menuItemId}`));
     scheduleBody.innerHTML = data.menuItems.map((item) => `
-      <tr>
+      <tr data-menu-item-row>
         <th scope="row">
           <span class="schedule-meal-name">${escapeHtml(item.name)}</span>
           <span class="schedule-meal-price">${formatCurrency(item.price)}</span>
@@ -500,6 +503,7 @@ async function loadMenuSchedule() {
         }).join('')}
       </tr>
     `).join('');
+    filterMenuSchedule();
     saveScheduleButton.disabled = false;
   } catch (error) {
     console.error('Error loading weekly menu schedule:', error);
@@ -507,6 +511,22 @@ async function loadMenuSchedule() {
     scheduleStatus.classList.add('error');
   }
 }
+
+function filterMenuSchedule() {
+  const query = scheduleSearchInput.value.trim().toLocaleLowerCase();
+  const rows = Array.from(scheduleBody.querySelectorAll('[data-menu-item-row]'));
+  let visibleRows = 0;
+
+  for (const row of rows) {
+    const mealName = row.querySelector('.schedule-meal-name').textContent.toLocaleLowerCase();
+    row.hidden = !mealName.includes(query);
+    if (!row.hidden) visibleRows += 1;
+  }
+
+  scheduleSearchEmpty.hidden = !query || visibleRows > 0;
+}
+
+scheduleSearchInput.addEventListener('input', filterMenuSchedule);
 
 async function saveMenuSchedule() {
   const schedule = Array.from(scheduleBody.querySelectorAll('input[type="checkbox"]:checked'))
