@@ -1296,6 +1296,8 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     ['Coke 350ml', 'Chilled Coke soft drink, 350ml.', 0.75, 'Drink', '/drinks-assortment.jpg'],
     ['Coleslaw', 'Fresh cabbage coleslaw.', 0.50, 'Meals', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=80'],
     ['Cream soda', 'Chilled cream soda.', 1.00, 'Drink', '/drinks-assortment.jpg'],
+    ['Fanta 350ml', 'Chilled Fanta soft drink, 350ml.', 0.75, 'Drink', '/drinks-assortment.jpg'],
+    ['Fanta orange', 'Chilled Fanta orange soft drink.', 1.00, 'Drink', '/drinks-assortment.jpg'],
     ['Rice and pork trotters', 'Rice served with pork trotters.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'],
     ['Rice and stirfry', 'Rice served with chicken stir-fry.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80'],
     ['Rice and T-bone', 'Rice served with grilled T-bone steak.', 3.00, 'Meals', 'https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=900&q=80'],
@@ -1347,7 +1349,11 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     ['Chicken stirfry and rice', 'Chicken stir-fry served with rice.', 3.00, 'Meals', 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80'],
     ['Chips', 'Golden fried chips.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=900&q=80'],
     ['Chips + chicken offals', 'Chips served with chicken offals.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=900&q=80'],
-    ['Chips and beef', 'Chips served with beef.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80']
+    ['Chips and beef', 'Chips served with beef.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'],
+    ['Fish', 'Cooked fish.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=900&q=80'],
+    ['Fish and chips', 'Fish served with chips.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=900&q=80'],
+    ['Fish and rice', 'Fish served with rice.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=900&q=80'],
+    ['Fish and Sadza', 'Fish served with sadza.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=900&q=80']
   ];
   const legacyRiceAndRussian = await get('SELECT id FROM menu_items WHERE name = ? LIMIT 1', ['Rice + Russian']);
   const riceAndRussian = await get('SELECT id FROM menu_items WHERE name = ? LIMIT 1', ['Rice and Russian']);
