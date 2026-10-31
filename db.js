@@ -1242,7 +1242,15 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     ['Stir fry and chips', 'Stir-fried chicken served with chips.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=900&q=80'],
     ['Stirfry', 'Stir-fried chicken and vegetables.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=900&q=80'],
     ['T-Bone and Rice', 'Grilled T-bone steak served with rice.', 2.50, 'Meals', 'https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=900&q=80'],
-    ['T-Bone', 'Grilled T-bone steak.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=900&q=80']
+    ['T-Bone', 'Grilled T-bone steak.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=900&q=80'],
+    ['Beans', 'Beans served with a savory sauce.', 0.50, 'Meals', 'https://images.unsplash.com/photo-1515543237350-b3eea1ec8082?auto=format&fit=crop&w=900&q=80'],
+    ['Beef', 'Seasoned beef.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=900&q=80'],
+    ['Beef and rice', 'Seasoned beef served with rice.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80'],
+    ['Beef bones', 'Slow-cooked beef bones.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'],
+    ['Beef bones and Rice', 'Beef bones served with rice.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80'],
+    ['Beef bones and Sadza', 'Beef bones served with sadza.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'],
+    ['Boerewors', 'Grilled boerewors sausage.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=900&q=80'],
+    ['Boerewors and chips', 'Grilled boerewors served with chips.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=900&q=80']
   ];
   for (const [name, description, price, category, image] of additionalMenuItems) {
     const existingItem = await get('SELECT id FROM menu_items WHERE name = ? LIMIT 1', [name]);
