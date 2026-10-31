@@ -1271,7 +1271,15 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     ['Rice and Guru', 'Rice served with guru.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80'],
     ['Rice and mince', 'Rice served with minced beef.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80'],
     ['Rice and pork', 'Rice served with pork.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'],
-    ['Rice and pork bones', 'Rice served with pork bones.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80']
+    ['Rice and pork bones', 'Rice served with pork bones.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'],
+    ['Freshup', 'Chilled Freshup drink.', 0.50, 'Drink', '/drinks-assortment.jpg'],
+    ['Fruitcana mixed fruit', 'Chilled Fruitcana mixed fruit drink.', 0.75, 'Drink', '/drinks-assortment.jpg'],
+    ['Fruitcana orange', 'Chilled Fruitcana orange drink.', 0.75, 'Drink', '/drinks-assortment.jpg'],
+    ['Fruiticana mixed berry', 'Chilled Fruiticana mixed berry drink.', 0.75, 'Drink', '/drinks-assortment.jpg'],
+    ['Fruta Apple', 'Chilled Fruta apple drink.', 0.50, 'Drink', '/drinks-assortment.jpg'],
+    ['Fruta orange', 'Chilled Fruta orange drink.', 0.50, 'Drink', '/drinks-assortment.jpg'],
+    ['Fruta Pineapple', 'Chilled Fruta pineapple drink.', 0.50, 'Drink', '/drinks-assortment.jpg'],
+    ['Fruticana mango', 'Chilled Fruticana mango drink.', 0.75, 'Drink', '/drinks-assortment.jpg']
   ];
   for (const [name, description, price, category, image] of additionalMenuItems) {
     const existingItem = await get('SELECT id FROM menu_items WHERE name = ? LIMIT 1', [name]);
