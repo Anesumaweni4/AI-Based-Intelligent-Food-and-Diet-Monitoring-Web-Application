@@ -1099,6 +1099,51 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     }
   }
 
+  const traditionalMeals = [
+    ['Sadza and Pork', 'Sadza served with pork.', 2.00, 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'],
+    ['Sadza and Pork Bones', 'Sadza served with pork bones.', 2.00, 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'],
+    ['Sadza and Pork Trotters', 'Sadza served with pork trotters.', 2.00, 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'],
+    ['Sadza and T-Bone', 'Sadza served with grilled T-bone steak.', 3.00, 'https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=900&q=80'],
+    ['Sadza Pork', 'Sadza served with pork.', 2.50, 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'],
+    ['Sadza + Haifiridzi', 'Sadza served with haifiridzi.', 2.00, 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'],
+    ['Sadza + Chicken Offals', 'Sadza served with chicken offals.', 2.00, 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=900&q=80'],
+    ['Salad and T-Bone', 'Grilled T-bone steak served with salad.', 3.00, 'https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=900&q=80']
+  ];
+  const traditionalMealIds = [];
+  for (const [name, description, price, image] of traditionalMeals) {
+    const existingMeal = await get('SELECT id FROM menu_items WHERE name = ? LIMIT 1', [name]);
+    if (existingMeal) {
+      await run(
+        'UPDATE menu_items SET price = ?, category = ? WHERE id = ?',
+        [price, 'Traditional Meals', existingMeal.id]
+      );
+      traditionalMealIds.push(Number(existingMeal.id));
+    } else {
+      const result = await run(
+        'INSERT INTO menu_items (name, description, price, category, image) VALUES (?, ?, ?, ?, ?)',
+        [name, description, price, 'Traditional Meals', image]
+      );
+      traditionalMealIds.push(Number(result.id));
+    }
+  }
+
+  const scheduledMeals = await all('SELECT day_of_week, menu_item_id FROM menu_schedule');
+  const scheduledMealKeys = new Set(
+    scheduledMeals.map(({ day_of_week: dayOfWeek, menu_item_id: menuItemId }) => `${dayOfWeek}:${menuItemId}`)
+  );
+  for (const menuItemId of traditionalMealIds) {
+    for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek += 1) {
+      const scheduleKey = `${dayOfWeek}:${menuItemId}`;
+      if (scheduledMealKeys.has(scheduleKey)) continue;
+
+      await run(
+        'INSERT INTO menu_schedule (day_of_week, menu_item_id) VALUES (?, ?)',
+        [dayOfWeek, menuItemId]
+      );
+      scheduledMealKeys.add(scheduleKey);
+    }
+  }
+
   const drinkOptions = [
     ['Minute Maid', 'Chilled Minute Maid fruit juice.', 2.00],
     ['Pepsi', 'Chilled Pepsi soft drink.', 1.50],
