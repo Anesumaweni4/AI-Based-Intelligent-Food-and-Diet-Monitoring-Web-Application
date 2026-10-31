@@ -1353,7 +1353,15 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     ['Fish', 'Cooked fish.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=900&q=80'],
     ['Fish and chips', 'Fish served with chips.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=900&q=80'],
     ['Fish and rice', 'Fish served with rice.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=900&q=80'],
-    ['Fish and Sadza', 'Fish served with sadza.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=900&q=80']
+    ['Fish and Sadza', 'Fish served with sadza.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=900&q=80'],
+    ['Boerewors and rice', 'Grilled boerewors served with rice.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=900&q=80'],
+    ['Boerewors and Sadza', 'Grilled boerewors served with sadza.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=900&q=80'],
+    ['Boerewors Roll', 'Grilled boerewors served in a roll.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=900&q=80'],
+    ['Boerewors roll and chips', 'Boerewors roll served with chips.', 3.00, 'Meals', 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=900&q=80'],
+    ['Burger', 'Beef burger.', 1.00, 'Meals', 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=80'],
+    ['Burger and chips', 'Beef burger served with chips.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=900&q=80'],
+    ['Cake', 'Slice of cake.', 2.00, 'Meals', 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=900&q=80'],
+    ['Cheese', 'Cheese portion.', 0.50, 'Meals', 'https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?auto=format&fit=crop&w=900&q=80']
   ];
   const legacyRiceAndRussian = await get('SELECT id FROM menu_items WHERE name = ? LIMIT 1', ['Rice + Russian']);
   const riceAndRussian = await get('SELECT id FROM menu_items WHERE name = ? LIMIT 1', ['Rice and Russian']);
