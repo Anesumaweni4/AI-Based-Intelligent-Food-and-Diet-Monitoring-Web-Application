@@ -1539,13 +1539,18 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
   for (const drink of menuDrinks) {
     const inventoryName = /^water\b/i.test(drink.name) ? 'Bottled water' : drink.name;
     const existingInventoryItem = await get(
-      'SELECT id FROM inventory_items WHERE name = ? LIMIT 1',
+      'SELECT id, unit FROM inventory_items WHERE name = ? LIMIT 1',
       [inventoryName]
     );
     if (!existingInventoryItem) {
       await run(
         'INSERT INTO inventory_items (name, unit, current_quantity) VALUES (?, ?, ?)',
-        [inventoryName, drink.name === 'Fruit Smoothie' ? 'servings' : 'bottles', 0]
+        [inventoryName, 'bottles', 0]
+      );
+    } else if (existingInventoryItem.unit !== 'bottles') {
+      await run(
+        'UPDATE inventory_items SET unit = ? WHERE id = ?',
+        ['bottles', existingInventoryItem.id]
       );
     }
   }
