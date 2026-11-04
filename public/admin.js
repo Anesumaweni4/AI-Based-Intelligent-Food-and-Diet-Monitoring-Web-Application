@@ -49,6 +49,9 @@ let activeOrderDetails = null;
 const pendingOrdersDialog = document.getElementById('pending-orders-dialog');
 const pendingOrdersStatus = document.getElementById('pending-orders-status');
 const pendingOrdersList = document.getElementById('pending-orders-list');
+const totalOrdersDialog = document.getElementById('total-orders-dialog');
+const totalOrdersStatus = document.getElementById('total-orders-status');
+const totalOrdersList = document.getElementById('total-orders-list');
 const cashierCreateForm = document.getElementById('cashier-create-form');
 const cashierCreateStatus = document.getElementById('cashier-create-status');
 const clientFeedbackList = document.getElementById('client-feedback-list');
@@ -174,6 +177,7 @@ document.getElementById('close-revenue-dialog').addEventListener('click', () => 
 document.getElementById('close-order-dialog').addEventListener('click', () => orderDialog.close());
 document.getElementById('close-account-dialog').addEventListener('click', () => accountDialog.close());
 document.getElementById('close-pending-orders-dialog').addEventListener('click', () => pendingOrdersDialog.close());
+document.getElementById('close-total-orders-dialog').addEventListener('click', () => totalOrdersDialog.close());
 accountDialog.addEventListener('click', (event) => {
   if (event.target === accountDialog) accountDialog.close();
 });
@@ -188,6 +192,18 @@ orderDialog.addEventListener('click', (event) => {
 });
 pendingOrdersDialog.addEventListener('click', (event) => {
   if (event.target === pendingOrdersDialog) pendingOrdersDialog.close();
+});
+totalOrdersDialog.addEventListener('click', (event) => {
+  if (event.target === totalOrdersDialog) totalOrdersDialog.close();
+});
+totalOrdersList.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-total-order-id]');
+  if (!button) return;
+
+  const selectedOrder = allOrders.find((order) => Number(order.id) === Number(button.dataset.totalOrderId));
+  if (!selectedOrder) return;
+  totalOrdersDialog.close();
+  showOrderDetails(selectedOrder);
 });
 pendingOrdersList.addEventListener('click', async (event) => {
   const button = event.target.closest('[data-pending-order-id]');
@@ -1009,11 +1025,6 @@ async function loadSummary() {
       </div>
     `;
 
-    const summaryDropdown = document.createElement('div');
-    summaryDropdown.className = 'admin-summary-dropdown';
-    summaryDropdown.hidden = true;
-    summaryContainer.appendChild(summaryDropdown);
-
     const users = data.users || [];
     const clientCount = users.filter(user => user.role === 'staff').length;
     const cashierCount = users.filter(user => user.role === 'cashier').length;
@@ -1054,65 +1065,42 @@ async function loadSummary() {
     }
 
     if (totalOrdersCard) {
-      const renderSummaryDropdown = (orders) => {
-        const dropdown = summaryContainer.querySelector('.admin-summary-dropdown');
-        if (!dropdown) return;
-
-        if (!orders.length) {
-          dropdown.innerHTML = '<div class="admin-summary-empty">No orders yet.</div>';
-          dropdown.hidden = false;
-          return;
-        }
-
-        dropdown.innerHTML = orders.slice(0, 5).map((order) => `
-          <div class="admin-summary-order-row">
-            <div>
-              <strong>Order #${Number(order.id)}</strong>
-              <span>${escapeHtml(order.customer_name)}</span>
-            </div>
-            <span class="badge admin-summary-badge">${escapeHtml(order.status)}</span>
-            <strong>${formatCurrency(order.total)}</strong>
-          </div>
-        `).join('');
-        dropdown.hidden = false;
-      };
-
-      const toggleOrdersDropdown = async () => {
-        const dropdown = summaryContainer.querySelector('.admin-summary-dropdown');
-        if (!dropdown) return;
-
-        if (!dropdown.hidden) {
-          dropdown.hidden = true;
-          return;
-        }
+      const showTotalOrders = async () => {
+        totalOrdersStatus.textContent = 'Loading orders…';
+        totalOrdersStatus.classList.remove('error');
+        totalOrdersList.innerHTML = '';
+        totalOrdersDialog.showModal();
 
         try {
           const response = await fetch('/api/orders');
           const orders = await response.json();
-          if (!response.ok) throw new Error('Unable to load recent orders.');
-          renderSummaryDropdown(Array.isArray(orders) ? orders : []);
+          if (!response.ok) throw new Error(orders.message || 'Unable to load orders.');
+
+          allOrders = orders;
+          totalOrdersStatus.textContent = `${orders.length} order${orders.length === 1 ? '' : 's'}. Select an order to view its details.`;
+          totalOrdersList.innerHTML = orders.length ? orders.map((order) => `
+            <button type="button" class="order-card admin-order-summary" data-total-order-id="${Number(order.id)}">
+              <span class="admin-order-summary-main">
+                <span class="admin-order-number">Order #${Number(order.id)}</span>
+                <span class="admin-order-customer">${escapeHtml(order.customer_name)}</span>
+              </span>
+              <span class="admin-order-summary-end">
+                <span class="badge">${escapeHtml(order.status)}</span>
+                <strong>${formatCurrency(order.total)}</strong>
+              </span>
+            </button>
+          `).join('') : '<div class="empty-state">No orders yet.</div>';
         } catch (error) {
-          dropdown.innerHTML = `<div class="admin-summary-empty">${escapeHtml(error.message || 'Unable to load recent orders.')}</div>`;
-          dropdown.hidden = false;
+          totalOrdersStatus.textContent = error.message || 'Unable to load orders.';
+          totalOrdersStatus.classList.add('error');
         }
       };
 
-      const scrollToOrders = () => {
-        const ordersSection = document.getElementById('admin-orders');
-        if (ordersSection) {
-          ordersSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      };
-
-      totalOrdersCard.addEventListener('click', async () => {
-        await toggleOrdersDropdown();
-        scrollToOrders();
-      });
-      totalOrdersCard.addEventListener('keydown', async (event) => {
+      totalOrdersCard.addEventListener('click', showTotalOrders);
+      totalOrdersCard.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
-          await toggleOrdersDropdown();
-          scrollToOrders();
+          showTotalOrders();
         }
       });
     }

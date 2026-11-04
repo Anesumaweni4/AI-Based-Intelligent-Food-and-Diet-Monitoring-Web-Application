@@ -259,6 +259,20 @@
       </div>
     </main>
 
+    <dialog id="total-orders-dialog" class="notice-dialog admin-account-dialog" aria-labelledby="total-orders-title">
+      <div class="notice-dialog-content">
+        <div class="revenue-dialog-header">
+          <div>
+            <p class="eyebrow">Order activity</p>
+            <h2 id="total-orders-title">All Orders</h2>
+          </div>
+          <button type="button" class="revenue-dialog-close" id="close-total-orders-dialog" aria-label="Close all orders">×</button>
+        </div>
+        <p id="total-orders-status" class="schedule-status" role="status" aria-live="polite"></p>
+        <div id="total-orders-list" class="order-list"></div>
+      </div>
+    </dialog>
+
     <dialog id="order-dialog" class="notice-dialog admin-order-dialog" aria-labelledby="order-dialog-title">
       <div class="notice-dialog-content">
         <div class="revenue-dialog-header">
