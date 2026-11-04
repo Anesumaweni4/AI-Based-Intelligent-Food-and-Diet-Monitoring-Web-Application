@@ -2216,7 +2216,7 @@ app.get('/api/menu', async (req, res) => {
   try {
     const today = getCurrentMenuDay();
     const menuItems = await all(
-      `SELECT mi.id, mi.name, mi.description, mi.price, mi.category, mi.image
+      `SELECT mi.id, mi.name, mi.description, mi.price, mi.category, mi.image, mi.stock_quantity
        FROM menu_items mi
        JOIN menu_schedule ms ON ms.menu_item_id = mi.id
        WHERE ms.day_of_week = ?
@@ -2233,7 +2233,7 @@ app.get('/api/menu', async (req, res) => {
 app.get('/api/admin/menu-schedule', async (req, res) => {
   try {
     const menuItems = await all(
-      'SELECT id, name, description, price, category, image FROM menu_items ORDER BY category, id'
+      'SELECT id, name, description, price, category, image, stock_quantity FROM menu_items ORDER BY category, id'
     );
     const schedule = await all('SELECT day_of_week, menu_item_id FROM menu_schedule');
     res.json({
@@ -2293,6 +2293,42 @@ app.put('/api/admin/menu-schedule', async (req, res) => {
   }
 });
 
+app.put('/api/admin/menu-stock', async (req, res) => {
+  try {
+    const { stockQuantities } = req.body;
+    if (!Array.isArray(stockQuantities)) {
+      return res.status(400).json({ message: 'Meal plate counts are required.' });
+    }
+
+    const menuItems = await all('SELECT id FROM menu_items');
+    const menuItemIds = new Set(menuItems.map((item) => Number(item.id)));
+    const seen = new Set();
+    for (const entry of stockQuantities) {
+      const menuItemId = Number(entry?.menuItemId);
+      const quantity = Number(entry?.quantity);
+      if (!Number.isSafeInteger(menuItemId) || !menuItemIds.has(menuItemId) ||
+          !Number.isSafeInteger(quantity) || quantity < 0 || quantity > 1000000 || seen.has(menuItemId)) {
+        return res.status(400).json({ message: 'Enter a valid whole-number plate count for each meal.' });
+      }
+      seen.add(menuItemId);
+    }
+
+    await withTransaction(async (transaction) => {
+      for (const entry of stockQuantities) {
+        await transaction.run(
+          'UPDATE menu_items SET stock_quantity = ? WHERE id = ?',
+          [Number(entry.quantity), Number(entry.menuItemId)]
+        );
+      }
+    });
+
+    res.json({ message: 'Meal plate counts saved.' });
+  } catch (error) {
+    console.error('Error saving meal plate counts:', error);
+    res.status(500).json({ message: 'Unable to save meal plate counts.' });
+  }
+});
+
 app.get('/api/orders', requireAdminApi, async (req, res) => {
   try {
     const orders = await all('SELECT * FROM orders ORDER BY created_at DESC');
@@ -2343,7 +2379,7 @@ app.post('/api/orders', requireStudentApi, async (req, res) => {
 
     const today = getCurrentMenuDay();
     const menuItems = await all(
-      `SELECT mi.id, mi.name, mi.description, mi.price, mi.category, mi.image
+      `SELECT mi.id, mi.name, mi.description, mi.price, mi.category, mi.image, mi.stock_quantity
        FROM menu_items mi
        JOIN menu_schedule ms ON ms.menu_item_id = mi.id
        WHERE ms.day_of_week = ?`,
@@ -2352,7 +2388,7 @@ app.post('/api/orders', requireStudentApi, async (req, res) => {
     const menuMap = new Map(menuItems.map(item => [Number(item.id), item]));
 
     let totalCents = isDelivery ? 350 : 0;
-    const orderItems = [];
+    const orderItemsById = new Map();
 
     for (const item of items) {
       const menuItem = menuMap.get(Number(item.id));
@@ -2365,18 +2401,26 @@ app.post('/api/orders', requireStudentApi, async (req, res) => {
         return res.status(400).json({ message: 'Each item must have a quantity greater than zero.' });
       }
 
+      const itemKey = Number(menuItem.id);
+      const combinedQuantity = (orderItemsById.get(itemKey)?.quantity || 0) + quantity;
+      if (!Number.isSafeInteger(combinedQuantity)) {
+        return res.status(400).json({ message: 'The requested meal quantity is invalid.' });
+      }
+
       const unitPriceCents = Math.round(Number(menuItem.price) * 100);
       if (!Number.isSafeInteger(unitPriceCents) || unitPriceCents < 0 ||
           !Number.isSafeInteger(unitPriceCents * quantity)) {
         return res.status(400).json({ message: 'The order total is invalid.' });
       }
       totalCents += unitPriceCents * quantity;
-      orderItems.push({
+      orderItemsById.set(itemKey, {
         menu_item_id: menuItem.id,
-        quantity,
+        quantity: combinedQuantity,
         unit_price: menuItem.price,
       });
     }
+
+    const orderItems = Array.from(orderItemsById.values());
 
     if (!Number.isSafeInteger(totalCents)) {
       return res.status(400).json({ message: 'The order total is invalid.' });
@@ -2407,6 +2451,31 @@ app.post('/api/orders', requireStudentApi, async (req, res) => {
         ]
       );
       for (const orderItem of orderItems) {
+        const stockUpdate = await transaction.run(
+          `UPDATE menu_items
+           SET stock_quantity = stock_quantity - ?
+           WHERE id = ? AND stock_quantity >= ?`,
+          [orderItem.quantity, orderItem.menu_item_id, orderItem.quantity]
+        );
+        if (stockUpdate.changes !== 1) {
+          const meal = await transaction.get(
+            'SELECT name, stock_quantity FROM menu_items WHERE id = ?',
+            [orderItem.menu_item_id]
+          );
+          const message = !meal || Number(meal.stock_quantity) === 0
+            ? `Sorry, ${meal?.name || 'this meal'} is sold out. Please choose another meal.`
+            : Number(meal.stock_quantity) === 1
+              ? `Sorry, only 1 plate of ${meal.name} is available. Please reduce the quantity or choose another meal.`
+              : `Sorry, only ${Number(meal.stock_quantity)} plates of ${meal.name} are available. Please reduce the quantity or choose another meal.`;
+          const error = new Error(message);
+          error.statusCode = 409;
+          throw error;
+        }
+        await transaction.run(
+          `INSERT INTO stock_movements (menu_item_id, quantity_change, type, order_id, created_by)
+           VALUES (?, ?, 'order', ?, ?)`,
+          [orderItem.menu_item_id, -orderItem.quantity, orderResult.id, req.accountUser.id]
+        );
         await transaction.run(
           'INSERT INTO order_items (order_id, menu_item_id, quantity, unit_price) VALUES (?, ?, ?, ?)',
           [orderResult.id, orderItem.menu_item_id, orderItem.quantity, orderItem.unit_price]
@@ -2529,6 +2598,29 @@ app.patch('/api/orders/:id/status', requireCashierOrAdminApi, async (req, res) =
            VALUES (?, ?, 'refund', ?, ?)`,
           [order.user_id, refundCents, order.id, req.accountUser.id]
         );
+      }
+      if (status === 'Cancelled') {
+        const reservation = await transaction.get(
+          "SELECT id FROM stock_movements WHERE order_id = ? AND type = 'order' LIMIT 1",
+          [order.id]
+        );
+        if (reservation) {
+          const items = await transaction.all(
+            'SELECT menu_item_id, quantity FROM order_items WHERE order_id = ?',
+            [order.id]
+          );
+          for (const item of items) {
+            await transaction.run(
+              'UPDATE menu_items SET stock_quantity = stock_quantity + ? WHERE id = ?',
+              [item.quantity, item.menu_item_id]
+            );
+            await transaction.run(
+              `INSERT INTO stock_movements (menu_item_id, quantity_change, type, order_id, created_by)
+               VALUES (?, ?, 'restock', ?, ?)`,
+              [item.menu_item_id, item.quantity, order.id, req.accountUser.id]
+            );
+          }
+        }
       }
       return transaction.get('SELECT * FROM orders WHERE id = ?', [req.params.id]);
     });

@@ -66,6 +66,31 @@ Neon automatically; export and migrate them separately if you need to preserve
 them. If `DATABASE_URL` is unset, the app continues to use the existing MySQL
 then SQLite behavior.
 
+### Deploy with Render and Neon
+
+The repository includes `render.yaml` for deploying the web app to Render. The
+app uses Neon for its persistent database; Render's local filesystem is not a
+persistent database location.
+
+1. Push the project, including `render.yaml`, to a GitHub repository.
+2. Create a Neon project and copy its pooled connection string. Keep the
+   connection string private.
+3. In Render, choose **New → Blueprint**, connect the repository, and deploy
+   the Blueprint. When prompted, provide the Neon connection string for
+   `DATABASE_URL`.
+4. Render generates `SESSION_SECRET` and `FITBIT_TOKEN_ENCRYPTION_KEY`. The
+   latter is persistent and should not be changed after students connect
+   Fitbit accounts.
+5. After deployment succeeds, open the Render service URL and sign in using
+   the administrator account for the configured Neon database.
+
+The application creates its tables and seeds its initial menu and admin account
+on startup when needed. Existing local SQLite or MySQL data is not deployed
+automatically. To preserve it, migrate the local SQLite database to an empty
+Neon database using the migration instructions below before relying on the
+deployed database. Do not put database URLs or other secrets in `render.yaml`
+or commit them to the repository.
+
 ### Fitbit activity and heart-rate data
 
 Create a Fitbit Web API application and configure its callback URL to exactly

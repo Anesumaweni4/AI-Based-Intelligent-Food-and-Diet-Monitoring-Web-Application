@@ -168,13 +168,14 @@
             <p class="eyebrow">Meals by weekday</p>
             <h3>Weekly Menu Schedule</h3>
           </div>
-          <p class="schedule-help">Choose which days each meal is served. The customer menu updates automatically for the current date.</p>
+          <p class="schedule-help">Choose which days each meal is served and enter the number of plates available. A count of zero marks a meal as sold out.</p>
           <div class="field-group schedule-search">
             <label for="menu-schedule-search">Search meals</label>
             <input id="menu-schedule-search" type="search" placeholder="Type a meal name" autocomplete="off" aria-controls="menu-schedule-body" />
           </div>
           <p id="menu-schedule-search-empty" class="schedule-search-empty" role="status" hidden>No meals match your search.</p>
           <div id="menu-schedule-status" class="schedule-status" role="status"></div>
+          <div id="menu-stock-status" class="schedule-status" role="status" aria-live="polite"></div>
           <div class="schedule-table-wrap">
             <table class="schedule-table">
               <thead id="menu-schedule-head"></thead>
@@ -182,6 +183,7 @@
             </table>
           </div>
           <button type="button" class="submit-btn schedule-save-btn" id="save-menu-schedule">Save Weekly Schedule</button>
+          <button type="button" class="submit-btn schedule-save-btn" id="save-menu-stock">Save Plate Counts</button>
         </section>
 
         <div class="section-title left">

@@ -298,6 +298,17 @@ function addToCart(menuId) {
   if (!selected) return;
 
   const existing = getCartItem(menuId);
+  const available = Number(selected.stock_quantity);
+  if (available <= 0) {
+    showToast(`Sorry, ${selected.name} is sold out. Please choose another meal.`);
+    return;
+  }
+  if ((existing?.quantity || 0) >= available) {
+    showToast(available === 1
+      ? `Only 1 plate of ${selected.name} is available.`
+      : `Only ${available} plates of ${selected.name} are available.`);
+    return;
+  }
   if (existing) {
     existing.quantity += 1;
   } else {
@@ -311,6 +322,15 @@ function addToCart(menuId) {
 function changeQuantity(menuId, delta) {
   const item = getCartItem(menuId);
   if (!item) return;
+
+  const selected = menu.find(entry => entry.id === menuId);
+  if (delta > 0 && selected && item.quantity >= Number(selected.stock_quantity)) {
+    const available = Number(selected.stock_quantity);
+    showToast(available === 1
+      ? `Only 1 plate of ${item.name} is available.`
+      : `Only ${available} plates of ${item.name} are available.`);
+    return;
+  }
 
   item.quantity += delta;
   if (item.quantity <= 0) {
@@ -342,7 +362,8 @@ async function loadMenu() {
   if (!response.ok) throw new Error(result.message || 'Failed to load menu');
   menu = result.items.map(item => ({
     ...item,
-    id: Number(item.id)
+    id: Number(item.id),
+    stock_quantity: Number(item.stock_quantity)
   }));
   menuDateEl.textContent = `${result.dayName}, ${result.date} — today's meals`;
 
@@ -398,7 +419,8 @@ async function loadMenu() {
           ` : ''}
           <div class="meta-row">
             <span class="price" ${isBeefBurger ? 'data-burger-price' : ''}>${formatCurrency(item.price)}</span>
-            <button type="button" class="add-btn" data-id="${Number(item.id)}">Add</button>
+            <span class="menu-stock-status"${isBeefBurger ? ' data-burger-stock' : ''}>${Number(item.stock_quantity) > 0 ? `${Number(item.stock_quantity)} plates available` : 'Sold out'}</span>
+            <button type="button" class="add-btn" data-id="${Number(item.id)}">${Number(item.stock_quantity) > 0 ? 'Add' : 'Sold out'}</button>
           </div>
         </div>
       </article>
@@ -415,6 +437,11 @@ async function loadMenu() {
       card.querySelector('[data-burger-price]').textContent = formatCurrency(selected.price);
       const addButton = card.querySelector('.add-btn');
       addButton.dataset.id = String(selected.id);
+      const available = Number(selected.stock_quantity);
+      addButton.textContent = available > 0 ? 'Add' : 'Sold out';
+      card.querySelector('[data-burger-stock]').textContent = available > 0
+        ? `${available} plates available`
+        : 'Sold out';
     });
   });
 
@@ -436,7 +463,7 @@ function openDrinkPicker() {
         <span>${escapeHtml(item.description || '')}</span>
       </div>
       <strong class="drink-picker-price">${formatCurrency(item.price)}</strong>
-      <button type="button" class="add-btn" data-id="${Number(item.id)}">Add</button>
+      <button type="button" class="add-btn" data-id="${Number(item.id)}">${Number(item.stock_quantity) > 0 ? 'Add' : 'Sold out'}</button>
     </div>
   `).join('');
   drinkPickerOptions.querySelectorAll('.add-btn').forEach(button => {
@@ -468,7 +495,15 @@ async function placeOrder(paymentMethod) {
     });
 
     const result = await response.json();
-    if (!response.ok) throw new Error(result.message || 'Order failed');
+    if (!response.ok) {
+      const message = result.message || 'Order failed';
+      if (response.status === 409) {
+        showToast(message);
+        loadMenu().catch(error => console.error('Unable to refresh meal availability:', error));
+        return;
+      }
+      throw new Error(message);
+    }
 
     const studentName = document.getElementById('customerName').value;
     accountBalanceCents = Number(result.balanceCents);

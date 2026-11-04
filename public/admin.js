@@ -33,6 +33,8 @@ const scheduleStatus = document.getElementById('menu-schedule-status');
 const scheduleSearchInput = document.getElementById('menu-schedule-search');
 const scheduleSearchEmpty = document.getElementById('menu-schedule-search-empty');
 const saveScheduleButton = document.getElementById('save-menu-schedule');
+const menuPlateStatus = document.getElementById('menu-stock-status');
+const saveMenuStockButton = document.getElementById('save-menu-stock');
 const adminPasswordForm = document.getElementById('admin-password-form');
 const adminPasswordStatus = document.getElementById('admin-password-status');
 const revenueDialog = document.getElementById('revenue-dialog');
@@ -475,13 +477,15 @@ async function loadMenuSchedule() {
       <tr>
         <th scope="col">Meal</th>
         ${data.weekdays.map((day) => `<th scope="col">${escapeHtml(day)}</th>`).join('')}
+        <th scope="col">Plates available</th>
       </tr>
     `;
 
     if (!data.menuItems.length) {
-      scheduleBody.innerHTML = '<tr><td colspan="8">No menu items are available to schedule.</td></tr>';
+      scheduleBody.innerHTML = '<tr><td colspan="9">No menu items are available to schedule.</td></tr>';
       scheduleSearchEmpty.hidden = true;
       saveScheduleButton.disabled = true;
+      saveMenuStockButton.disabled = true;
       return;
     }
 
@@ -503,10 +507,15 @@ async function loadMenuSchedule() {
             </td>
           `;
         }).join('')}
+        <td>
+          <label class="visually-hidden" for="menu-stock-${Number(item.id)}">Plates available for ${escapeHtml(item.name)}</label>
+          <input class="menu-stock-input" id="menu-stock-${Number(item.id)}" type="number" min="0" max="1000000" step="1" value="${Number(item.stock_quantity)}" data-menu-stock-id="${Number(item.id)}" required>
+        </td>
       </tr>
     `).join('');
     filterMenuSchedule();
     saveScheduleButton.disabled = false;
+    saveMenuStockButton.disabled = false;
   } catch (error) {
     console.error('Error loading weekly menu schedule:', error);
     scheduleStatus.textContent = error.message;
@@ -555,6 +564,35 @@ async function saveMenuSchedule() {
     scheduleStatus.classList.add('error');
   } finally {
     saveScheduleButton.disabled = false;
+  }
+}
+
+async function saveMenuStock() {
+  const inputs = Array.from(scheduleBody.querySelectorAll('[data-menu-stock-id]'));
+  if (inputs.some((input) => !input.reportValidity())) return;
+
+  const stockQuantities = inputs.map((input) => ({
+    menuItemId: Number(input.dataset.menuStockId),
+    quantity: Number(input.value)
+  }));
+
+  saveMenuStockButton.disabled = true;
+  menuPlateStatus.textContent = 'Saving plate counts…';
+  menuPlateStatus.classList.remove('error');
+  try {
+    const response = await fetch('/api/admin/menu-stock', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stockQuantities })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || 'Unable to save plate counts.');
+    menuPlateStatus.textContent = result.message;
+  } catch (error) {
+    menuPlateStatus.textContent = error.message;
+    menuPlateStatus.classList.add('error');
+  } finally {
+    saveMenuStockButton.disabled = false;
   }
 }
 
@@ -1344,6 +1382,7 @@ loadInventory();
 loadTransactions();
 loadMonthlyInvoices();
 saveScheduleButton.addEventListener('click', saveMenuSchedule);
+saveMenuStockButton.addEventListener('click', saveMenuStock);
 setInterval(loadOrders, 8000);
 setInterval(loadSummary, 8000);
 setInterval(loadClientFeedback, 15000);

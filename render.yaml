@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: food-ordering-app
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: FITBIT_TOKEN_ENCRYPTION_KEY
+        generateValue: true

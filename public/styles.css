@@ -899,6 +899,10 @@ nav {
   border-collapse: collapse;
 }
 
+.weekly-menu-section .schedule-table {
+  min-width: 900px;
+}
+
 .schedule-table th,
 .schedule-table td {
   padding: 12px 10px;
@@ -947,6 +951,23 @@ nav {
   height: 18px;
   accent-color: var(--primary);
   cursor: pointer;
+}
+
+.menu-stock-input {
+  width: 96px;
+  max-width: 100%;
+  padding: 8px;
+  text-align: center;
+}
+
+.menu-stock-status {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.add-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .schedule-save-btn {
