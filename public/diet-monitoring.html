@@ -4,40 +4,72 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Diet Monitoring | THE KITCHEN</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="styles.css?v=meal-card-health-tip-3" />
+    <link rel="stylesheet" href="theme.css?v=redesign-1" />
+    <link rel="stylesheet" href="client.css?v=client-redesign-1" />
   </head>
-  <body>
-    <header class="topbar">
-      <div class="container nav">
-        <div class="brand">
-          <span class="brand-mark">F</span>
-          <div>
-            <h1>THE KITCHEN</h1>
-            <p>Diet Monitoring</p>
-          </div>
-        </div>
-        <nav>
-          <a href="home.html#my-orders">My Orders</a>
-          <a href="diet-monitoring.html" aria-current="page" class="diet-monitoring-link">
-            Diet Monitoring <span class="activity-reminder-badge">Hourly check-in</span>
+  <body class="client-body">
+    <header class="client-topbar">
+      <div class="client-container client-topbar-inner">
+        <a class="client-brand" href="home.html#top" aria-label="THE KITCHEN home">
+          <span class="brand-mark">K</span>
+          <span>
+            <strong>THE KITCHEN</strong>
+            <small>Diet monitoring</small>
+          </span>
+        </a>
+
+        <nav class="client-nav" aria-label="Main">
+          <a href="home.html#menu">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3v8a3 3 0 0 0 3 3v7M7 3v6M10 3v8a3 3 0 0 1-3 3"/><path d="M17 21V3c-2.2 1.2-3.5 3.6-3.5 7v4H17"/></svg>
+            <span>Menu</span>
           </a>
-          <a href="#" id="diet-logout">Logout</a>
+          <a href="home.html#my-orders">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"/><path d="M9 8h6M9 12h6"/></svg>
+            <span>My orders</span>
+          </a>
+          <a href="diet-monitoring.html" aria-current="page" class="diet-monitoring-link">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>
+            <span>Diet</span>
+          </a>
+          <a href="home.html#checkout" class="client-nav-cart">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+            <span>Cart</span>
+          </a>
         </nav>
+
+        <div class="client-actions">
+          <span class="client-avatar" id="client-avatar" title="Signed in">S</span>
+          <button type="button" class="client-logout client-logout-text" id="diet-logout">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5M5 12h11"/></svg>
+            <span>Log out</span>
+          </button>
+        </div>
       </div>
     </header>
 
-    <main class="dashboard-main">
-      <div class="container">
-        <section class="weekly-menu-section diet-page">
-          <div class="section-title left">
-            <p class="eyebrow">Student tools</p>
-            <h2>Diet Monitoring</h2>
-          </div>
-          <p class="diet-intro">
-            Keep a simple food diary and explore menu suggestions. Nutrition values are estimates for demonstration,
-            not medical or dietary advice.
-          </p>
+    <section class="diet-hero">
+      <div class="client-container">
+        <p class="eyebrow">Student tools</p>
+        <h2>Eat well, <em>feel</em> well.</h2>
+        <p class="diet-intro">
+          Keep a simple food diary and explore menu suggestions. Nutrition values are estimates for demonstration,
+          not medical or dietary advice.
+        </p>
+        <div class="diet-hero-badges">
+          <span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"/><path d="M9 8h6M9 12h6"/></svg> Food diary</span>
+          <span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7L12 3z"/></svg> Menu suggestions</span>
+          <span class="activity-reminder-badge"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Hourly check-in</span>
+        </div>
+      </div>
+    </section>
 
+    <main class="dashboard-main">
+      <div class="client-container">
+        <section class="weekly-menu-section diet-page">
           <section class="diet-wellness-panel" aria-labelledby="diet-wellness-title">
             <div class="diet-wellness-heading">
               <span class="diet-wellness-icon" aria-hidden="true">+</span>
@@ -231,6 +263,7 @@
       </section>
       <p class="diet-insights-note">Nutrition values are estimates for general information, not medical or dietary advice. Menu availability may vary.</p>
     </dialog>
+    <script src="client-shell.js?v=client-redesign-1"></script>
     <script src="diet-monitoring.js?v=fitbit-health-dashboard-1"></script>
   </body>
 </html>

@@ -4,73 +4,136 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Create Account | THE KITCHEN</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="styles.css?v=password-reset-1" />
-    <link rel="stylesheet" href="theme.css?v=redesign-1" />
+    <link rel="stylesheet" href="theme.css?v=redesign-2" />
   </head>
   <body class="auth-body">
-    <header class="topbar">
-      <div class="container nav">
-        <div class="brand">
-          <span class="brand-mark">F</span>
+    <div class="auth-split">
+      <aside class="auth-visual" aria-label="About THE KITCHEN">
+        <div class="auth-brand">
+          <span class="brand-mark">K</span>
           <div>
-            <h1>THE KITCHEN</h1>
+            <strong>THE KITCHEN</strong>
+            <small>Fresh meals, ordered simply</small>
           </div>
         </div>
-        <nav>
+
+        <div class="auth-visual-copy">
+          <p class="auth-kicker">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7L12 3z"/></svg>
+            Join in under a minute
+          </p>
+          <h2>Your table is <em>ready</em>.</h2>
+          <p class="auth-lead">Create a free student account to order from the daily menu, keep track of your orders and follow your nutrition.</p>
+          <ul class="auth-points">
+            <li>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+              Order ahead and skip the queue
+            </li>
+            <li>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h13v4"/><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 13.5h2"/></svg>
+              Top up and pay with student credit
+            </li>
+            <li>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>
+              Personal diet monitoring and meal ideas
+            </li>
+          </ul>
+        </div>
+
+        <div class="auth-visual-foot">
+          <span>© THE KITCHEN</span>
+          <span>Your details stay private</span>
+        </div>
+      </aside>
+
+      <main class="auth-panel">
+        <nav class="auth-panel-top" aria-label="Site">
           <a href="home.html">Home</a>
           <a href="restaurant.html">Restaurant</a>
           <a href="delivery.html">Delivery</a>
         </nav>
-      </div>
-    </header>
 
-    <main class="auth-main">
-      <div class="auth-card">
-        <div class="auth-header">
-          <h2>Create Account</h2>
+        <div class="auth-panel-body">
+          <div class="auth-form-wrap auth-form-wrap--wide">
+            <p class="eyebrow">Get started</p>
+            <h1>Create your account</h1>
+            <p class="auth-subtitle">Your age, weight and height help us personalise your nutrition suggestions.</p>
+
+            <form id="register-form" class="auth-form">
+              <p class="auth-form-section">Account details</p>
+              <div class="field-group">
+                <label for="registerName">Full name</label>
+                <div class="input-shell">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                  <input id="registerName" type="text" autocomplete="name" placeholder="Your full name" required />
+                </div>
+              </div>
+              <div class="auth-field-row">
+                <div class="field-group">
+                  <label for="registerUsername">Username</label>
+                  <div class="input-shell">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M16 12v1.5a2.5 2.5 0 0 0 5 0V12a9 9 0 1 0-3.5 7.1"/></svg>
+                    <input id="registerUsername" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Choose a username" required />
+                  </div>
+                </div>
+                <div class="field-group">
+                  <label for="registerEmail">Email address</label>
+                  <div class="input-shell">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+                    <input id="registerEmail" type="email" autocomplete="email" maxlength="255" placeholder="you@example.com" required />
+                  </div>
+                </div>
+              </div>
+
+              <p class="auth-form-section">About you</p>
+              <div class="auth-field-row auth-field-row--3">
+                <div class="field-group">
+                  <label for="registerAge">Age</label>
+                  <input id="registerAge" type="number" min="1" max="120" placeholder="Years" required />
+                </div>
+                <div class="field-group">
+                  <label for="registerWeight">Weight (kg)</label>
+                  <input id="registerWeight" type="number" min="1" step="0.1" placeholder="kg" required />
+                </div>
+                <div class="field-group">
+                  <label for="registerHeight">Height (cm)</label>
+                  <input id="registerHeight" type="number" min="1" step="0.1" placeholder="cm" required />
+                </div>
+              </div>
+
+              <p class="auth-form-section">Security</p>
+              <div class="field-group">
+                <label for="registerPassword">Password</label>
+                <div class="input-shell has-toggle">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                  <input id="registerPassword" type="password" autocomplete="new-password" placeholder="Create a password" required />
+                  <button type="button" class="password-toggle" aria-controls="registerPassword" aria-pressed="false" aria-label="Show password">
+                    <svg class="icon icon-eye" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg class="icon icon-eye-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a10 10 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+                  </button>
+                </div>
+              </div>
+              <button type="submit" class="submit-btn">
+                Create account
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </button>
+            </form>
+
+            <p class="auth-link-row">
+              Already have an account?
+              <a href="login.html">Sign in</a>
+            </p>
+          </div>
         </div>
-
-        <form id="register-form" class="auth-form">
-          <div class="field-group">
-            <label for="registerName">Full Name</label>
-            <input id="registerName" type="text" placeholder="Your Full Name" required />
-          </div>
-          <div class="field-group">
-            <label for="registerUsername">Username</label>
-            <input id="registerUsername" type="text" placeholder="Choose username" required />
-          </div>
-          <div class="field-group">
-            <label for="registerEmail">Email address</label>
-            <input id="registerEmail" type="email" autocomplete="email" maxlength="255" placeholder="you@example.com" required />
-          </div>
-          <div class="field-group">
-            <label for="registerAge">Age</label>
-            <input id="registerAge" type="number" min="1" max="120" placeholder="Your age" required />
-          </div>
-          <div class="field-group">
-            <label for="registerWeight">Weight (kg)</label>
-            <input id="registerWeight" type="number" min="1" step="0.1" placeholder="Your weight" required />
-          </div>
-          <div class="field-group">
-            <label for="registerHeight">Height (cm)</label>
-            <input id="registerHeight" type="number" min="1" step="0.1" placeholder="Your height" required />
-          </div>
-          <div class="field-group">
-            <label for="registerPassword">Password</label>
-            <input id="registerPassword" type="password" placeholder="Create password" required />
-          </div>
-          <button type="submit" class="submit-btn secondary">Create Account</button>
-        </form>
-
-        <p class="auth-link-row">
-          Already have an account?
-          <a href="login.html">Login</a>
-        </p>
-      </div>
-    </main>
+      </main>
+    </div>
 
     <div id="toast" class="toast"></div>
+    <script src="auth-ui.js?v=redesign-1"></script>
     <script src="auth.js?v=password-reset-1"></script>
     <script src="staff-dashboard-links.js?v=20261026-1"></script>
   </body>
