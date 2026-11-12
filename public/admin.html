@@ -3,261 +3,365 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Dashboard</title>
+    <title>Admin Dashboard | THE KITCHEN</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="styles.css?v=ingredient-stock-ledger-1" />
+    <link rel="stylesheet" href="theme.css?v=redesign-1" />
   </head>
-  <body class="dashboard-body">
-    <header class="topbar dashboard-header">
-      <div class="container nav">
-        <div class="brand">
-          <span class="brand-mark">F</span>
+  <body class="dashboard-body admin-body">
+    <div class="admin-shell">
+      <aside class="admin-sidebar" id="admin-sidebar" aria-label="Admin navigation">
+        <div class="admin-sidebar-brand">
+          <span class="brand-mark">K</span>
           <div>
-            <h1>Admin Panel</h1>
-            <p>Platform overview</p>
+            <strong>THE KITCHEN</strong>
+            <small>Admin panel</small>
           </div>
         </div>
-        <nav>
-          <a href="index.html">Customer</a>
-          <a href="restaurant.html">Restaurant</a>
-          <a href="delivery.html">Delivery</a>
-          <a href="login.html">Login</a>
+
+        <nav class="admin-side-nav" aria-label="Dashboard sections">
+          <span class="nav-label">Dashboard</span>
+          <a href="#overview">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+            Overview
+          </a>
+          <a href="#orders">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+            Orders
+          </a>
+
+          <span class="nav-label">Kitchen</span>
+          <a href="#stock">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+            Stock control
+          </a>
+          <a href="#menu">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+            Weekly menu
+          </a>
+
+          <span class="nav-label">Finance</span>
+          <a href="#credit">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="9" r="6"/><path d="M15.5 9.3A6 6 0 1 1 9.3 15.5"/></svg>
+            Student credit
+          </a>
+          <a href="#wallets">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h13v4"/><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 13.5h2"/></svg>
+            Wallet balances
+          </a>
+          <a href="#billing">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9l-6-6z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>
+            Monthly billing
+          </a>
+
+          <span class="nav-label">People</span>
+          <a href="#feedback">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>
+            Client feedback
+          </a>
+          <a href="#accounts">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2.2.6 3.5 2.8 3.5 6"/></svg>
+            Accounts
+          </a>
+          <a href="#settings">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>
+            Team &amp; security
+          </a>
         </nav>
-      </div>
-    </header>
 
-    <main class="dashboard-main">
-      <div class="container">
-        <div class="admin-summary" id="admin-summary"></div>
-
-        <details class="weekly-menu-section admin-collapse-dropdown security-section">
-          <summary class="admin-collapse-summary">
-            <span>
-              <span class="eyebrow">Account security</span>
-              <strong>Change Admin Password</strong>
-            </span>
-            <span class="admin-collapse-chevron" aria-hidden="true"></span>
-          </summary>
-          <div class="admin-collapse-content">
-            <p>Use a unique password with at least 14 characters. Changing it signs out other admin sessions.</p>
-            <form id="admin-password-form" class="admin-password-form">
-              <div class="field-group">
-                <label for="current-admin-password">Current password</label>
-                <input id="current-admin-password" type="password" autocomplete="current-password" required />
-              </div>
-              <div class="field-group">
-                <label for="new-admin-password">New password</label>
-                <input id="new-admin-password" type="password" minlength="14" autocomplete="new-password" required />
-              </div>
-              <button type="submit" class="submit-btn">Update Admin Password</button>
-              <p id="admin-password-status" class="schedule-status" role="status"></p>
-            </form>
-          </div>
-        </details>
-
-        <details class="weekly-menu-section admin-collapse-dropdown">
-          <summary class="admin-collapse-summary">
-            <span>
-              <span class="eyebrow">Staff permissions</span>
-              <strong>Create Cashier Account</strong>
-            </span>
-            <span class="admin-collapse-chevron" aria-hidden="true"></span>
-          </summary>
-          <div class="admin-collapse-content">
-            <p class="schedule-help">Cashier accounts can record student deposits and manage order status, but cannot access the admin dashboard.</p>
-            <form id="cashier-create-form" class="admin-password-form">
-              <div class="field-group">
-                <label for="cashier-full-name">Cashier name</label>
-                <input id="cashier-full-name" type="text" maxlength="255" required />
-              </div>
-              <div class="field-group">
-                <label for="cashier-username">Username</label>
-                <input id="cashier-username" type="text" maxlength="100" required />
-              </div>
-              <div class="field-group">
-                <label for="cashier-password">Temporary password (at least 14 characters)</label>
-                <input id="cashier-password" type="password" minlength="14" required />
-              </div>
-              <button type="submit" class="submit-btn">Create Cashier</button>
-              <p id="cashier-create-status" class="schedule-status" role="status"></p>
-            </form>
-            <a class="submit-btn cashier-desk-link" href="cashier.html">Open Cashier Desk</a>
-          </div>
-        </details>
-
-        <section class="weekly-menu-section">
-          <div class="section-title left">
-            <p class="eyebrow">Inventory control</p>
-            <h3>Stock Control</h3>
-          </div>
-          <p class="schedule-help">Track ingredients separately from the customer menu. Record stock added and used in kilograms; customer orders do not change these balances.</p>
-          <form id="stock-receipt-form" class="cashier-stock-form">
-            <div class="field-group">
-              <label for="inventory-item-select">Stock item</label>
-              <select id="inventory-item-select" required>
-                <option value="">Loading stock items…</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <label for="stock-quantity">Quantity (<span id="stock-unit">kg</span>)</label>
-              <input id="stock-quantity" type="number" min="0.001" max="1000000" step="0.001" required />
-            </div>
-            <div class="cashier-stock-actions">
-              <button class="submit-btn" type="submit" name="stockAction" value="received">Record Added</button>
-              <button class="cashier-stock-remove-button" type="submit" name="stockAction" value="used">Record Used</button>
-            </div>
-          </form>
-          <p id="stock-status" class="schedule-status" role="status" aria-live="polite"></p>
-          <div class="cashier-stock-ledger-wrap">
-            <h4>Stock ledger</h4>
-            <div class="schedule-table-wrap">
-              <table class="schedule-table cashier-stock-ledger">
-                <thead>
-                  <tr>
-                    <th scope="col">Date</th>
-                    <th scope="col">Item</th>
-                    <th scope="col">Opening</th>
-                    <th scope="col">Used</th>
-                    <th scope="col">Added</th>
-                    <th scope="col">Closing</th>
-                  </tr>
-                </thead>
-                <tbody id="stock-ledger-body"></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <section class="weekly-menu-section">
-          <div class="section-title left">
-            <p class="eyebrow">Record cash deposits</p>
-            <h3>Student Credit</h3>
-          </div>
-          <p class="schedule-help">Find the student account first, confirm the name, then enter the cash deposit amount in USD.</p>
-          <form id="student-search-form" class="cashier-search-form">
-            <div class="field-group">
-              <label for="student-search">Student name or username</label>
-              <input id="student-search" type="search" minlength="2" required />
-            </div>
-            <button class="submit-btn" type="submit">Find Student</button>
-          </form>
-          <p id="cashier-status" class="schedule-status" role="status"></p>
-          <div id="student-search-results" class="order-list"></div>
-          <form id="deposit-form" class="cashier-deposit-form" hidden>
-            <h4 id="selected-student"></h4>
-            <div class="field-group">
-              <label for="deposit-amount">Deposit amount (USD)</label>
-              <input id="deposit-amount" type="number" min="0.01" step="0.01" required />
-            </div>
-            <button class="submit-btn" type="submit">Record Deposit</button>
-          </form>
-        </section>
-
-        <section class="weekly-menu-section">
-          <div class="section-title left">
-            <p class="eyebrow">Student accounts</p>
-            <h3>Wallet Balances</h3>
-          </div>
-          <details class="wallet-balances-dropdown">
-            <summary>Show student accounts</summary>
-            <div id="credit-transactions" class="order-list wallet-balances-list"></div>
-          </details>
-        </section>
-
-        <section class="weekly-menu-section">
-          <div class="section-title left">
-            <p class="eyebrow">Meals by weekday</p>
-            <h3>Weekly Menu Schedule</h3>
-          </div>
-          <p class="schedule-help">Choose which days each meal is served and enter the number of plates available. A count of zero marks a meal as sold out.</p>
-          <div class="field-group schedule-search">
-            <label for="menu-schedule-search">Search meals</label>
-            <input id="menu-schedule-search" type="search" placeholder="Type a meal name" autocomplete="off" aria-controls="menu-schedule-body" />
-          </div>
-          <p id="menu-schedule-search-empty" class="schedule-search-empty" role="status" hidden>No meals match your search.</p>
-          <div id="menu-schedule-status" class="schedule-status" role="status"></div>
-          <div id="menu-stock-status" class="schedule-status" role="status" aria-live="polite"></div>
-          <div class="schedule-table-wrap">
-            <table class="schedule-table">
-              <thead id="menu-schedule-head"></thead>
-              <tbody id="menu-schedule-body"></tbody>
-            </table>
-          </div>
-          <button type="button" class="submit-btn schedule-save-btn" id="save-menu-schedule">Save Weekly Schedule</button>
-          <button type="button" class="submit-btn schedule-save-btn" id="save-menu-stock">Save Plate Counts</button>
-        </section>
-
-        <div class="section-title left">
-          <p class="eyebrow">Client voice</p>
-          <h3>Client Feedback</h3>
-        </div>
-        <p id="client-feedback-status" class="schedule-status" role="status" aria-live="polite"></p>
-        <div id="client-feedback-list" class="order-list client-feedback-list"></div>
-
-        <section class="weekly-menu-section monthly-billing-section" aria-labelledby="monthly-billing-title">
-          <div class="section-title left">
-            <p class="eyebrow">Approved client accounts</p>
-            <h3 id="monthly-billing-title">Monthly Billing</h3>
-          </div>
-          <p class="schedule-help">Generate statements for a completed month. Only collected or delivered monthly-account orders are included. Unpaid statements can receive any later-completed orders for that month when generated again.</p>
-          <div class="monthly-billing-controls">
-            <div class="field-group">
-              <label for="monthly-billing-period">Billing month</label>
-              <input id="monthly-billing-period" type="month" required />
-            </div>
-            <button type="button" class="submit-btn" id="generate-monthly-invoices">Generate Statements</button>
-          </div>
-          <p id="monthly-billing-status" class="schedule-status" role="status" aria-live="polite"></p>
-          <div id="monthly-invoices" class="order-list monthly-invoices"></div>
-        </section>
-
-        <div class="section-title left">
-          <p class="eyebrow">Order activity</p>
-          <h3>All Orders</h3>
-        </div>
-        <p class="schedule-help order-history-help">Today's orders appear here by default. Choose another date to view saved orders from that day. The CSV download includes your complete order history.</p>
-        <div class="order-search-filters" aria-label="Search and filter orders">
-          <div class="field-group">
-            <label for="admin-order-search">Customer</label>
-            <input id="admin-order-search" type="search" placeholder="Search customer name or phone" autocomplete="off" />
-          </div>
-          <div class="field-group">
-            <label for="admin-order-date">Order date</label>
-            <input id="admin-order-date" type="date" />
-          </div>
-          <div class="field-group">
-            <label for="admin-order-status">Status</label>
-            <select id="admin-order-status">
-              <option value="">All statuses</option>
-              <option value="Pending">Pending</option>
-              <option value="Preparing">Preparing</option>
-              <option value="Ready for Pickup">Ready for Pickup</option>
-              <option value="Out for Delivery">Out for Delivery</option>
-              <option value="Delivered">Delivered</option>
-              <option value="Collected">Collected</option>
-              <option value="Cancelled">Cancelled</option>
-            </select>
-          </div>
-          <div class="order-search-actions">
-            <button type="button" class="order-filter-clear" id="admin-order-filter-clear">Clear filters</button>
-            <button type="button" class="submit-btn order-history-download" id="download-order-history" disabled>Download full history (CSV)</button>
-          </div>
-        </div>
-        <p id="admin-order-results" class="order-results" role="status" aria-live="polite"></p>
-        <div id="admin-orders" class="order-list"></div>
-
-        <section class="admin-directory-section" aria-labelledby="admin-directory-title">
-          <div class="admin-directory-heading">
+        <div class="admin-sidebar-foot">
+          <div class="admin-profile">
+            <span class="admin-avatar" id="admin-avatar" aria-hidden="true">A</span>
             <div>
-              <p class="eyebrow">System users</p>
-              <h3 id="admin-directory-title">Account directory</h3>
-              <p class="admin-directory-description">Select an account category to manage client recovery details and approve clients for month-end billing.</p>
+              <strong id="admin-profile-name">Administrator</strong>
+              <small>Signed in</small>
             </div>
-            <span class="admin-directory-live"><span aria-hidden="true"></span> Live overview</span>
           </div>
-          <div id="admin-user-stats" class="admin-user-stats" aria-label="Account counts"></div>
-        </section>
+          <a class="sidebar-action" href="cashier.html">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l1.5-5h15L21 9"/><path d="M4 9v11h16V9"/><path d="M3 9h18M9 20v-6h6v6"/></svg>
+            Cashier desk
+          </a>
+          <button type="button" class="sidebar-action is-danger" id="admin-logout">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5M5 12h11"/></svg>
+            Log out
+          </button>
+        </div>
+      </aside>
+      <div class="admin-scrim" id="admin-scrim" aria-hidden="true"></div>
+
+      <div class="admin-workspace">
+        <header class="admin-topbar">
+          <div class="container admin-topbar-inner">
+            <div class="admin-topbar-title">
+              <button type="button" class="topbar-button admin-menu-toggle" id="admin-menu-toggle" aria-controls="admin-sidebar" aria-expanded="false" aria-label="Open navigation">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+              </button>
+              <div>
+                <h1><span id="admin-greeting">Welcome</span> 👋</h1>
+                <p id="admin-date">Here's what's happening in the kitchen.</p>
+              </div>
+            </div>
+            <div class="admin-topbar-actions">
+              <span class="live-pill">Live</span>
+              <a class="topbar-button" href="cashier.html">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l1.5-5h15L21 9"/><path d="M4 9v11h16V9"/><path d="M3 9h18M9 20v-6h6v6"/></svg>
+                <span class="topbar-button-label">Cashier desk</span>
+              </a>
+            </div>
+          </div>
+        </header>
+
+        <main class="dashboard-main">
+          <div class="container">
+            <section class="admin-overview" id="overview" aria-labelledby="overview-title">
+              <div class="admin-section-head">
+                <div>
+                  <p class="eyebrow">Today at a glance</p>
+                  <h2 id="overview-title">Overview</h2>
+                </div>
+              </div>
+              <div class="admin-summary" id="admin-summary"></div>
+            </section>
+
+            <section class="weekly-menu-section" id="orders" aria-labelledby="orders-title">
+              <div class="section-title left">
+                <p class="eyebrow">Order activity</p>
+                <h3 id="orders-title">All Orders</h3>
+              </div>
+              <p class="schedule-help order-history-help">Today's orders appear here by default. Choose another date to view saved orders from that day. The CSV download includes your complete order history.</p>
+              <div class="order-search-filters" aria-label="Search and filter orders">
+                <div class="field-group">
+                  <label for="admin-order-search">Customer</label>
+                  <input id="admin-order-search" type="search" placeholder="Search customer name or phone" autocomplete="off" />
+                </div>
+                <div class="field-group">
+                  <label for="admin-order-date">Order date</label>
+                  <input id="admin-order-date" type="date" />
+                </div>
+                <div class="field-group">
+                  <label for="admin-order-status">Status</label>
+                  <select id="admin-order-status">
+                    <option value="">All statuses</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Preparing">Preparing</option>
+                    <option value="Ready for Pickup">Ready for Pickup</option>
+                    <option value="Out for Delivery">Out for Delivery</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Collected">Collected</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                </div>
+                <div class="order-search-actions">
+                  <button type="button" class="order-filter-clear" id="admin-order-filter-clear">Clear filters</button>
+                  <button type="button" class="submit-btn order-history-download" id="download-order-history" disabled>Download full history (CSV)</button>
+                </div>
+              </div>
+              <p id="admin-order-results" class="order-results" role="status" aria-live="polite"></p>
+              <div id="admin-orders" class="order-list"></div>
+            </section>
+
+            <section class="weekly-menu-section" id="stock" aria-labelledby="stock-title">
+              <div class="section-title left">
+                <p class="eyebrow">Inventory control</p>
+                <h3 id="stock-title">Stock Control</h3>
+              </div>
+              <p class="schedule-help">Track ingredients separately from the customer menu. Record stock added and used in kilograms; customer orders do not change these balances.</p>
+              <form id="stock-receipt-form" class="cashier-stock-form">
+                <div class="field-group">
+                  <label for="inventory-item-select">Stock item</label>
+                  <select id="inventory-item-select" required>
+                    <option value="">Loading stock items…</option>
+                  </select>
+                </div>
+                <div class="field-group">
+                  <label for="stock-quantity">Quantity (<span id="stock-unit">kg</span>)</label>
+                  <input id="stock-quantity" type="number" min="0.001" max="1000000" step="0.001" required />
+                </div>
+                <div class="cashier-stock-actions">
+                  <button class="submit-btn" type="submit" name="stockAction" value="received">Record Added</button>
+                  <button class="cashier-stock-remove-button" type="submit" name="stockAction" value="used">Record Used</button>
+                </div>
+              </form>
+              <p id="stock-status" class="schedule-status" role="status" aria-live="polite"></p>
+              <div class="cashier-stock-ledger-wrap">
+                <h4>Stock ledger</h4>
+                <div class="schedule-table-wrap">
+                  <table class="schedule-table cashier-stock-ledger">
+                    <thead>
+                      <tr>
+                        <th scope="col">Date</th>
+                        <th scope="col">Item</th>
+                        <th scope="col">Opening</th>
+                        <th scope="col">Used</th>
+                        <th scope="col">Added</th>
+                        <th scope="col">Closing</th>
+                      </tr>
+                    </thead>
+                    <tbody id="stock-ledger-body"></tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+
+            <section class="weekly-menu-section" id="menu" aria-labelledby="menu-title">
+              <div class="section-title left">
+                <p class="eyebrow">Meals by weekday</p>
+                <h3 id="menu-title">Weekly Menu Schedule</h3>
+              </div>
+              <p class="schedule-help">Choose which days each meal is served and enter the number of plates available. A count of zero marks a meal as sold out.</p>
+              <div class="field-group schedule-search">
+                <label for="menu-schedule-search">Search meals</label>
+                <input id="menu-schedule-search" type="search" placeholder="Type a meal name" autocomplete="off" aria-controls="menu-schedule-body" />
+              </div>
+              <p id="menu-schedule-search-empty" class="schedule-search-empty" role="status" hidden>No meals match your search.</p>
+              <div id="menu-schedule-status" class="schedule-status" role="status"></div>
+              <div id="menu-stock-status" class="schedule-status" role="status" aria-live="polite"></div>
+              <div class="schedule-table-wrap">
+                <table class="schedule-table">
+                  <thead id="menu-schedule-head"></thead>
+                  <tbody id="menu-schedule-body"></tbody>
+                </table>
+              </div>
+              <button type="button" class="submit-btn schedule-save-btn" id="save-menu-schedule">Save Weekly Schedule</button>
+              <button type="button" class="submit-btn schedule-save-btn" id="save-menu-stock">Save Plate Counts</button>
+            </section>
+
+            <section class="weekly-menu-section" id="credit" aria-labelledby="credit-title">
+              <div class="section-title left">
+                <p class="eyebrow">Record cash deposits</p>
+                <h3 id="credit-title">Student Credit</h3>
+              </div>
+              <p class="schedule-help">Find the student account first, confirm the name, then enter the cash deposit amount in USD.</p>
+              <form id="student-search-form" class="cashier-search-form">
+                <div class="field-group">
+                  <label for="student-search">Student name or username</label>
+                  <input id="student-search" type="search" minlength="2" required />
+                </div>
+                <button class="submit-btn" type="submit">Find Student</button>
+              </form>
+              <p id="cashier-status" class="schedule-status" role="status"></p>
+              <div id="student-search-results" class="order-list"></div>
+              <form id="deposit-form" class="cashier-deposit-form" hidden>
+                <h4 id="selected-student"></h4>
+                <div class="field-group">
+                  <label for="deposit-amount">Deposit amount (USD)</label>
+                  <input id="deposit-amount" type="number" min="0.01" step="0.01" required />
+                </div>
+                <button class="submit-btn" type="submit">Record Deposit</button>
+              </form>
+            </section>
+
+            <section class="weekly-menu-section" id="wallets" aria-labelledby="wallets-title">
+              <div class="section-title left">
+                <p class="eyebrow">Student accounts</p>
+                <h3 id="wallets-title">Wallet Balances</h3>
+              </div>
+              <details class="wallet-balances-dropdown">
+                <summary>Show student accounts</summary>
+                <div id="credit-transactions" class="order-list wallet-balances-list"></div>
+              </details>
+            </section>
+
+            <section class="weekly-menu-section monthly-billing-section" id="billing" aria-labelledby="monthly-billing-title">
+              <div class="section-title left">
+                <p class="eyebrow">Approved client accounts</p>
+                <h3 id="monthly-billing-title">Monthly Billing</h3>
+              </div>
+              <p class="schedule-help">Generate statements for a completed month. Only collected or delivered monthly-account orders are included. Unpaid statements can receive any later-completed orders for that month when generated again.</p>
+              <div class="monthly-billing-controls">
+                <div class="field-group">
+                  <label for="monthly-billing-period">Billing month</label>
+                  <input id="monthly-billing-period" type="month" required />
+                </div>
+                <button type="button" class="submit-btn" id="generate-monthly-invoices">Generate Statements</button>
+              </div>
+              <p id="monthly-billing-status" class="schedule-status" role="status" aria-live="polite"></p>
+              <div id="monthly-invoices" class="order-list monthly-invoices"></div>
+            </section>
+
+            <section class="weekly-menu-section" id="feedback" aria-labelledby="feedback-title">
+              <div class="section-title left">
+                <p class="eyebrow">Client voice</p>
+                <h3 id="feedback-title">Client Feedback</h3>
+              </div>
+              <p id="client-feedback-status" class="schedule-status" role="status" aria-live="polite"></p>
+              <div id="client-feedback-list" class="order-list client-feedback-list"></div>
+            </section>
+
+            <section class="admin-directory-section" id="accounts" aria-labelledby="admin-directory-title">
+              <div class="admin-directory-heading">
+                <div>
+                  <p class="eyebrow">System users</p>
+                  <h3 id="admin-directory-title">Account directory</h3>
+                  <p class="admin-directory-description">Select an account category to manage client recovery details and approve clients for month-end billing.</p>
+                </div>
+                <span class="admin-directory-live"><span aria-hidden="true"></span> Live overview</span>
+              </div>
+              <div id="admin-user-stats" class="admin-user-stats" aria-label="Account counts"></div>
+            </section>
+
+            <div class="admin-settings-grid" id="settings">
+              <details class="weekly-menu-section admin-collapse-dropdown">
+                <summary class="admin-collapse-summary">
+                  <span>
+                    <span class="eyebrow">Staff permissions</span>
+                    <strong>Create Cashier Account</strong>
+                  </span>
+                  <span class="admin-collapse-chevron" aria-hidden="true"></span>
+                </summary>
+                <div class="admin-collapse-content">
+                  <p class="schedule-help">Cashier accounts can record student deposits and manage order status, but cannot access the admin dashboard.</p>
+                  <form id="cashier-create-form" class="admin-password-form">
+                    <div class="field-group">
+                      <label for="cashier-full-name">Cashier name</label>
+                      <input id="cashier-full-name" type="text" maxlength="255" required />
+                    </div>
+                    <div class="field-group">
+                      <label for="cashier-username">Username</label>
+                      <input id="cashier-username" type="text" maxlength="100" required />
+                    </div>
+                    <div class="field-group">
+                      <label for="cashier-password">Temporary password (at least 14 characters)</label>
+                      <input id="cashier-password" type="password" minlength="14" required />
+                    </div>
+                    <button type="submit" class="submit-btn">Create Cashier</button>
+                    <p id="cashier-create-status" class="schedule-status" role="status"></p>
+                  </form>
+                  <a class="submit-btn cashier-desk-link" href="cashier.html">Open Cashier Desk</a>
+                </div>
+              </details>
+
+              <details class="weekly-menu-section admin-collapse-dropdown security-section">
+                <summary class="admin-collapse-summary">
+                  <span>
+                    <span class="eyebrow">Account security</span>
+                    <strong>Change Admin Password</strong>
+                  </span>
+                  <span class="admin-collapse-chevron" aria-hidden="true"></span>
+                </summary>
+                <div class="admin-collapse-content">
+                  <p>Use a unique password with at least 14 characters. Changing it signs out other admin sessions.</p>
+                  <form id="admin-password-form" class="admin-password-form">
+                    <div class="field-group">
+                      <label for="current-admin-password">Current password</label>
+                      <input id="current-admin-password" type="password" autocomplete="current-password" required />
+                    </div>
+                    <div class="field-group">
+                      <label for="new-admin-password">New password</label>
+                      <input id="new-admin-password" type="password" minlength="14" autocomplete="new-password" required />
+                    </div>
+                    <button type="submit" class="submit-btn">Update Admin Password</button>
+                    <p id="admin-password-status" class="schedule-status" role="status"></p>
+                  </form>
+                </div>
+              </details>
+            </div>
+          </div>
+        </main>
       </div>
-    </main>
+    </div>
 
     <dialog id="total-orders-dialog" class="notice-dialog admin-account-dialog" aria-labelledby="total-orders-title">
       <div class="notice-dialog-content">
@@ -347,35 +451,7 @@
       </div>
     </dialog>
 
-    <script>
-      const nav = document.querySelector('nav');
-      if (nav) {
-        Array.from(nav.querySelectorAll('a')).forEach(link => {
-          link.style.display = 'none';
-        });
-
-        const logoutLink = document.createElement('a');
-        logoutLink.href = '#';
-        logoutLink.textContent = 'Logout';
-        logoutLink.addEventListener('click', async (event) => {
-          event.preventDefault();
-          try {
-            const response = await fetch('/api/auth/logout', { method: 'POST' });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.message || 'Unable to log out safely.');
-            localStorage.removeItem('foodieUser');
-            window.location.href = 'admin-login.html';
-          } catch (error) {
-            window.alert(error.message);
-          }
-        });
-        nav.appendChild(logoutLink);
-        const cashierDeskLink = document.createElement('a');
-        cashierDeskLink.href = 'cashier.html';
-        cashierDeskLink.textContent = 'Cashier Desk';
-        nav.appendChild(cashierDeskLink);
-      }
-    </script>
+    <script src="admin-shell.js?v=redesign-1"></script>
     <script src="admin.js?v=ingredient-stock-ledger-1"></script>
     <script src="staff-dashboard-links.js?v=20261026-1"></script>
   </body>

@@ -4,56 +4,105 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login | THE KITCHEN</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="styles.css?v=password-reset-1" />
+    <link rel="stylesheet" href="theme.css?v=redesign-1" />
   </head>
   <body class="auth-body">
-    <header class="topbar">
-      <div class="container nav">
-        <div class="brand">
-          <span class="brand-mark">F</span>
+    <div class="auth-split">
+      <aside class="auth-visual" aria-label="About THE KITCHEN">
+        <div class="auth-brand">
+          <span class="brand-mark">K</span>
           <div>
-            <h1>THE KITCHEN</h1>
-            <p>User access</p>
+            <strong>THE KITCHEN</strong>
+            <small>Fresh meals, ordered simply</small>
           </div>
         </div>
-        <nav>
+
+        <div class="auth-visual-copy">
+          <p class="auth-kicker">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7L12 3z"/></svg>
+            Today's menu is ready
+          </p>
+          <h2>Good food, <em>without</em> the queue.</h2>
+          <p class="auth-lead">Sign in to browse the weekly menu, order ahead and pay from your student wallet — then collect when it's ready.</p>
+          <ul class="auth-points">
+            <li>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+              A fresh menu planned for every weekday
+            </li>
+            <li>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h13v4"/><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 13.5h2"/></svg>
+              Pay from your wallet balance
+            </li>
+            <li>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+              Track your order from kitchen to collection
+            </li>
+          </ul>
+        </div>
+
+        <div class="auth-visual-foot">
+          <span>© THE KITCHEN</span>
+          <span>Secure sign-in</span>
+        </div>
+      </aside>
+
+      <main class="auth-panel">
+        <nav class="auth-panel-top" aria-label="Site">
           <a href="/home.html">Home</a>
           <a href="/restaurant.html">Restaurant</a>
           <a href="/delivery.html">Delivery</a>
         </nav>
-      </div>
-    </header>
 
-    <main class="auth-main">
-      <div class="auth-card">
-        <div class="auth-header">
-          <p class="eyebrow">Secure access</p>
-          <h2>Login</h2>
+        <div class="auth-panel-body">
+          <div class="auth-form-wrap">
+            <p class="eyebrow">Welcome back</p>
+            <h1>Sign in to your account</h1>
+            <p class="auth-subtitle">Enter your username and password to continue.</p>
+
+            <form id="login-form" class="auth-form" method="post" action="/api/auth/login">
+              <div class="field-group">
+                <label for="loginUsername">Username</label>
+                <div class="input-shell">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                  <input id="loginUsername" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Enter username" required />
+                </div>
+              </div>
+              <div class="field-group">
+                <label for="loginPassword">Password</label>
+                <div class="input-shell has-toggle">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                  <input id="loginPassword" name="password" type="password" autocomplete="current-password" placeholder="Enter password" required />
+                  <button type="button" class="password-toggle" aria-controls="loginPassword" aria-pressed="false" aria-label="Show password">
+                    <svg class="icon icon-eye" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg class="icon icon-eye-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a10 10 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="auth-row">
+                <a href="/reset-password.html">Forgot password?</a>
+              </div>
+              <button type="submit" class="submit-btn">
+                Sign in
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </button>
+            </form>
+
+            <div class="auth-divider">New here?</div>
+            <p class="auth-link-row">
+              Don’t have an account?
+              <a href="/register.html">Create one</a>
+            </p>
+          </div>
         </div>
-
-        <form id="login-form" class="auth-form" method="post" action="/api/auth/login">
-          <div class="field-group">
-            <label for="loginUsername">Username</label>
-            <input id="loginUsername" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Enter username" required />
-          </div>
-          <div class="field-group">
-            <label for="loginPassword">Password</label>
-            <input id="loginPassword" name="password" type="password" autocomplete="current-password" placeholder="Enter password" required />
-          </div>
-          <button type="submit" class="submit-btn">Login</button>
-        </form>
-
-        <p class="auth-link-row">
-          <a href="/reset-password.html">Forgot password?</a>
-        </p>
-        <p class="auth-link-row">
-          Don’t have an account?
-          <a href="/register.html">Create one</a>
-        </p>
-      </div>
-    </main>
+      </main>
+    </div>
 
     <div id="toast" class="toast"></div>
+    <script src="auth-ui.js?v=redesign-1"></script>
     <script src="auth.js?v=password-reset-1"></script>
     <script src="staff-dashboard-links.js?v=20261026-1"></script>
   </body>
