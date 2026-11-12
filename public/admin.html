@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="styles.css?v=ingredient-stock-ledger-1" />
-    <link rel="stylesheet" href="theme.css?v=redesign-6" />
+    <link rel="stylesheet" href="theme.css?v=redesign-7" />
   </head>
   <body class="dashboard-body admin-body">
     <div class="admin-shell">
@@ -99,7 +99,11 @@
                 <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
               </button>
               <div>
-                <h1><span id="admin-greeting">Welcome</span> 👋</h1>
+                <a class="admin-back" id="admin-back" href="#overview" hidden>
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+                  Overview
+                </a>
+                <h1 id="admin-page-title"><span id="admin-greeting">Welcome</span> 👋</h1>
                 <p id="admin-date">Here's what's happening in the kitchen.</p>
               </div>
             </div>
@@ -123,6 +127,54 @@
                 </div>
               </div>
               <div class="admin-summary" id="admin-summary"></div>
+
+              <div class="admin-section-head quick-head">
+                <div>
+                  <p class="eyebrow">Manage the kitchen</p>
+                  <h2>Jump to</h2>
+                </div>
+              </div>
+              <nav class="quick-grid" aria-label="Admin areas">
+                <a class="quick-tile" href="#orders" data-tone="terracotta">
+                  <span class="quick-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></span>
+                  <span class="quick-text"><strong>Orders</strong><small>Today's orders, filters and CSV history</small></span>
+                  <span class="quick-badge" data-quick-badge="orders" hidden></span>
+                </a>
+                <a class="quick-tile" href="#stock" data-tone="green">
+                  <span class="quick-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span>
+                  <span class="quick-text"><strong>Stock control</strong><small>Stock on hand and the ingredient ledger</small></span>
+                  <span class="quick-badge" data-quick-badge="stock" hidden></span>
+                </a>
+                <a class="quick-tile" href="#menu" data-tone="amber">
+                  <span class="quick-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span>
+                  <span class="quick-text"><strong>Weekly menu</strong><small>Meals per weekday and plate counts</small></span>
+                </a>
+                <a class="quick-tile" href="#credit" data-tone="blue">
+                  <span class="quick-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="9" r="6"/><path d="M15.5 9.3A6 6 0 1 1 9.3 15.5"/></svg></span>
+                  <span class="quick-text"><strong>Student credit</strong><small>Record cash deposits for students</small></span>
+                </a>
+                <a class="quick-tile" href="#wallets" data-tone="green">
+                  <span class="quick-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h13v4"/><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 13.5h2"/></svg></span>
+                  <span class="quick-text"><strong>Wallet balances</strong><small>Every student's credit and history</small></span>
+                </a>
+                <a class="quick-tile" href="#billing" data-tone="terracotta">
+                  <span class="quick-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9l-6-6z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg></span>
+                  <span class="quick-text"><strong>Monthly billing</strong><small>Statements for approved clients</small></span>
+                </a>
+                <a class="quick-tile" href="#feedback" data-tone="amber">
+                  <span class="quick-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></span>
+                  <span class="quick-text"><strong>Client feedback</strong><small>Messages and photos from clients</small></span>
+                  <span class="quick-badge" data-quick-badge="feedback" hidden></span>
+                </a>
+                <a class="quick-tile" href="#accounts" data-tone="blue">
+                  <span class="quick-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2.2.6 3.5 2.8 3.5 6"/></svg></span>
+                  <span class="quick-text"><strong>Accounts</strong><small>Clients, cashiers and administrators</small></span>
+                </a>
+                <a class="quick-tile" href="#settings" data-tone="ink">
+                  <span class="quick-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg></span>
+                  <span class="quick-text"><strong>Team &amp; security</strong><small>Create cashiers, change your password</small></span>
+                </a>
+              </nav>
             </section>
 
             <section class="weekly-menu-section" id="orders" aria-labelledby="orders-title">
@@ -521,7 +573,7 @@
       </div>
     </dialog>
 
-    <script src="admin-shell.js?v=redesign-1"></script>
+    <script src="admin-shell.js?v=views-1"></script>
     <script src="admin.js?v=client-feedback-1"></script>
     <script src="staff-dashboard-links.js?v=20261026-1"></script>
   </body>
