@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="styles.css?v=ingredient-stock-ledger-1" />
-    <link rel="stylesheet" href="theme.css?v=redesign-3" />
+    <link rel="stylesheet" href="theme.css?v=redesign-4" />
   </head>
   <body class="dashboard-body admin-body">
     <div class="admin-shell">
@@ -233,23 +233,65 @@
                 <p class="eyebrow">Record cash deposits</p>
                 <h3 id="credit-title">Student Credit</h3>
               </div>
-              <p class="schedule-help">Find the student account first, confirm the name, then enter the cash deposit amount in USD.</p>
-              <form id="student-search-form" class="cashier-search-form">
+              <ol class="credit-steps" aria-label="How to record a deposit">
+                <li><span>1</span> Find the student</li>
+                <li><span>2</span> Confirm the account</li>
+                <li><span>3</span> Enter the cash amount</li>
+              </ol>
+              <form id="student-search-form" class="cashier-search-form credit-search">
                 <div class="field-group">
                   <label for="student-search">Student name or username</label>
-                  <input id="student-search" type="search" minlength="2" required />
+                  <div class="input-shell">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+                    <input id="student-search" type="search" minlength="2" placeholder="e.g. Munashe or dabvu" autocomplete="off" required />
+                  </div>
                 </div>
-                <button class="submit-btn" type="submit">Find Student</button>
+                <button class="submit-btn" type="submit">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+                  Find student
+                </button>
               </form>
-              <p id="cashier-status" class="schedule-status" role="status"></p>
-              <div id="student-search-results" class="order-list"></div>
-              <form id="deposit-form" class="cashier-deposit-form" hidden>
-                <h4 id="selected-student"></h4>
-                <div class="field-group">
-                  <label for="deposit-amount">Deposit amount (USD)</label>
-                  <input id="deposit-amount" type="number" min="0.01" step="0.01" required />
+              <p id="cashier-status" class="schedule-status credit-status" role="status"></p>
+              <div id="student-search-results" class="order-list credit-results"></div>
+              <form id="deposit-form" class="cashier-deposit-form credit-deposit" hidden>
+                <div class="credit-deposit-head">
+                  <span class="credit-avatar credit-avatar--lg" id="selected-student-avatar" aria-hidden="true"></span>
+                  <div class="credit-deposit-who">
+                    <p class="eyebrow">Recording cash for</p>
+                    <h4 id="selected-student"></h4>
+                    <span id="selected-student-username" class="credit-username"></span>
+                  </div>
+                  <div class="credit-deposit-balance">
+                    <span>Current balance</span>
+                    <strong id="selected-student-balance">$0.00</strong>
+                  </div>
                 </div>
-                <button class="submit-btn" type="submit">Record Deposit</button>
+                <div class="credit-deposit-body">
+                  <div class="field-group">
+                    <label for="deposit-amount">Deposit amount (USD)</label>
+                    <div class="money-input">
+                      <span aria-hidden="true">$</span>
+                      <input id="deposit-amount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00" required />
+                    </div>
+                  </div>
+                  <div class="quick-amounts" role="group" aria-label="Quick amounts">
+                    <button type="button" data-quick-amount="1">$1</button>
+                    <button type="button" data-quick-amount="5">$5</button>
+                    <button type="button" data-quick-amount="10">$10</button>
+                    <button type="button" data-quick-amount="20">$20</button>
+                  </div>
+                  <p class="credit-preview" id="deposit-preview" hidden>
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                    New balance after this deposit: <strong id="deposit-preview-value">$0.00</strong>
+                  </p>
+                  <div class="credit-deposit-actions">
+                    <button class="submit-btn" type="submit">
+                      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>
+                      Record deposit
+                    </button>
+                    <button class="credit-cancel" type="button" id="deposit-cancel">Choose a different student</button>
+                  </div>
+                </div>
               </form>
             </section>
 
@@ -452,7 +494,7 @@
     </dialog>
 
     <script src="admin-shell.js?v=redesign-1"></script>
-    <script src="admin.js?v=schedule-grid-1"></script>
+    <script src="admin.js?v=student-credit-1"></script>
     <script src="staff-dashboard-links.js?v=20261026-1"></script>
   </body>
 </html>

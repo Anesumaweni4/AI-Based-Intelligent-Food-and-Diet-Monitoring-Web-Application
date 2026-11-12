@@ -1301,6 +1301,432 @@
   }
 }
 
+/* ---- Student credit ---- */
+.credit-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  margin: 6px 0 22px;
+  padding: 0;
+  list-style: none;
+  color: var(--muted-ink);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.credit-steps li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.credit-steps span {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 50%;
+  background: #f1e1cf;
+  color: var(--terracotta-dark);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.admin-body .credit-search {
+  grid-template-columns: minmax(0, 1fr) auto;
+  max-width: 760px;
+}
+
+.admin-body .credit-search .input-shell input {
+  padding-left: 46px;
+}
+
+.admin-body .credit-search .submit-btn {
+  gap: 8px;
+  width: auto;
+  min-height: 46px;
+  margin: 0;
+  padding: 0 22px;
+}
+
+.admin-body .credit-status:empty {
+  display: none;
+}
+
+.admin-body .credit-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 760px;
+  min-height: 0;
+  margin: 16px 0 14px;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #faf6f0;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.admin-body .credit-status::before {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--saffron);
+  content: "";
+}
+
+.admin-body .credit-status.is-success {
+  border-color: #cfe2d3;
+  background: #eef6ef;
+  color: #2f6b43;
+}
+
+.admin-body .credit-status.is-success::before {
+  background: var(--ok);
+}
+
+.admin-body .credit-status.error {
+  border-color: #f1cfc7;
+  background: #fcefec;
+  color: #a12f1a;
+}
+
+.admin-body .credit-status.error::before {
+  background: #c8432a;
+}
+
+.admin-body .credit-results {
+  display: grid;
+  gap: 10px;
+  max-width: 760px;
+}
+
+.admin-body .student-result {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  margin: 0;
+  padding: 14px 18px;
+  border: 1.5px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease, background 0.18s ease;
+}
+
+.admin-body .student-result:hover,
+.admin-body .student-result:focus-visible {
+  border-color: var(--line-strong);
+  box-shadow: 0 8px 20px rgba(36, 24, 19, 0.07);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.admin-body .student-result:focus-visible {
+  box-shadow: var(--ring);
+}
+
+.admin-body .student-result[aria-pressed="true"] {
+  border-color: var(--terracotta);
+  background: #fdf6f2;
+  box-shadow: 0 0 0 3px rgba(162, 74, 48, 0.12);
+}
+
+.credit-avatar {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f3e2cf, #e9cfb3);
+  color: var(--terracotta-dark);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.credit-avatar--lg {
+  width: 56px;
+  height: 56px;
+  border: 3px solid rgba(255, 255, 255, 0.25);
+  background: linear-gradient(135deg, var(--saffron), #c0703f);
+  color: #fff;
+  font-size: 1.1rem;
+}
+
+.student-result-who strong {
+  display: block;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.credit-username {
+  display: inline-block;
+  margin-top: 3px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #f4ede4;
+  color: var(--ink-soft);
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 0.82rem;
+}
+
+.student-result-balance {
+  text-align: right;
+}
+
+.student-result-balance small {
+  display: block;
+  color: var(--muted-ink);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.student-result-balance strong {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.student-result-pick {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 2px solid var(--line-strong);
+  border-radius: 50%;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.student-result[aria-pressed="true"] .student-result-pick {
+  border-color: var(--terracotta);
+  background: var(--terracotta) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / 14px no-repeat;
+}
+
+/* Deposit card */
+.admin-body .credit-deposit {
+  max-width: 760px;
+  margin: 18px 0 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 14px 34px rgba(36, 24, 19, 0.08);
+  animation: credit-in 0.28s ease;
+}
+
+@keyframes credit-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+.credit-deposit-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 22px;
+  background:
+    radial-gradient(70% 140% at 100% 0%, rgba(224, 181, 106, 0.3), transparent 60%),
+    var(--ink);
+  color: #fff;
+}
+
+.credit-deposit-who .eyebrow {
+  margin: 0 0 4px;
+  color: var(--saffron);
+}
+
+.admin-body .credit-deposit-who h4 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.35rem;
+}
+
+.credit-deposit-who .credit-username {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.credit-deposit-balance {
+  text-align: right;
+}
+
+.credit-deposit-balance span {
+  display: block;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.credit-deposit-balance strong {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+.credit-deposit-body {
+  padding: 22px;
+}
+
+.money-input {
+  position: relative;
+}
+
+.money-input > span {
+  position: absolute;
+  top: 50%;
+  left: 18px;
+  color: var(--muted-ink);
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 600;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.admin-body .money-input input {
+  height: 60px;
+  padding-left: 42px;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+.quick-amounts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 18px;
+}
+
+.quick-amounts button {
+  min-width: 64px;
+  padding: 9px 14px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.quick-amounts button:hover,
+.quick-amounts button:focus-visible {
+  border-color: var(--terracotta);
+  color: var(--terracotta);
+  outline: none;
+}
+
+.quick-amounts button[aria-pressed="true"] {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+}
+
+.credit-preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border: 1px solid #cfe2d3;
+  border-radius: 12px;
+  background: #eef6ef;
+  color: #2f6b43;
+  font-size: 0.92rem;
+}
+
+.credit-preview strong {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.credit-deposit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-body .credit-deposit-actions .submit-btn {
+  gap: 8px;
+  width: auto;
+  margin: 0;
+  padding: 14px 24px;
+}
+
+.credit-cancel {
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted-ink);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.credit-cancel:hover,
+.credit-cancel:focus-visible {
+  background: #f6efe6;
+  color: var(--ink);
+  outline: none;
+}
+
+@media (max-width: 640px) {
+  .admin-body .credit-search {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-body .student-result {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+
+  .student-result-pick {
+    display: none;
+  }
+
+  .credit-deposit-head {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .credit-deposit-balance {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+
+  .admin-body .credit-deposit-actions .submit-btn {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-body .credit-deposit {
+    animation: none;
+  }
+}
+
 /* Order filters + cards */
 .admin-body .order-search-filters {
   border: 1px solid var(--line);

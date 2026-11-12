@@ -790,40 +790,111 @@ stockReceiptForm.addEventListener('submit', async (event) => {
   }
 });
 
-searchForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
+// --- Student credit: search, select, deposit ---
+const depositPreview = document.getElementById('deposit-preview');
+const depositPreviewValue = document.getElementById('deposit-preview-value');
+
+function setCashierStatus(message, tone = 'info') {
+  cashierStatus.textContent = message;
+  cashierStatus.classList.toggle('error', tone === 'error');
+  cashierStatus.classList.toggle('is-success', tone === 'success');
+  cashierStatus.classList.toggle('is-info', tone === 'info');
+}
+
+function getInitials(name) {
+  return String(name || '?').trim().split(/\s+/).filter(Boolean).slice(0, 2)
+    .map((part) => part[0].toUpperCase()).join('') || '?';
+}
+
+function updateDepositPreview() {
+  const amount = Number(depositAmount.value);
+  const valid = selectedStudent && Number.isFinite(amount) && amount > 0;
+  depositPreview.hidden = !valid;
+  if (valid) {
+    depositPreviewValue.textContent = formatCredit(selectedStudent.balanceCents + Math.round(amount * 100));
+  }
+  depositForm.querySelectorAll('[data-quick-amount]').forEach((button) => {
+    button.setAttribute('aria-pressed', String(Number(button.dataset.quickAmount) === amount));
+  });
+}
+
+function clearStudentSelection() {
   selectedStudent = null;
   depositForm.hidden = true;
-  cashierStatus.textContent = 'Searching student accounts…';
-  cashierStatus.classList.remove('error');
+  depositForm.reset();
+  updateDepositPreview();
+  searchResults.querySelectorAll('.student-result').forEach((button) => button.setAttribute('aria-pressed', 'false'));
+}
+
+searchForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  clearStudentSelection();
+  setCashierStatus('Searching student accounts…');
   searchResults.innerHTML = '';
 
   try {
     const response = await fetch(`/api/cashier/students?search=${encodeURIComponent(searchInput.value.trim())}`);
     const result = await response.json();
     if (!response.ok) throw new Error(result.message || 'Unable to search student accounts.');
-    cashierStatus.textContent = result.students.length ? 'Select the correct student account.' : 'No matching student accounts.';
+    const count = result.students.length;
+    setCashierStatus(count
+      ? `${count} account${count === 1 ? '' : 's'} found. Select the correct student. Check the username carefully.`
+      : 'No matching student accounts. Try part of the name or the username.', count ? 'info' : 'error');
     searchResults.innerHTML = result.students.map((student) => `
-      <button type="button" class="order-card student-result" data-username="${escapeHtml(student.username)}" data-name="${escapeHtml(student.fullName)}" data-balance="${Number(student.balanceCents)}">
-        <strong>${escapeHtml(student.fullName)}</strong>
-        <span>@${escapeHtml(student.username)}</span>
-        <span>Balance: ${formatCredit(student.balanceCents)}</span>
+      <button type="button" class="student-result" aria-pressed="false" data-username="${escapeHtml(student.username)}" data-name="${escapeHtml(student.fullName)}" data-balance="${Number(student.balanceCents)}">
+        <span class="credit-avatar" aria-hidden="true">${escapeHtml(getInitials(student.fullName))}</span>
+        <span class="student-result-who">
+          <strong>${escapeHtml(student.fullName)}</strong>
+          <span class="credit-username">@${escapeHtml(student.username)}</span>
+        </span>
+        <span class="student-result-balance">
+          <small>Balance</small>
+          <strong data-balance-label>${formatCredit(student.balanceCents)}</strong>
+        </span>
+        <span class="student-result-pick" aria-hidden="true"></span>
       </button>
     `).join('');
   } catch (error) {
-    cashierStatus.textContent = error.message;
-    cashierStatus.classList.add('error');
+    setCashierStatus(error.message, 'error');
   }
 });
 
 searchResults.addEventListener('click', (event) => {
   const button = event.target.closest('.student-result');
   if (!button) return;
-  selectedStudent = { username: button.dataset.username, fullName: button.dataset.name };
-  selectedStudentLabel.textContent = `${selectedStudent.fullName} (@${selectedStudent.username})`;
+  searchResults.querySelectorAll('.student-result').forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
+  selectedStudent = {
+    username: button.dataset.username,
+    fullName: button.dataset.name,
+    balanceCents: Number(button.dataset.balance) || 0
+  };
+  selectedStudentLabel.textContent = selectedStudent.fullName;
+  document.getElementById('selected-student-username').textContent = `@${selectedStudent.username}`;
+  document.getElementById('selected-student-avatar').textContent = getInitials(selectedStudent.fullName);
+  document.getElementById('selected-student-balance').textContent = formatCredit(selectedStudent.balanceCents);
   depositAmount.value = '';
   depositForm.hidden = false;
-  cashierStatus.textContent = 'Confirm the student name before recording cash.';
+  updateDepositPreview();
+  setCashierStatus(`Confirm this is ${selectedStudent.fullName} (@${selectedStudent.username}) before recording cash.`);
+  depositForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  depositAmount.focus({ preventScroll: true });
+});
+
+depositAmount.addEventListener('input', updateDepositPreview);
+
+depositForm.addEventListener('click', (event) => {
+  const quick = event.target.closest('[data-quick-amount]');
+  if (quick) {
+    depositAmount.value = Number(quick.dataset.quickAmount).toFixed(2);
+    updateDepositPreview();
+    depositAmount.focus();
+    return;
+  }
+  if (event.target.closest('#deposit-cancel')) {
+    clearStudentSelection();
+    setCashierStatus('Select the correct student account.');
+    searchResults.querySelector('.student-result')?.focus();
+  }
 });
 
 depositForm.addEventListener('submit', async (event) => {
@@ -831,8 +902,7 @@ depositForm.addEventListener('submit', async (event) => {
   if (!selectedStudent) return;
   const submitButton = depositForm.querySelector('button[type="submit"]');
   submitButton.disabled = true;
-  cashierStatus.textContent = 'Recording deposit…';
-  cashierStatus.classList.remove('error');
+  setCashierStatus('Recording deposit…');
 
   try {
     const response = await fetch('/api/cashier/deposits', {
@@ -845,14 +915,18 @@ depositForm.addEventListener('submit', async (event) => {
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.message || 'Unable to record deposit.');
-    depositForm.reset();
-    depositForm.hidden = true;
-    cashierStatus.textContent = `${result.message} New balance: ${formatCredit(result.student.balanceCents)}.`;
-    selectedStudent = null;
+    // Refresh the balance shown on the student's result card.
+    const card = Array.from(searchResults.querySelectorAll('.student-result'))
+      .find((item) => item.dataset.username === selectedStudent.username);
+    if (card && result.student) {
+      card.dataset.balance = String(Number(result.student.balanceCents));
+      card.querySelector('[data-balance-label]').textContent = formatCredit(result.student.balanceCents);
+    }
+    clearStudentSelection();
+    setCashierStatus(`${result.message} New balance: ${formatCredit(result.student.balanceCents)}.`, 'success');
     await loadTransactions();
   } catch (error) {
-    cashierStatus.textContent = error.message;
-    cashierStatus.classList.add('error');
+    setCashierStatus(error.message, 'error');
   } finally {
     submitButton.disabled = false;
   }
