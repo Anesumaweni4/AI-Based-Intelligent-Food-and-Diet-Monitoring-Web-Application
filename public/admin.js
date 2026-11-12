@@ -492,7 +492,15 @@ async function loadMenuSchedule() {
     scheduleHead.innerHTML = `
       <tr>
         <th scope="col">Meal</th>
-        ${data.weekdays.map((day) => `<th scope="col">${escapeHtml(day)}</th>`).join('')}
+        ${data.weekdays.map((day, dayOfWeek) => `
+          <th scope="col">
+            <button type="button" class="schedule-day-toggle" data-toggle-day="${dayOfWeek}"
+              title="Tick or untick ${escapeHtml(day)} for every meal shown">
+              <span>${escapeHtml(day.slice(0, 3))}</span>
+              <small class="schedule-day-count" data-day-count="${dayOfWeek}">0</small>
+            </button>
+          </th>
+        `).join('')}
         <th scope="col">Plates available</th>
       </tr>
     `;
@@ -515,7 +523,7 @@ async function loadMenuSchedule() {
         ${data.weekdays.map((day, dayOfWeek) => {
           const checked = assignedMeals.has(`${dayOfWeek}:${item.id}`) ? ' checked' : '';
           return `
-            <td>
+            <td class="schedule-cell">
               <label class="schedule-checkbox" aria-label="${escapeHtml(item.name)} served on ${escapeHtml(day)}">
                 <input type="checkbox" data-menu-item-id="${Number(item.id)}" data-day-of-week="${dayOfWeek}"${checked}>
                 <span class="visually-hidden">${escapeHtml(day)}</span>
@@ -530,6 +538,9 @@ async function loadMenuSchedule() {
       </tr>
     `).join('');
     filterMenuSchedule();
+    updateScheduleDayCounts();
+    setScheduleDirty(false);
+    setMenuStockDirty(false);
     saveScheduleButton.disabled = false;
     saveMenuStockButton.disabled = false;
   } catch (error) {
@@ -555,6 +566,59 @@ function filterMenuSchedule() {
 
 scheduleSearchInput.addEventListener('input', filterMenuSchedule);
 
+// --- Weekly schedule: live day counts, day toggles and unsaved-change hints ---
+function updateScheduleDayCounts() {
+  scheduleHead.querySelectorAll('[data-day-count]').forEach((badge) => {
+    const day = badge.dataset.dayCount;
+    badge.textContent = String(scheduleBody.querySelectorAll(`input[data-day-of-week="${day}"]:checked`).length);
+  });
+}
+
+function setScheduleDirty(isDirty) {
+  saveScheduleButton.classList.toggle('has-changes', isDirty);
+  if (isDirty) {
+    scheduleStatus.textContent = 'You have unsaved schedule changes. Click “Save Weekly Schedule” to keep them.';
+    scheduleStatus.classList.remove('error');
+    scheduleStatus.classList.add('is-pending');
+  } else {
+    scheduleStatus.classList.remove('is-pending');
+  }
+}
+
+function setMenuStockDirty(isDirty) {
+  saveMenuStockButton.classList.toggle('has-changes', isDirty);
+  if (isDirty) {
+    menuPlateStatus.textContent = 'You have unsaved plate counts. Click “Save Plate Counts” to keep them.';
+    menuPlateStatus.classList.remove('error');
+    menuPlateStatus.classList.add('is-pending');
+  } else {
+    menuPlateStatus.classList.remove('is-pending');
+  }
+}
+
+scheduleBody.addEventListener('change', (event) => {
+  if (event.target.matches('input[type="checkbox"]')) {
+    updateScheduleDayCounts();
+    setScheduleDirty(true);
+  }
+});
+
+scheduleBody.addEventListener('input', (event) => {
+  if (event.target.matches('[data-menu-stock-id]')) setMenuStockDirty(true);
+});
+
+scheduleHead.addEventListener('click', (event) => {
+  const toggle = event.target.closest('[data-toggle-day]');
+  if (!toggle) return;
+  const boxes = Array.from(scheduleBody.querySelectorAll(`input[data-day-of-week="${toggle.dataset.toggleDay}"]`))
+    .filter((box) => !box.closest('tr').hidden);
+  if (!boxes.length) return;
+  const tickAll = boxes.some((box) => !box.checked);
+  boxes.forEach((box) => { box.checked = tickAll; });
+  updateScheduleDayCounts();
+  setScheduleDirty(true);
+});
+
 async function saveMenuSchedule() {
   const schedule = Array.from(scheduleBody.querySelectorAll('input[type="checkbox"]:checked'))
     .map((checkbox) => ({
@@ -574,6 +638,7 @@ async function saveMenuSchedule() {
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.message || 'Unable to save weekly schedule');
+    setScheduleDirty(false);
     scheduleStatus.textContent = result.message;
   } catch (error) {
     scheduleStatus.textContent = error.message;
@@ -603,6 +668,7 @@ async function saveMenuStock() {
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.message || 'Unable to save plate counts.');
+    setMenuStockDirty(false);
     menuPlateStatus.textContent = result.message;
   } catch (error) {
     menuPlateStatus.textContent = error.message;

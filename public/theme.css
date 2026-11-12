@@ -1065,6 +1065,242 @@
   background: #fdf9f3;
 }
 
+/* ---- Weekly menu schedule grid ---- */
+.admin-body #menu .schedule-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.admin-body #menu .schedule-table th,
+.admin-body #menu .schedule-table td {
+  border-bottom: 1px solid var(--line);
+}
+
+.admin-body #menu .schedule-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+/* Keep the meal name visible while scrolling sideways on small screens. */
+.admin-body #menu .schedule-table tr > :first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: #fff;
+  box-shadow: 1px 0 0 var(--line);
+}
+
+.admin-body #menu .schedule-table thead tr > :first-child {
+  z-index: 2;
+  background: #faf5ee;
+}
+
+.admin-body #menu .schedule-table tbody tr:hover > * {
+  background: #fdf8f1;
+}
+
+.admin-body #menu .schedule-table tbody th {
+  background: #fff;
+  color: var(--ink);
+  font-size: 0.95rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.admin-body .schedule-meal-name {
+  font-weight: 600;
+}
+
+.admin-body .schedule-meal-price {
+  color: var(--terracotta);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+/* Day header buttons: click to tick/untick the whole column. */
+.admin-body #menu .schedule-table thead th:not(:first-child):not(:last-child) {
+  padding: 8px 4px;
+}
+
+.schedule-day-toggle {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 58px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.schedule-day-toggle:hover,
+.schedule-day-toggle:focus-visible {
+  border-color: var(--line-strong);
+  background: #fff;
+  color: var(--terracotta);
+  outline: none;
+}
+
+.schedule-day-count {
+  display: inline-grid;
+  min-width: 24px;
+  height: 20px;
+  padding: 0 6px;
+  place-items: center;
+  border-radius: 999px;
+  background: #f1e1cf;
+  color: var(--terracotta-dark);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+/* The whole cell is the click target. */
+.admin-body #menu .schedule-table td.schedule-cell {
+  height: 1px; /* lets the label stretch to the full row height */
+  padding: 0;
+}
+
+.admin-body .schedule-checkbox {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 60px;
+  cursor: pointer;
+}
+
+.admin-body .schedule-checkbox input {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  place-items: center;
+  border: 2px solid var(--line-strong);
+  border-radius: 9px;
+  background: #fff;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-body .schedule-checkbox input::after {
+  width: 14px;
+  height: 14px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / contain no-repeat;
+  content: "";
+  opacity: 0;
+  transform: scale(0.4);
+  transition: opacity 0.15s ease, transform 0.18s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+.admin-body .schedule-checkbox:hover input {
+  border-color: var(--terracotta);
+  transform: scale(1.06);
+}
+
+.admin-body .schedule-checkbox input:checked {
+  border-color: var(--terracotta);
+  background: linear-gradient(135deg, #b5563a, var(--terracotta-dark));
+  box-shadow: 0 4px 10px rgba(162, 74, 48, 0.3);
+}
+
+.admin-body .schedule-checkbox input:checked::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.admin-body .schedule-checkbox input:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.admin-body .menu-stock-input {
+  width: 96px;
+  min-height: 42px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 12px;
+  background: #fffdfa;
+  font: inherit;
+  font-weight: 600;
+}
+
+.admin-body .menu-stock-input:focus {
+  border-color: var(--terracotta);
+  box-shadow: var(--ring);
+  outline: none;
+}
+
+/* Save buttons light up when there is something to save. */
+.admin-body .schedule-save-btn {
+  width: auto;
+  margin: 18px 10px 0 0;
+  padding: 13px 22px;
+}
+
+.admin-body .schedule-save-btn:not(.has-changes) {
+  background: #fff;
+  box-shadow: none;
+  border: 1.5px solid var(--line-strong);
+  color: var(--ink-soft);
+}
+
+.admin-body .schedule-save-btn:not(.has-changes):hover {
+  background: #fff;
+  border-color: var(--terracotta);
+  color: var(--terracotta);
+  box-shadow: none;
+  filter: none;
+}
+
+.admin-body .schedule-save-btn.has-changes {
+  animation: save-nudge 1.6s ease-in-out infinite;
+}
+
+@keyframes save-nudge {
+  0%, 100% { box-shadow: 0 6px 16px rgba(162, 74, 48, 0.22), 0 0 0 0 rgba(162, 74, 48, 0.35); }
+  50% { box-shadow: 0 6px 16px rgba(162, 74, 48, 0.22), 0 0 0 7px rgba(162, 74, 48, 0); }
+}
+
+.admin-body .schedule-status.is-pending {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 12px 16px;
+  border: 1px solid #f0d9ac;
+  border-radius: 12px;
+  background: #fdf5e4;
+  color: #8a5e12;
+  font-weight: 600;
+}
+
+.admin-body .schedule-status.is-pending::before {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: #d9a03a;
+  content: "";
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-body .schedule-save-btn.has-changes {
+    animation: none;
+  }
+}
+
 /* Order filters + cards */
 .admin-body .order-search-filters {
   border: 1px solid var(--line);
