@@ -743,6 +743,14 @@ function formatLedgerChange(quantity, unit, sign) {
   return `<span class="ledger-change ${sign === '-' ? 'is-used' : 'is-added'}">${sign === '-' ? '−' : '+'}${formatStockQuantity(amount)} ${escapeHtml(unit)}</span>`;
 }
 
+let inventoryItems = [];
+const stockSearch = document.getElementById('stock-item-search');
+const stockOptionsList = document.getElementById('stock-item-options');
+const stockSearchClear = document.getElementById('stock-item-clear');
+const stockFilterNote = document.getElementById('stock-filter-note');
+let stockActiveIndex = -1;
+let stockMatches = [];
+
 function syncStockSelection() {
   const selectedOption = stockItemSelect.selectedOptions[0];
   const unit = selectedOption?.dataset.unit || 'kg';
@@ -751,7 +759,188 @@ function syncStockSelection() {
   stockOnHand.querySelectorAll('.stock-item').forEach((card) => {
     card.setAttribute('aria-pressed', String(card.dataset.stockId === stockItemSelect.value));
   });
+  // Show the chosen item's name in the search box (unless the admin is typing).
+  const selectedItem = inventoryItems.find((item) => String(item.id) === stockItemSelect.value);
+  if (selectedItem && document.activeElement !== stockSearch) stockSearch.value = selectedItem.name;
+  stockSearchClear.hidden = !stockSearch.value;
+  filterStockCards();
 }
+
+// --- Stock item search (combobox) ---
+function getStockMatches(query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return inventoryItems.slice();
+  return inventoryItems
+    .map((item) => {
+      const name = String(item.name).toLowerCase();
+      const index = name.indexOf(q);
+      const wordStart = name.split(/[\s-]+/).some((word) => word.startsWith(q));
+      return { item, rank: index === 0 ? 0 : wordStart ? 1 : index > 0 ? 2 : -1 };
+    })
+    .filter((entry) => entry.rank >= 0)
+    .sort((a, b) => a.rank - b.rank || String(a.item.name).localeCompare(String(b.item.name)))
+    .map((entry) => entry.item);
+}
+
+function highlightMatch(name, query) {
+  const q = query.trim();
+  const index = q ? name.toLowerCase().indexOf(q.toLowerCase()) : -1;
+  if (index < 0) return escapeHtml(name);
+  return `${escapeHtml(name.slice(0, index))}<mark>${escapeHtml(name.slice(index, index + q.length))}</mark>${escapeHtml(name.slice(index + q.length))}`;
+}
+
+function setStockActive(index) {
+  stockActiveIndex = index;
+  const options = stockOptionsList.querySelectorAll('[role="option"]');
+  options.forEach((option, i) => option.setAttribute('aria-selected', String(i === index)));
+  const active = options[index];
+  if (active) {
+    stockSearch.setAttribute('aria-activedescendant', active.id);
+    active.scrollIntoView({ block: 'nearest' });
+  } else {
+    stockSearch.removeAttribute('aria-activedescendant');
+  }
+}
+
+function openStockOptions() {
+  const query = stockSearch.value;
+  stockMatches = getStockMatches(query);
+  stockOptionsList.innerHTML = stockMatches.length
+    ? stockMatches.map((item, index) => {
+        const quantity = Number(item.current_quantity) || 0;
+        return `
+          <li role="option" id="stock-option-${Number(item.id)}" data-stock-id="${Number(item.id)}" aria-selected="false"
+            class="${quantity <= 0 ? 'is-empty' : ''}">
+            <span class="combo-name">${highlightMatch(String(item.name), query)}</span>
+            <span class="combo-qty">${formatStockQuantity(quantity)} ${escapeHtml(item.unit)}</span>
+          </li>
+        `;
+      }).join('')
+    : `<li class="combo-empty" role="presentation">No stock items match “${escapeHtml(query.trim())}”.</li>`;
+  stockOptionsList.hidden = false;
+  stockSearch.setAttribute('aria-expanded', 'true');
+  setStockActive(stockMatches.length ? 0 : -1);
+}
+
+function closeStockOptions() {
+  stockOptionsList.hidden = true;
+  stockSearch.setAttribute('aria-expanded', 'false');
+  setStockActive(-1);
+}
+
+function chooseStockItem(id) {
+  stockItemSelect.value = String(id);
+  const item = inventoryItems.find((entry) => String(entry.id) === String(id));
+  if (item) stockSearch.value = item.name;
+  closeStockOptions();
+  syncStockSelection();
+  stockQuantity.focus();
+}
+
+function filterStockCards() {
+  const query = stockSearch.value.trim();
+  const ids = new Set(getStockMatches(query).map((item) => String(item.id)));
+  let shown = 0;
+  stockOnHand.querySelectorAll('.stock-item').forEach((card) => {
+    const visible = !query || ids.has(card.dataset.stockId);
+    card.hidden = !visible;
+    if (visible) shown += 1;
+  });
+  let empty = stockOnHand.querySelector('.stock-onhand-nomatch');
+  if (query && shown === 0 && inventoryItems.length) {
+    if (!empty) {
+      empty = document.createElement('div');
+      empty.className = 'stock-onhand-empty stock-onhand-nomatch';
+      stockOnHand.appendChild(empty);
+    }
+    empty.textContent = `No stock items match “${query}”.`;
+  } else if (empty) {
+    empty.remove();
+  }
+  stockFilterNote.hidden = !query;
+  stockFilterNote.textContent = query ? `· showing ${shown} of ${inventoryItems.length}` : '';
+}
+
+stockSearch.addEventListener('input', () => {
+  // Typing starts a new search, so forget the previous choice until one is picked.
+  stockItemSelect.value = '';
+  syncStockSelection();
+  openStockOptions();
+});
+
+stockSearch.addEventListener('focus', () => {
+  if (!stockItemSelect.value) openStockOptions();
+});
+
+stockSearch.addEventListener('keydown', (event) => {
+  const isOpen = !stockOptionsList.hidden;
+  if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    if (!isOpen) openStockOptions();
+    else if (stockMatches.length) setStockActive((stockActiveIndex + 1) % stockMatches.length);
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault();
+    if (isOpen && stockMatches.length) setStockActive((stockActiveIndex - 1 + stockMatches.length) % stockMatches.length);
+  } else if (event.key === 'Enter') {
+    if (isOpen && stockMatches[stockActiveIndex]) {
+      event.preventDefault();
+      chooseStockItem(stockMatches[stockActiveIndex].id);
+    }
+  } else if (event.key === 'Escape') {
+    if (isOpen) {
+      event.preventDefault();
+      closeStockOptions();
+    }
+  }
+});
+
+stockSearch.addEventListener('blur', () => {
+  // Let a click on an option land first, then tidy up.
+  setTimeout(() => {
+    if (stockOptionsList.contains(document.activeElement)) return;
+    closeStockOptions();
+    if (!stockItemSelect.value && stockSearch.value.trim()) {
+      const exact = inventoryItems.find((item) => item.name.toLowerCase() === stockSearch.value.trim().toLowerCase());
+      if (exact) {
+        stockItemSelect.value = String(exact.id);
+        syncStockSelection();
+      }
+    }
+  }, 150);
+});
+
+// mousedown (not click) so the input keeps focus and blur does not close the list first.
+stockOptionsList.addEventListener('mousedown', (event) => {
+  const option = event.target.closest('[role="option"]');
+  if (!option) return;
+  event.preventDefault();
+  chooseStockItem(option.dataset.stockId);
+});
+
+stockSearchClear.addEventListener('click', () => {
+  stockSearch.value = '';
+  stockItemSelect.value = '';
+  syncStockSelection();
+  stockSearch.focus();
+});
+
+// Block submitting without a chosen item (the real list is hidden, so the browser cannot flag it).
+document.addEventListener('submit', (event) => {
+  if (event.target !== stockReceiptForm || stockItemSelect.value) return;
+  event.preventDefault();
+  event.stopPropagation();
+  setStockStatus(stockSearch.value.trim()
+    ? `Choose a stock item from the list: nothing matches “${stockSearch.value.trim()}” exactly.`
+    : 'Choose a stock item first. Start typing its name, for example “water”.', 'error');
+  stockSearch.focus();
+}, true);
+
+stockReceiptForm.addEventListener('reset', () => {
+  setTimeout(() => {
+    stockSearchClear.hidden = true;
+    filterStockCards();
+  });
+});
 
 async function loadInventory() {
   if (!inventoryLoadedOnce) setStockStatus('Loading stock inventory…');
@@ -760,6 +949,7 @@ async function loadInventory() {
     const result = await readStockApiResponse(response);
     if (!response.ok) throw new Error(result.message || 'Unable to load stock inventory.');
 
+    inventoryItems = result.items;
     // Keep the admin's current choice when the list refreshes every few seconds.
     const previousSelection = stockItemSelect.value;
     stockItemSelect.innerHTML = result.items.length
@@ -771,6 +961,8 @@ async function loadInventory() {
       stockItemSelect.value = previousSelection;
     }
     stockItemSelect.disabled = !result.items.length;
+    stockSearch.disabled = !result.items.length;
+    stockSearch.placeholder = result.items.length ? 'Type to search, e.g. water' : 'No stock items available';
 
     stockCount.hidden = !result.items.length;
     stockCount.textContent = `${result.items.length} item${result.items.length === 1 ? '' : 's'} tracked`;

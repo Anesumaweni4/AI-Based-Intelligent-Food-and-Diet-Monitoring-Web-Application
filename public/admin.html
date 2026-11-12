@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="styles.css?v=ingredient-stock-ledger-1" />
-    <link rel="stylesheet" href="theme.css?v=redesign-7" />
+    <link rel="stylesheet" href="theme.css?v=redesign-8" />
   </head>
   <body class="dashboard-body admin-body">
     <div class="admin-shell">
@@ -224,7 +224,7 @@
               </div>
               <p class="schedule-help">Track kitchen ingredients separately from the customer menu. Record stock added and used in each item's unit; customer orders do not change these balances.</p>
 
-              <h4 class="stock-subhead">Stock on hand</h4>
+              <h4 class="stock-subhead">Stock on hand <span class="stock-filter-note" id="stock-filter-note" hidden></span></h4>
               <div class="stock-onhand" id="stock-onhand" aria-label="Current stock levels">
                 <div class="stock-onhand-empty">Loading stock levels…</div>
               </div>
@@ -236,8 +236,22 @@
                 </div>
                 <form id="stock-receipt-form" class="cashier-stock-form stock-form">
                   <div class="field-group">
-                    <label for="inventory-item-select">Stock item</label>
-                    <select id="inventory-item-select" required>
+                    <label for="stock-item-search">Stock item</label>
+                    <div class="combo" id="stock-combo">
+                      <div class="input-shell">
+                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+                        <input id="stock-item-search" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false"
+                          aria-controls="stock-item-options" aria-describedby="stock-item-hint" autocomplete="off" spellcheck="false"
+                          placeholder="Type to search, e.g. water" />
+                        <button type="button" class="combo-clear" id="stock-item-clear" aria-label="Clear stock item" hidden>
+                          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+                        </button>
+                      </div>
+                      <ul class="combo-list" id="stock-item-options" role="listbox" aria-label="Matching stock items" hidden></ul>
+                    </div>
+                    <span class="visually-hidden" id="stock-item-hint">Type part of a name, then use the arrow keys and Enter, or click an item.</span>
+                    <!-- The original list stays as the form's value; the search box above drives it. -->
+                    <select id="inventory-item-select" class="visually-hidden" tabindex="-1" aria-hidden="true">
                       <option value="">Loading stock items…</option>
                     </select>
                   </div>
@@ -574,7 +588,7 @@
     </dialog>
 
     <script src="admin-shell.js?v=views-1"></script>
-    <script src="admin.js?v=client-feedback-1"></script>
+    <script src="admin.js?v=stock-search-1"></script>
     <script src="staff-dashboard-links.js?v=20261026-1"></script>
   </body>
 </html>

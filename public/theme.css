@@ -1947,6 +1947,133 @@
   font: inherit;
 }
 
+/* Searchable stock item field */
+.combo {
+  position: relative;
+}
+
+.admin-body .combo .input-shell input {
+  width: 100%;
+  padding-right: 44px;
+  padding-left: 46px;
+}
+
+.combo-clear {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted-ink);
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.combo-clear[hidden] {
+  display: none;
+}
+
+.combo-clear .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.combo-clear:hover,
+.combo-clear:focus-visible {
+  background: #f4ede4;
+  color: var(--ink);
+  outline: none;
+}
+
+.combo-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  z-index: 15;
+  max-height: 300px;
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 18px 40px rgba(36, 24, 19, 0.16);
+  list-style: none;
+}
+
+.combo-list[hidden] {
+  display: none;
+}
+
+.combo-list [role="option"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.combo-list [role="option"]:hover,
+.combo-list [role="option"][aria-selected="true"] {
+  background: #fdf1ea;
+}
+
+.combo-list [role="option"][aria-selected="true"] {
+  box-shadow: inset 3px 0 0 var(--terracotta);
+}
+
+.combo-name {
+  font-weight: 600;
+}
+
+.combo-name mark {
+  padding: 0 1px;
+  border-radius: 3px;
+  background: #f7dfa9;
+  color: inherit;
+}
+
+.combo-qty {
+  flex: none;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #e5f2e8;
+  color: #2f6b43;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.combo-list .is-empty .combo-qty {
+  background: #fcefec;
+  color: #a12f1a;
+}
+
+.combo-empty {
+  padding: 14px 12px;
+  color: var(--muted-ink);
+  font-size: 0.9rem;
+}
+
+.stock-filter-note {
+  color: var(--muted-ink);
+  font-family: var(--font-ui);
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+
+.stock-onhand .stock-item[hidden] {
+  display: none;
+}
+
 .unit-input {
   position: relative;
 }
