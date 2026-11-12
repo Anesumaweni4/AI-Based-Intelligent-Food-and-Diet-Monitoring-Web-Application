@@ -1366,91 +1366,160 @@ async function showPendingOrders() {
   }
 }
 
+// --- Client feedback: filter tabs, one-click status, stable refreshes ---
+const FEEDBACK_STATUSES = [
+  { key: 'new', label: 'New' },
+  { key: 'reviewing', label: 'Reviewing' },
+  { key: 'resolved', label: 'Resolved' }
+];
+const FEEDBACK_CATEGORIES = {
+  food: { label: 'Food', icon: '<path d="M4 3v8a3 3 0 0 0 3 3v7M7 3v6M10 3v8a3 3 0 0 1-3 3"/><path d="M17 21V3c-2.2 1.2-3.5 3.6-3.5 7v4H17"/>' },
+  order: { label: 'Order', icon: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"/><path d="M9 8h6M9 12h6"/>' },
+  service: { label: 'Service', icon: '<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4 4 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/>' },
+  website: { label: 'Website', icon: '<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>' },
+  other: { label: 'Other', icon: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>' }
+};
+let feedbackEntries = [];
+let feedbackFilter = 'all';
+let feedbackSignature = '';
+
+function formatRelativeTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const seconds = Math.round((Date.now() - date.getTime()) / 1000);
+  const units = [['year', 31536000], ['month', 2592000], ['week', 604800], ['day', 86400], ['hour', 3600], ['minute', 60]];
+  const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+  for (const [unit, size] of units) {
+    if (Math.abs(seconds) >= size) return formatter.format(-Math.round(seconds / size), unit);
+  }
+  return 'just now';
+}
+
 function renderClientFeedback(feedback) {
+  feedbackEntries = feedback;
   if (!feedback.length) {
     clientFeedbackList.innerHTML = '<div class="empty-state">No client feedback has been submitted yet.</div>';
     return;
   }
-  const categoryLabels = {
-    food: 'Food',
-    order: 'Order',
-    service: 'Service',
-    website: 'Website',
-    other: 'Other'
-  };
+
+  const counts = { all: feedback.length };
+  FEEDBACK_STATUSES.forEach(({ key }) => { counts[key] = feedback.filter((entry) => entry.status === key).length; });
+  const visible = feedbackFilter === 'all' ? feedback : feedback.filter((entry) => entry.status === feedbackFilter);
+
   clientFeedbackList.innerHTML = `
-    <details class="client-feedback-dropdown">
-      <summary>View ${feedback.length} feedback submission${feedback.length === 1 ? '' : 's'}</summary>
-      <div class="client-feedback-dropdown-list">
-        ${feedback.map((entry) => `
-          <article class="client-feedback-card">
-            <div class="client-feedback-heading">
-              <div>
-                <strong>${escapeHtml(entry.full_name)} (@${escapeHtml(entry.username)})</strong>
-                <span>${escapeHtml(categoryLabels[entry.category] || entry.category)} · ${escapeHtml(formatSaleDate(entry.created_at))}</span>
+    <div class="feedback-tabs" role="tablist" aria-label="Filter feedback by status">
+      ${[{ key: 'all', label: 'All' }, ...FEEDBACK_STATUSES].map(({ key, label }) => `
+        <button type="button" role="tab" class="feedback-tab" data-feedback-filter="${key}" data-tone="${key}"
+          aria-selected="${feedbackFilter === key}">
+          ${label} <span>${counts[key]}</span>
+        </button>
+      `).join('')}
+    </div>
+    ${visible.length ? `
+      <div class="feedback-grid">
+        ${visible.map((entry) => {
+          const category = FEEDBACK_CATEGORIES[entry.category] || { label: entry.category, icon: FEEDBACK_CATEGORIES.other.icon };
+          const id = Number(entry.id);
+          return `
+            <article class="feedback-card" data-status="${escapeHtml(entry.status)}">
+              <header class="feedback-card-head">
+                <span class="credit-avatar" aria-hidden="true">${escapeHtml(getInitials(entry.full_name))}</span>
+                <div class="feedback-card-who">
+                  <strong>${escapeHtml(entry.full_name)}</strong>
+                  <span class="credit-username">@${escapeHtml(entry.username)}</span>
+                </div>
+                <span class="feedback-category">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${category.icon}</svg>
+                  ${escapeHtml(category.label)}
+                </span>
+              </header>
+              <div class="feedback-card-body${entry.has_photo ? ' has-photo' : ''}">
+                <blockquote class="feedback-quote">${escapeHtml(entry.message)}</blockquote>
+                ${entry.has_photo ? `
+                  <a class="feedback-photo" href="/api/admin/feedback/${id}/photo" target="_blank" rel="noopener noreferrer"
+                    title="Open the full photo in a new tab">
+                    <img src="/api/admin/feedback/${id}/photo" alt="Photo attached to ${escapeHtml(category.label)} feedback from ${escapeHtml(entry.full_name)}" loading="lazy" />
+                    <span>
+                      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6M10 14L21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                      Open
+                    </span>
+                  </a>
+                ` : ''}
               </div>
-              <span class="badge client-feedback-badge">${escapeHtml(entry.status)}</span>
-            </div>
-            <p class="client-feedback-message">${escapeHtml(entry.message)}</p>
-            ${entry.has_photo ? `
-              <a class="client-feedback-photo-link" href="/api/admin/feedback/${Number(entry.id)}/photo" target="_blank" rel="noopener noreferrer">
-                <img class="client-feedback-photo" src="/api/admin/feedback/${Number(entry.id)}/photo" alt="Photo attached to ${escapeHtml(categoryLabels[entry.category] || 'client')} feedback" loading="lazy" />
-                <span>View attached photo</span>
-              </a>
-            ` : ''}
-            <form class="client-feedback-status-form" data-feedback-id="${Number(entry.id)}">
-              <label for="feedback-status-${Number(entry.id)}">Review status</label>
-              <select id="feedback-status-${Number(entry.id)}" name="status">
-                <option value="new" ${entry.status === 'new' ? 'selected' : ''}>New</option>
-                <option value="reviewing" ${entry.status === 'reviewing' ? 'selected' : ''}>Reviewing</option>
-                <option value="resolved" ${entry.status === 'resolved' ? 'selected' : ''}>Resolved</option>
-              </select>
-              <button type="submit" class="admin-user-email-save">Update</button>
-            </form>
-          </article>
-        `).join('')}
+              <footer class="feedback-card-foot">
+                <time datetime="${escapeHtml(entry.created_at)}" title="${escapeHtml(formatSaleDate(entry.created_at))}">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                  ${escapeHtml(formatRelativeTime(entry.created_at))}
+                </time>
+                <form class="client-feedback-status-form feedback-status" data-feedback-id="${id}" aria-label="Review status for feedback from ${escapeHtml(entry.full_name)}">
+                  ${FEEDBACK_STATUSES.map(({ key, label }) => `
+                    <button type="submit" name="status" value="${key}" data-tone="${key}" aria-pressed="${entry.status === key}">${label}</button>
+                  `).join('')}
+                </form>
+              </footer>
+            </article>
+          `;
+        }).join('')}
       </div>
-    </details>
+    ` : `<div class="empty-state">No ${escapeHtml(feedbackFilter)} feedback right now.</div>`}
   `;
 }
 
-async function loadClientFeedback() {
+async function loadClientFeedback({ force = false } = {}) {
   try {
     const response = await fetch('/api/admin/feedback');
     const result = await response.json();
     if (!response.ok) throw new Error(result.message || 'Unable to load client feedback.');
-    renderClientFeedback(Array.isArray(result) ? result : []);
-    clientFeedbackStatus.textContent = '';
-    clientFeedbackStatus.classList.remove('error');
+    const entries = Array.isArray(result) ? result : [];
+    // Only rebuild when something changed, so photos and focus are not reset every 15 seconds.
+    const signature = JSON.stringify(entries.map((entry) => [entry.id, entry.status, entry.has_photo]));
+    if (force || signature !== feedbackSignature) {
+      feedbackSignature = signature;
+      renderClientFeedback(entries);
+    }
+    if (clientFeedbackStatus.classList.contains('error')) {
+      clientFeedbackStatus.textContent = '';
+      clientFeedbackStatus.classList.remove('error');
+    }
   } catch (error) {
     clientFeedbackStatus.textContent = error.message;
     clientFeedbackStatus.classList.add('error');
   }
 }
+
+clientFeedbackList.addEventListener('click', (event) => {
+  const tab = event.target.closest('[data-feedback-filter]');
+  if (!tab) return;
+  feedbackFilter = tab.dataset.feedbackFilter;
+  renderClientFeedback(feedbackEntries);
+  clientFeedbackList.querySelector(`[data-feedback-filter="${feedbackFilter}"]`)?.focus();
+});
 
 clientFeedbackList.addEventListener('submit', async (event) => {
   const form = event.target.closest('.client-feedback-status-form');
   if (!form) return;
   event.preventDefault();
-  const button = form.querySelector('button[type="submit"]');
-  button.disabled = true;
+  const status = event.submitter?.value;
+  if (!status || event.submitter.getAttribute('aria-pressed') === 'true') return;
+  const buttons = form.querySelectorAll('button');
+  buttons.forEach((button) => { button.disabled = true; });
+  clientFeedbackStatus.classList.remove('error', 'is-success');
   clientFeedbackStatus.textContent = 'Updating feedback status…';
-  clientFeedbackStatus.classList.remove('error');
   try {
     const response = await fetch(`/api/admin/feedback/${Number(form.dataset.feedbackId)}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: form.elements.status.value })
+      body: JSON.stringify({ status })
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.message || 'Unable to update feedback status.');
-    await loadClientFeedback();
+    await loadClientFeedback({ force: true });
     clientFeedbackStatus.textContent = result.message;
+    clientFeedbackStatus.classList.add('is-success');
   } catch (error) {
     clientFeedbackStatus.textContent = error.message;
     clientFeedbackStatus.classList.add('error');
-  } finally {
-    button.disabled = false;
+    buttons.forEach((button) => { button.disabled = false; });
   }
 });
 

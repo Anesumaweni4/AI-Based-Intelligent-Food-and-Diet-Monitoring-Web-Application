@@ -1301,6 +1301,324 @@
   }
 }
 
+/* ---- Client feedback ---- */
+.feedback-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 18px;
+  padding: 5px;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #faf6f0;
+}
+
+.feedback-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted-ink);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.feedback-tab span {
+  display: inline-grid;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 6px;
+  place-items: center;
+  border-radius: 999px;
+  background: #ece2d6;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.feedback-tab:hover,
+.feedback-tab:focus-visible {
+  color: var(--ink);
+  outline: none;
+}
+
+.feedback-tab:focus-visible {
+  box-shadow: var(--ring);
+}
+
+.feedback-tab[aria-selected="true"] {
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(36, 24, 19, 0.08);
+  color: var(--ink);
+}
+
+.feedback-tab[data-tone="new"] span { background: #fbe3d9; color: #9a3f24; }
+.feedback-tab[data-tone="reviewing"] span { background: #fbf0d9; color: #8a5e12; }
+.feedback-tab[data-tone="resolved"] span { background: #e5f2e8; color: #2f6b43; }
+
+.feedback-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+  gap: 16px;
+}
+
+.feedback-card {
+  --tone: #c8432a;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(36, 24, 19, 0.04);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.feedback-card::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background: var(--tone);
+  content: "";
+}
+
+.feedback-card[data-status="reviewing"] { --tone: #d9a03a; }
+.feedback-card[data-status="resolved"] { --tone: var(--ok); }
+
+.feedback-card:hover {
+  border-color: var(--line-strong);
+  box-shadow: 0 12px 28px rgba(36, 24, 19, 0.08);
+}
+
+.feedback-card-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 18px 0;
+}
+
+.feedback-card-who strong {
+  display: block;
+  font-size: 0.98rem;
+}
+
+.feedback-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #f4ede4;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.feedback-category .icon {
+  width: 14px;
+  height: 14px;
+  color: var(--terracotta);
+}
+
+.feedback-card-body {
+  display: grid;
+  flex: 1;
+  gap: 14px;
+  align-items: start;
+  padding: 14px 18px 16px;
+}
+
+.feedback-card-body.has-photo {
+  grid-template-columns: minmax(0, 1fr) 104px;
+}
+
+.feedback-quote {
+  position: relative;
+  margin: 0;
+  padding: 12px 14px 12px 36px;
+  border-radius: 12px;
+  background: #faf6f0;
+  color: var(--ink);
+  font-size: 0.98rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.feedback-quote::before {
+  position: absolute;
+  top: 2px;
+  left: 12px;
+  color: var(--saffron);
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  line-height: 1;
+  content: "\201C";
+}
+
+.feedback-photo {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  aspect-ratio: 1;
+  background: #f4ede4;
+}
+
+.feedback-photo img {
+  width: 100%;
+  height: 100%;
+  color: transparent; /* hide alt text if a photo fails to load; screen readers still get it */
+  font-size: 0;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.feedback-photo span {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  left: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  background: rgba(36, 24, 19, 0.75);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.feedback-photo span .icon {
+  width: 12px;
+  height: 12px;
+}
+
+.feedback-photo:hover img,
+.feedback-photo:focus-visible img {
+  transform: scale(1.06);
+}
+
+.feedback-photo:hover span,
+.feedback-photo:focus-visible span {
+  opacity: 1;
+}
+
+.feedback-photo:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.feedback-card-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--line);
+  background: #fcf9f5;
+}
+
+.feedback-card-foot time {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted-ink);
+  font-size: 0.84rem;
+}
+
+.feedback-card-foot time .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.admin-body .feedback-status {
+  display: inline-flex;
+  gap: 2px;
+  margin: 0;
+  padding: 3px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.admin-body .feedback-status button {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted-ink);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.admin-body .feedback-status button:hover:not([aria-pressed="true"]),
+.admin-body .feedback-status button:focus-visible {
+  background: #f6efe6;
+  color: var(--ink);
+  outline: none;
+}
+
+.admin-body .feedback-status button[aria-pressed="true"] {
+  color: #fff;
+  cursor: default;
+}
+
+.admin-body .feedback-status button[aria-pressed="true"][data-tone="new"] { background: #c8432a; }
+.admin-body .feedback-status button[aria-pressed="true"][data-tone="reviewing"] { background: #c9902a; }
+.admin-body .feedback-status button[aria-pressed="true"][data-tone="resolved"] { background: var(--ok); }
+
+.admin-body .feedback-status button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+@media (max-width: 640px) {
+  .feedback-card-head {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .feedback-category {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .feedback-card-body.has-photo {
+    grid-template-columns: minmax(0, 1fr) 80px;
+  }
+
+  .feedback-card-foot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-body .feedback-status button {
+    flex: 1;
+  }
+}
+
 /* ---- Stock control ---- */
 .stock-head {
   display: flex;
