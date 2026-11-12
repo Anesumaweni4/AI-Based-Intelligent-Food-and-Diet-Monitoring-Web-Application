@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="styles.css?v=ingredient-stock-ledger-1" />
-    <link rel="stylesheet" href="theme.css?v=redesign-4" />
+    <link rel="stylesheet" href="theme.css?v=redesign-5" />
   </head>
   <body class="dashboard-body admin-body">
     <div class="admin-shell">
@@ -163,30 +163,58 @@
             </section>
 
             <section class="weekly-menu-section" id="stock" aria-labelledby="stock-title">
-              <div class="section-title left">
-                <p class="eyebrow">Inventory control</p>
-                <h3 id="stock-title">Stock Control</h3>
+              <div class="stock-head">
+                <div class="section-title left">
+                  <p class="eyebrow">Inventory control</p>
+                  <h3 id="stock-title">Stock Control</h3>
+                </div>
+                <span class="stock-count" id="stock-count" hidden></span>
               </div>
-              <p class="schedule-help">Track ingredients separately from the customer menu. Record stock added and used in kilograms; customer orders do not change these balances.</p>
-              <form id="stock-receipt-form" class="cashier-stock-form">
-                <div class="field-group">
-                  <label for="inventory-item-select">Stock item</label>
-                  <select id="inventory-item-select" required>
-                    <option value="">Loading stock items…</option>
-                  </select>
+              <p class="schedule-help">Track kitchen ingredients separately from the customer menu. Record stock added and used in each item's unit; customer orders do not change these balances.</p>
+
+              <h4 class="stock-subhead">Stock on hand</h4>
+              <div class="stock-onhand" id="stock-onhand" aria-label="Current stock levels">
+                <div class="stock-onhand-empty">Loading stock levels…</div>
+              </div>
+
+              <div class="stock-entry">
+                <div class="stock-entry-head">
+                  <h4>Record a stock movement</h4>
+                  <span>Pick an item above or from the list</span>
                 </div>
-                <div class="field-group">
-                  <label for="stock-quantity">Quantity (<span id="stock-unit">kg</span>)</label>
-                  <input id="stock-quantity" type="number" min="0.001" max="1000000" step="0.001" required />
+                <form id="stock-receipt-form" class="cashier-stock-form stock-form">
+                  <div class="field-group">
+                    <label for="inventory-item-select">Stock item</label>
+                    <select id="inventory-item-select" required>
+                      <option value="">Loading stock items…</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <label for="stock-quantity">Quantity (<span id="stock-unit">kg</span>)</label>
+                    <div class="unit-input">
+                      <input id="stock-quantity" type="number" min="0.001" max="1000000" step="0.001" inputmode="decimal" placeholder="0" required />
+                      <span id="stock-unit-suffix" aria-hidden="true">kg</span>
+                    </div>
+                  </div>
+                  <div class="cashier-stock-actions stock-actions">
+                    <button class="submit-btn stock-btn-add" type="submit" name="stockAction" value="received">
+                      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                      Record added
+                    </button>
+                    <button class="cashier-stock-remove-button stock-btn-use" type="submit" name="stockAction" value="used">
+                      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg>
+                      Record used
+                    </button>
+                  </div>
+                </form>
+                <p id="stock-status" class="schedule-status credit-status" role="status" aria-live="polite"></p>
+              </div>
+
+              <div class="cashier-stock-ledger-wrap stock-ledger">
+                <div class="stock-entry-head">
+                  <h4>Stock ledger</h4>
+                  <span class="stock-legend"><i class="is-used"></i> Used <i class="is-added"></i> Added</span>
                 </div>
-                <div class="cashier-stock-actions">
-                  <button class="submit-btn" type="submit" name="stockAction" value="received">Record Added</button>
-                  <button class="cashier-stock-remove-button" type="submit" name="stockAction" value="used">Record Used</button>
-                </div>
-              </form>
-              <p id="stock-status" class="schedule-status" role="status" aria-live="polite"></p>
-              <div class="cashier-stock-ledger-wrap">
-                <h4>Stock ledger</h4>
                 <div class="schedule-table-wrap">
                   <table class="schedule-table cashier-stock-ledger">
                     <thead>
@@ -494,7 +522,7 @@
     </dialog>
 
     <script src="admin-shell.js?v=redesign-1"></script>
-    <script src="admin.js?v=student-credit-1"></script>
+    <script src="admin.js?v=stock-control-1"></script>
     <script src="staff-dashboard-links.js?v=20261026-1"></script>
   </body>
 </html>

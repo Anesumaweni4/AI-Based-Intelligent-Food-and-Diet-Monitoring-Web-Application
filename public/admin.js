@@ -719,43 +719,108 @@ async function loadTransactions() {
   }
 }
 
+const stockOnHand = document.getElementById('stock-onhand');
+const stockCount = document.getElementById('stock-count');
+const stockUnitSuffix = document.getElementById('stock-unit-suffix');
+let inventoryLoadedOnce = false;
+
+function setStockStatus(message, tone = 'info') {
+  stockStatus.textContent = message;
+  stockStatus.classList.toggle('error', tone === 'error');
+  stockStatus.classList.toggle('is-success', tone === 'success');
+}
+
+function formatLedgerDate(value) {
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return escapeHtml(value);
+  return `<span class="ledger-day">${date.toLocaleDateString(undefined, { weekday: 'short' })}</span>
+    ${date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`;
+}
+
+function formatLedgerChange(quantity, unit, sign) {
+  const amount = Number(quantity);
+  if (!amount) return '<span class="ledger-zero">—</span>';
+  return `<span class="ledger-change ${sign === '-' ? 'is-used' : 'is-added'}">${sign === '-' ? '−' : '+'}${formatStockQuantity(amount)} ${escapeHtml(unit)}</span>`;
+}
+
+function syncStockSelection() {
+  const selectedOption = stockItemSelect.selectedOptions[0];
+  const unit = selectedOption?.dataset.unit || 'kg';
+  stockUnit.textContent = unit;
+  stockUnitSuffix.textContent = unit;
+  stockOnHand.querySelectorAll('.stock-item').forEach((card) => {
+    card.setAttribute('aria-pressed', String(card.dataset.stockId === stockItemSelect.value));
+  });
+}
+
 async function loadInventory() {
-  stockStatus.textContent = 'Loading stock inventory…';
-  stockStatus.classList.remove('error');
+  if (!inventoryLoadedOnce) setStockStatus('Loading stock inventory…');
   try {
     const response = await fetch('/api/cashier/inventory');
     const result = await readStockApiResponse(response);
     if (!response.ok) throw new Error(result.message || 'Unable to load stock inventory.');
 
+    // Keep the admin's current choice when the list refreshes every few seconds.
+    const previousSelection = stockItemSelect.value;
     stockItemSelect.innerHTML = result.items.length
       ? `<option value="">Choose a stock item</option>${result.items.map((item) => `
           <option value="${Number(item.id)}" data-unit="${escapeHtml(item.unit)}">${escapeHtml(item.name)} (${escapeHtml(item.unit)})</option>
         `).join('')}`
       : '<option value="">No stock items available</option>';
+    if (previousSelection && result.items.some((item) => String(item.id) === previousSelection)) {
+      stockItemSelect.value = previousSelection;
+    }
     stockItemSelect.disabled = !result.items.length;
+
+    stockCount.hidden = !result.items.length;
+    stockCount.textContent = `${result.items.length} item${result.items.length === 1 ? '' : 's'} tracked`;
+    stockOnHand.innerHTML = result.items.length
+      ? result.items.map((item) => {
+          const quantity = Number(item.current_quantity) || 0;
+          const isEmpty = quantity <= 0;
+          return `
+            <button type="button" class="stock-item${isEmpty ? ' is-empty' : ''}" data-stock-id="${Number(item.id)}" aria-pressed="false"
+              aria-label="${escapeHtml(item.name)}: ${formatStockQuantity(quantity)} ${escapeHtml(item.unit)} on hand. Select to record a movement.">
+              <span class="stock-item-name">${escapeHtml(item.name)}</span>
+              <span class="stock-item-qty"><strong>${formatStockQuantity(quantity)}</strong> ${escapeHtml(item.unit)}</span>
+              <span class="stock-item-state">${isEmpty ? 'Out of stock' : 'In stock'}</span>
+            </button>
+          `;
+        }).join('')
+      : '<div class="stock-onhand-empty">No stock items have been set up yet.</div>';
+
     stockLedgerBody.innerHTML = result.ledger.length
       ? result.ledger.map((entry) => `
           <tr>
-            <td>${escapeHtml(entry.date)}</td>
+            <td class="ledger-date">${formatLedgerDate(entry.date)}</td>
             <th scope="row">${escapeHtml(entry.item_name)}</th>
             <td>${formatStockQuantity(entry.opening)} ${escapeHtml(entry.unit)}</td>
-            <td>${formatStockQuantity(entry.used)} ${escapeHtml(entry.unit)}</td>
-            <td>${formatStockQuantity(entry.added)} ${escapeHtml(entry.unit)}</td>
-            <td>${formatStockQuantity(entry.closing)} ${escapeHtml(entry.unit)}</td>
+            <td>${formatLedgerChange(entry.used, entry.unit, '-')}</td>
+            <td>${formatLedgerChange(entry.added, entry.unit, '+')}</td>
+            <td class="ledger-closing">${formatStockQuantity(entry.closing)} ${escapeHtml(entry.unit)}</td>
           </tr>
         `).join('')
-      : '<tr><td colspan="6">No stock activity has been recorded yet.</td></tr>';
-    stockStatus.textContent = '';
+      : '<tr><td colspan="6" class="ledger-empty">No stock activity has been recorded yet.</td></tr>';
+    syncStockSelection();
+    if (!inventoryLoadedOnce) setStockStatus('');
+    inventoryLoadedOnce = true;
   } catch (error) {
-    stockStatus.textContent = error.message;
-    stockStatus.classList.add('error');
-    stockLedgerBody.innerHTML = '<tr><td colspan="6">Unable to load the stock ledger.</td></tr>';
+    setStockStatus(error.message, 'error');
+    if (!inventoryLoadedOnce) {
+      stockLedgerBody.innerHTML = '<tr><td colspan="6" class="ledger-empty">Unable to load the stock ledger.</td></tr>';
+      stockOnHand.innerHTML = '<div class="stock-onhand-empty">Unable to load stock levels.</div>';
+    }
   }
 }
 
-stockItemSelect.addEventListener('change', () => {
-  const selectedOption = stockItemSelect.selectedOptions[0];
-  stockUnit.textContent = selectedOption?.dataset.unit || 'kg';
+stockItemSelect.addEventListener('change', syncStockSelection);
+
+stockOnHand.addEventListener('click', (event) => {
+  const card = event.target.closest('.stock-item');
+  if (!card) return;
+  stockItemSelect.value = card.dataset.stockId;
+  syncStockSelection();
+  stockQuantity.focus();
 });
 
 stockReceiptForm.addEventListener('submit', async (event) => {
@@ -765,8 +830,7 @@ stockReceiptForm.addEventListener('submit', async (event) => {
   const isRemoval = action === 'used';
   const buttons = stockReceiptForm.querySelectorAll('button[type="submit"]');
   buttons.forEach((button) => { button.disabled = true; });
-  stockStatus.textContent = isRemoval ? 'Removing used stock…' : 'Recording received stock…';
-  stockStatus.classList.remove('error');
+  setStockStatus(isRemoval ? 'Removing used stock…' : 'Recording received stock…');
   try {
     const response = await fetch(isRemoval ? '/api/cashier/stock-usage' : '/api/cashier/stock-receipts', {
       method: 'POST',
@@ -779,12 +843,10 @@ stockReceiptForm.addEventListener('submit', async (event) => {
     const result = await readStockApiResponse(response);
     if (!response.ok) throw new Error(result.message || (isRemoval ? 'Unable to remove stock.' : 'Unable to record received stock.'));
     stockReceiptForm.reset();
-    stockStatus.textContent = result.message;
     await loadInventory();
-    stockStatus.textContent = result.message;
+    setStockStatus(result.message, 'success');
   } catch (error) {
-    stockStatus.textContent = error.message;
-    stockStatus.classList.add('error');
+    setStockStatus(error.message, 'error');
   } finally {
     buttons.forEach((button) => { button.disabled = false; });
   }
