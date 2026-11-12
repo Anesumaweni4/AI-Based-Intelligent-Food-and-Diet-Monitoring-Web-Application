@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="styles.css?v=ingredient-stock-ledger-1" />
-    <link rel="stylesheet" href="theme.css?v=redesign-8" />
+    <link rel="stylesheet" href="theme.css?v=redesign-9" />
   </head>
   <body class="dashboard-body admin-body">
     <div class="admin-shell">
@@ -394,10 +394,24 @@
                 <p class="eyebrow">Student accounts</p>
                 <h3 id="wallets-title">Wallet Balances</h3>
               </div>
-              <details class="wallet-balances-dropdown">
-                <summary>Show student accounts</summary>
-                <div id="credit-transactions" class="order-list wallet-balances-list"></div>
-              </details>
+              <div class="wallet-stats" id="wallet-stats" aria-label="Wallet totals"></div>
+              <div class="wallet-toolbar">
+                <div class="input-shell wallet-search">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+                  <label class="visually-hidden" for="wallet-search">Search student accounts</label>
+                  <input id="wallet-search" type="search" placeholder="Search name or username" autocomplete="off" />
+                </div>
+                <div class="wallet-sort">
+                  <label for="wallet-sort">Sort by</label>
+                  <select id="wallet-sort">
+                    <option value="balance">Highest balance</option>
+                    <option value="activity">Recent activity</option>
+                    <option value="name">Name (A–Z)</option>
+                  </select>
+                </div>
+              </div>
+              <div id="credit-transactions" class="wallet-list" aria-live="polite"></div>
+              <p class="wallet-footnote">History shows each student's transactions from the 40 most recent credit movements.</p>
             </section>
 
             <section class="weekly-menu-section monthly-billing-section" id="billing" aria-labelledby="monthly-billing-title">
@@ -588,7 +602,7 @@
     </dialog>
 
     <script src="admin-shell.js?v=views-1"></script>
-    <script src="admin.js?v=stock-search-1"></script>
+    <script src="admin.js?v=wallets-1"></script>
     <script src="staff-dashboard-links.js?v=20261026-1"></script>
   </body>
 </html>

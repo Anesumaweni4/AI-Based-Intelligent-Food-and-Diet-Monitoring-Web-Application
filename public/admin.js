@@ -678,46 +678,149 @@ async function saveMenuStock() {
   }
 }
 
+// --- Wallet balances: totals, search, sort, history that survives refreshes ---
+const walletStats = document.getElementById('wallet-stats');
+const walletSearch = document.getElementById('wallet-search');
+const walletSort = document.getElementById('wallet-sort');
+const openWalletHistories = new Set();
+let walletAccounts = [];
+let walletSignature = '';
+
+const WALLET_TYPES = {
+  deposit: { label: 'Deposit', tone: 'deposit', icon: '<path d="M12 5v14M5 12h14"/>' },
+  purchase: { label: 'Purchase', tone: 'purchase', icon: '<path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>' },
+  refund: { label: 'Refund', tone: 'refund', icon: '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>' }
+};
+
+function walletType(type) {
+  return WALLET_TYPES[type] || { label: String(type || 'Adjustment'), tone: 'other', icon: '<circle cx="12" cy="12" r="3"/>' };
+}
+
+function renderWalletAccounts() {
+  if (!walletAccounts.length) {
+    walletStats.innerHTML = '';
+    transactionsContainer.innerHTML = '<div class="empty-state">No student accounts yet.</div>';
+    return;
+  }
+
+  const totalCents = walletAccounts.reduce((sum, account) => sum + Number(account.balance_cents || 0), 0);
+  const withCredit = walletAccounts.filter((account) => Number(account.balance_cents) > 0).length;
+  walletStats.innerHTML = `
+    <div class="wallet-stat wallet-stat--main"><span>Total credit held</span><strong>${formatCredit(totalCents)}</strong></div>
+    <div class="wallet-stat"><span>Students with credit</span><strong>${withCredit}</strong></div>
+    <div class="wallet-stat"><span>Student accounts</span><strong>${walletAccounts.length}</strong></div>
+  `;
+
+  const query = walletSearch.value.trim().toLowerCase();
+  const lastActivity = (account) => new Date(account.transactions[0]?.created_at || 0).getTime();
+  const sorters = {
+    balance: (a, b) => Number(b.balance_cents) - Number(a.balance_cents) || a.student_name.localeCompare(b.student_name),
+    activity: (a, b) => lastActivity(b) - lastActivity(a) || a.student_name.localeCompare(b.student_name),
+    name: (a, b) => a.student_name.localeCompare(b.student_name)
+  };
+  const visible = walletAccounts
+    .filter((account) => !query
+      || account.student_name.toLowerCase().includes(query)
+      || account.student_username.toLowerCase().includes(query))
+    .sort(sorters[walletSort.value] || sorters.balance);
+
+  if (!visible.length) {
+    transactionsContainer.innerHTML = `<div class="empty-state">No student accounts match “${escapeHtml(walletSearch.value.trim())}”.</div>`;
+    return;
+  }
+
+  transactionsContainer.innerHTML = visible.map((account) => {
+    const username = String(account.student_username);
+    const balance = Number(account.balance_cents) || 0;
+    const latest = account.transactions[0];
+    const isOpen = openWalletHistories.has(username);
+    const historyId = `wallet-history-${username.replace(/[^a-z0-9_-]/gi, '_')}`;
+    return `
+      <article class="wallet-row${balance <= 0 ? ' is-zero' : ''}">
+        <div class="wallet-row-main">
+          <span class="credit-avatar" aria-hidden="true">${escapeHtml(getInitials(account.student_name))}</span>
+          <div class="wallet-row-who">
+            <strong>${escapeHtml(account.student_name)}</strong>
+            <span class="credit-username">@${escapeHtml(username)}</span>
+          </div>
+          <div class="wallet-row-last">
+            ${latest ? `
+              <span class="wallet-dot" data-tone="${walletType(latest.type).tone}" aria-hidden="true"></span>
+              ${escapeHtml(walletType(latest.type).label)} · <time datetime="${escapeHtml(latest.created_at)}" title="${escapeHtml(new Date(latest.created_at).toLocaleString())}">${escapeHtml(formatRelativeTime(latest.created_at))}</time>
+            ` : '<span class="wallet-none">No transactions yet</span>'}
+          </div>
+          <div class="wallet-row-balance">
+            <small>Balance</small>
+            <strong>${formatCredit(balance)}</strong>
+          </div>
+          ${account.transactions.length ? `
+            <button type="button" class="wallet-history-toggle" data-wallet-toggle="${escapeHtml(username)}"
+              aria-expanded="${isOpen}" aria-controls="${historyId}">
+              History <span>${account.transactions.length}</span>
+            </button>
+          ` : '<span class="wallet-history-toggle is-placeholder" aria-hidden="true"></span>'}
+        </div>
+        ${account.transactions.length ? `
+          <ol class="wallet-history" id="${historyId}" ${isOpen ? '' : 'hidden'}>
+            ${account.transactions.map((entry) => {
+              const type = walletType(entry.type);
+              const amount = Number(entry.amount_cents) || 0;
+              return `
+                <li class="wallet-entry">
+                  <span class="wallet-entry-icon" data-tone="${type.tone}" aria-hidden="true">
+                    <svg class="icon" viewBox="0 0 24 24">${type.icon}</svg>
+                  </span>
+                  <div class="wallet-entry-text">
+                    <strong>${escapeHtml(type.label)}</strong>
+                    <span>${escapeHtml(entry.recorded_by || 'System')} · <time datetime="${escapeHtml(entry.created_at)}" title="${escapeHtml(new Date(entry.created_at).toLocaleString())}">${escapeHtml(formatRelativeTime(entry.created_at))}</time></span>
+                  </div>
+                  <strong class="wallet-entry-amount ${amount < 0 ? 'is-minus' : 'is-plus'}">${amount > 0 ? '+' : amount < 0 ? '−' : ''}${formatCredit(Math.abs(amount))}</strong>
+                </li>
+              `;
+            }).join('')}
+          </ol>
+        ` : ''}
+      </article>
+    `;
+  }).join('');
+}
+
 async function loadTransactions() {
   try {
     const response = await fetch('/api/cashier/transactions');
     const result = await response.json();
     if (!response.ok) throw new Error(result.message || 'Unable to load credit activity.');
-    transactionsContainer.innerHTML = result.accounts.length
-      ? result.accounts.map((account) => `
-          <article class="order-card credit-account-card">
-            <div class="credit-account-summary">
-              <div>
-                <h4>${escapeHtml(account.student_name)} (@${escapeHtml(account.student_username)})</h4>
-              </div>
-              <div class="credit-account-balance">
-                <span>Wallet balance</span>
-                <strong>${formatCredit(account.balance_cents)}</strong>
-              </div>
-            </div>
-            ${account.transactions.length ? `
-              <details class="credit-account-history">
-                <summary>Recent transactions (${account.transactions.length})</summary>
-                <div class="credit-account-transactions">
-                  ${account.transactions.map((entry) => `
-                    <div class="credit-account-transaction">
-                      <div>
-                        <strong>${escapeHtml(entry.type)}</strong>
-                        <span>${escapeHtml(entry.recorded_by || 'System')} · ${new Date(entry.created_at).toLocaleString()}</span>
-                      </div>
-                      <strong class="${Number(entry.amount_cents) < 0 ? 'credit-debit' : 'credit-addition'}">${formatCredit(entry.amount_cents)}</strong>
-                    </div>
-                  `).join('')}
-                </div>
-              </details>
-            ` : '<span class="credit-account-no-history">No credit transactions yet.</span>'}
-          </article>
-        `).join('')
-      : '<div class="empty-state">No credit activity has been recorded yet.</div>';
+    const accounts = Array.isArray(result.accounts) ? result.accounts : [];
+    // Only rebuild when balances or transactions changed (keeps open histories and focus).
+    const signature = JSON.stringify(accounts.map((account) => [
+      account.student_username, account.balance_cents, account.transactions.map((entry) => entry.id)
+    ]));
+    if (signature !== walletSignature) {
+      walletSignature = signature;
+      walletAccounts = accounts;
+      renderWalletAccounts();
+    }
   } catch (error) {
-    transactionsContainer.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+    if (!walletAccounts.length) {
+      transactionsContainer.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+    }
   }
 }
+
+walletSearch.addEventListener('input', renderWalletAccounts);
+walletSort.addEventListener('change', renderWalletAccounts);
+
+transactionsContainer.addEventListener('click', (event) => {
+  const toggle = event.target.closest('[data-wallet-toggle]');
+  if (!toggle) return;
+  const username = toggle.dataset.walletToggle;
+  const history = document.getElementById(toggle.getAttribute('aria-controls'));
+  const open = toggle.getAttribute('aria-expanded') !== 'true';
+  toggle.setAttribute('aria-expanded', String(open));
+  if (history) history.hidden = !open;
+  if (open) openWalletHistories.add(username);
+  else openWalletHistories.delete(username);
+});
 
 const stockOnHand = document.getElementById('stock-onhand');
 const stockCount = document.getElementById('stock-count');
