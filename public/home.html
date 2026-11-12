@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="styles.css?v=home-menu-price-layout-1" />
     <link rel="stylesheet" href="theme.css?v=redesign-1" />
-    <link rel="stylesheet" href="client.css?v=client-redesign-1" />
+    <link rel="stylesheet" href="client.css?v=client-redesign-2" />
     <script>
       // Send staff to their own dashboards before the page paints.
       (() => {
@@ -216,12 +216,23 @@
     </footer>
 
     <div id="toast" class="toast"></div>
-    <dialog id="delivery-unavailable-dialog" class="notice-dialog" aria-labelledby="delivery-notice-title">
-      <div class="notice-dialog-content">
+    <dialog id="delivery-unavailable-dialog" class="notice-dialog delivery-notice" aria-labelledby="delivery-notice-title" aria-describedby="delivery-notice-text">
+      <div class="delivery-notice-art" aria-hidden="true">
+        <span class="delivery-notice-icon">
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="5.5" cy="17" r="3"/><circle cx="18.5" cy="17" r="3"/><path d="M8.5 17h6l3-7h-4"/><path d="M5.5 17l3-6h5"/><path d="M15 6h3l1.5 4"/></svg>
+        </span>
+        <span class="delivery-notice-tag">Delivery paused</span>
+      </div>
+      <div class="delivery-notice-body">
         <p class="eyebrow">A quick update</p>
-        <h2 id="delivery-notice-title">Pickup is available</h2>
-        <p>We’re sorry, but delivery is temporarily unavailable while we arrange our motorbike. Please choose pickup for your order. Thank you for your understanding!</p>
-        <button type="button" class="submit-btn" id="close-delivery-unavailable">Got it</button>
+        <h2 id="delivery-notice-title">Pickup only, for now</h2>
+        <p id="delivery-notice-text">Delivery is temporarily unavailable while we arrange our motorbike. Your meal will be freshly prepared and ready for you to collect from the kitchen.</p>
+        <div class="delivery-notice-confirm">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>
+          <span>Your order is set to <strong>Pickup</strong></span>
+        </div>
+        <button type="button" class="submit-btn" id="close-delivery-unavailable">Continue with pickup</button>
+        <p class="delivery-notice-thanks">Thank you for your patience. Delivery will be back soon.</p>
       </div>
     </dialog>
     <dialog id="drink-picker-dialog" class="notice-dialog drink-picker-dialog" aria-labelledby="drink-picker-title">

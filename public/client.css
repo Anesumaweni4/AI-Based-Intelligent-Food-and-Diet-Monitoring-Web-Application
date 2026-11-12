@@ -1114,8 +1114,149 @@
   backdrop-filter: blur(4px);
 }
 
+/* styles.css sets margin: 0 auto, which pins modals to the top edge. */
+.client-body .notice-dialog {
+  margin: auto;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+
 .client-body .admin-gate-cancel {
   border-radius: 14px;
+}
+
+/* Delivery-unavailable notice */
+.client-body .delivery-notice {
+  width: min(420px, calc(100% - 32px));
+  overflow: hidden;
+  border: 0;
+  background: var(--card);
+  animation: notice-in 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes notice-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+.delivery-notice-art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 132px;
+  background:
+    radial-gradient(60% 90% at 85% 0%, rgba(224, 181, 106, 0.4), transparent 60%),
+    radial-gradient(60% 90% at 10% 100%, rgba(162, 74, 48, 0.55), transparent 65%),
+    var(--ink);
+}
+
+.delivery-notice-art::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 28px;
+  border-radius: 24px 24px 0 0;
+  background: var(--card);
+  content: "";
+}
+
+.delivery-notice-icon {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 76px;
+  height: 76px;
+  margin-top: 24px;
+  place-items: center;
+  border: 5px solid var(--card);
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--saffron), #c0703f);
+  box-shadow: 0 12px 28px rgba(24, 16, 12, 0.28);
+  color: #fff;
+}
+
+.delivery-notice-icon .icon {
+  width: 34px;
+  height: 34px;
+  stroke-width: 1.6;
+}
+
+.delivery-notice-tag {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 5px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #f6dfb4;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.delivery-notice-body {
+  padding: 8px 28px 26px;
+  text-align: center;
+}
+
+.delivery-notice-body .eyebrow {
+  margin-bottom: 8px;
+}
+
+.delivery-notice-body h2 {
+  margin: 0 0 12px;
+  font-size: 1.65rem;
+  line-height: 1.15;
+}
+
+.delivery-notice-body > p:not(.eyebrow):not(.delivery-notice-thanks) {
+  margin: 0 0 20px;
+  color: var(--muted-ink);
+  line-height: 1.6;
+}
+
+.delivery-notice-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 0 18px;
+  padding: 12px 16px;
+  border: 1px solid #cfe2d3;
+  border-radius: 14px;
+  background: #eef6ef;
+  color: #2f6b43;
+  font-size: 0.94rem;
+}
+
+.delivery-notice-confirm .icon {
+  width: 20px;
+  height: 20px;
+}
+
+.delivery-notice-body .submit-btn {
+  width: 100%;
+  margin: 0;
+}
+
+.client-body .submit-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(162, 74, 48, 0.22), 0 10px 24px rgba(162, 74, 48, 0.26);
+}
+
+.delivery-notice-thanks {
+  margin: 14px 0 0;
+  color: #a69888;
+  font-size: 0.82rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .client-body .delivery-notice {
+    animation: none;
+  }
 }
 
 .client-body .toast {
