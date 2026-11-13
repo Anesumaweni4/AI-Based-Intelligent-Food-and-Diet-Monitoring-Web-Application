@@ -7,6 +7,14 @@ const feedbackChatInput = document.getElementById('feedback-chat-input');
 const feedbackChatPhoto = document.getElementById('feedback-chat-photo');
 const feedbackPhotoPreview = document.getElementById('feedback-photo-preview');
 const feedbackChatStatus = document.getElementById('feedback-chat-status');
+const feedbackPhotoWrap = document.getElementById('feedback-photo-wrap');
+const feedbackTopicChip = document.getElementById('feedback-topic-chip');
+const feedbackCharCount = document.getElementById('feedback-char-count');
+const FEEDBACK_STATUS = {
+  new: { label: 'Received', tone: 'new' },
+  reviewing: { label: 'Being reviewed', tone: 'reviewing' },
+  resolved: { label: 'Resolved', tone: 'resolved' }
+};
 const feedbackCategoryLabels = {
   food: 'Food',
   order: 'My order',
@@ -31,15 +39,60 @@ function escapeFeedbackHtml(value) {
   })[character]);
 }
 
+function scrollFeedbackToEnd() {
+  feedbackChatMessages.scrollTop = feedbackChatMessages.scrollHeight;
+}
+
 function appendFeedbackMessage(text, author, meta = '') {
   const message = document.createElement('div');
-  message.className = `feedback-chat-message ${author === 'client' ? 'client' : 'assistant'}`;
+  message.className = `fbx-msg fbx-msg--${author === 'client' ? 'client' : 'assistant'}`;
   message.innerHTML = `
-    <p>${escapeFeedbackHtml(text)}</p>
-    ${meta ? `<span>${escapeFeedbackHtml(meta)}</span>` : ''}
-  `;
+    ${author === 'client' ? '' : '<span class="fbx-msg-avatar" aria-hidden="true">K</span>'}
+    <div class="fbx-bubble">
+      <p>${escapeFeedbackHtml(text)}</p>
+      ${meta ? `<span class="fbx-meta">${escapeFeedbackHtml(meta)}</span>` : ''}
+    </div>`;
   feedbackChatMessages.appendChild(message);
-  feedbackChatMessages.scrollTop = feedbackChatMessages.scrollHeight;
+  scrollFeedbackToEnd();
+  return message;
+}
+
+function appendFeedbackDivider(text) {
+  const divider = document.createElement('div');
+  divider.className = 'fbx-divider';
+  divider.innerHTML = `<span>${escapeFeedbackHtml(text)}</span>`;
+  feedbackChatMessages.appendChild(divider);
+}
+
+function formatFeedbackDate(value) {
+  const date = new Date(String(value).replace(' ', 'T') + (/[zZ]|[+-]\d\d:?\d\d$/.test(String(value)) ? '' : 'Z'));
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) + ', ' +
+    date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+
+function appendFeedbackTicket(entry) {
+  const status = FEEDBACK_STATUS[entry.status] || FEEDBACK_STATUS.new;
+  const ticket = document.createElement('div');
+  ticket.className = 'fbx-msg fbx-msg--client';
+  ticket.innerHTML = `
+    <div class="fbx-bubble">
+      <span class="fbx-ticket-topic">${escapeFeedbackHtml(feedbackCategoryLabels[entry.category] || 'Feedback')}</span>
+      <p>${escapeFeedbackHtml(entry.message)}</p>
+      <span class="fbx-meta">${escapeFeedbackHtml(formatFeedbackDate(entry.created_at))}${entry.has_photo ? ' · 📷 Photo' : ''}</span>
+    </div>
+    <span class="fbx-ticket-status" data-tone="${status.tone}">${status.label}</span>`;
+  feedbackChatMessages.appendChild(ticket);
+}
+
+function showTyping() {
+  const typing = document.createElement('div');
+  typing.className = 'fbx-msg fbx-msg--assistant fbx-typing';
+  typing.innerHTML = '<span class="fbx-msg-avatar" aria-hidden="true">K</span><div class="fbx-bubble"><i></i><i></i><i></i></div>';
+  typing.setAttribute('aria-label', 'Sending');
+  feedbackChatMessages.appendChild(typing);
+  scrollFeedbackToEnd();
+  return typing;
 }
 
 function showFeedbackCategories() {
@@ -107,6 +160,7 @@ async function prepareFeedbackPhoto(file) {
 
 function clearFeedbackPhoto() {
   feedbackChatPhoto.value = '';
+  feedbackPhotoWrap.hidden = true;
   feedbackPhotoPreview.hidden = true;
   feedbackPhotoPreview.removeAttribute('src');
   if (feedbackPhotoPreviewUrl) URL.revokeObjectURL(feedbackPhotoPreviewUrl);
@@ -117,14 +171,9 @@ async function loadFeedbackHistory() {
   const response = await fetch('/api/feedback');
   const entries = await readFeedbackResponse(response);
   if (entries.length) {
-    for (const entry of entries.slice().reverse()) {
-      appendFeedbackMessage(
-        `${feedbackCategoryLabels[entry.category] || 'Feedback'}: ${entry.message}`,
-        'client',
-        `${new Date(entry.created_at).toLocaleString()}${entry.has_photo ? ' · Photo attached' : ''}`
-      );
-      appendFeedbackMessage(`Your feedback is ${entry.status}. Thank you for sharing it.`, 'assistant');
-    }
+    appendFeedbackDivider('Your recent feedback');
+    for (const entry of entries.slice().reverse()) appendFeedbackTicket(entry);
+    appendFeedbackDivider('New message');
   }
   feedbackHistoryLoaded = true;
 }
@@ -136,13 +185,11 @@ feedbackChatPhoto.addEventListener('change', () => {
   feedbackPhotoPreviewUrl = null;
   const file = feedbackChatPhoto.files[0];
   if (!file) {
-    feedbackPhotoPreview.hidden = true;
-    feedbackPhotoPreview.removeAttribute('src');
+    clearFeedbackPhoto();
     return;
   }
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > MAX_FEEDBACK_PHOTO_SIZE) {
-    feedbackChatPhoto.value = '';
-    feedbackPhotoPreview.hidden = true;
+    clearFeedbackPhoto();
     feedbackChatStatus.textContent = 'Choose a JPEG, PNG, or WebP photo smaller than 15 MB.';
     feedbackChatStatus.classList.add('error');
     return;
@@ -150,6 +197,7 @@ feedbackChatPhoto.addEventListener('change', () => {
   feedbackPhotoPreviewUrl = URL.createObjectURL(file);
   feedbackPhotoPreview.src = feedbackPhotoPreviewUrl;
   feedbackPhotoPreview.hidden = false;
+  feedbackPhotoWrap.hidden = false;
 });
 
 feedbackChatToggle.addEventListener('click', async () => {
@@ -163,9 +211,7 @@ feedbackChatToggle.addEventListener('click', async () => {
       feedbackChatStatus.textContent = error.message;
       feedbackChatStatus.classList.add('error');
     }
-    if (!feedbackChatMessages.childElementCount) {
-      appendFeedbackMessage('Hi! I can pass your feedback to the team. What would you like to talk about?', 'assistant');
-    }
+    appendFeedbackMessage('Hi! 👋 Tell us how we are doing. Pick a topic below and your message goes straight to the kitchen team.', 'assistant');
     showFeedbackCategories();
   }
 });
@@ -182,8 +228,15 @@ feedbackChatCategories.addEventListener('click', (event) => {
   selectedFeedbackCategory = button.dataset.feedbackCategory;
   feedbackChatStatus.textContent = '';
   feedbackChatStatus.classList.remove('error');
-  appendFeedbackMessage(feedbackCategoryLabels[selectedFeedbackCategory], 'client');
-  appendFeedbackMessage(`Please tell us what happened or what we could improve about ${feedbackCategoryLabels[selectedFeedbackCategory].toLowerCase()}.`, 'assistant');
+  const prompts = {
+    food: 'What did you think of the food? Tell us the dish and what was good or not. A photo helps!',
+    order: 'What went wrong with your order? Include the order number if you have it.',
+    service: 'How was the service? Tell us what happened.',
+    website: 'What happened on the website? Which page, and what did you expect?',
+    other: 'Go ahead, we are listening.'
+  };
+  appendFeedbackMessage(prompts[selectedFeedbackCategory], 'assistant');
+  feedbackTopicChip.textContent = feedbackCategoryLabels[selectedFeedbackCategory];
   feedbackChatCategories.hidden = true;
   feedbackChatForm.hidden = false;
   feedbackChatInput.focus();
@@ -202,26 +255,63 @@ feedbackChatForm.addEventListener('submit', async (event) => {
     ? 'Preparing and sending your feedback photo…'
     : 'Sending your feedback…';
   feedbackChatStatus.classList.remove('error');
+  let typing = null;
   try {
     const photo = await prepareFeedbackPhoto(feedbackChatPhoto.files[0]);
+    typing = showTyping();
     const response = await fetch('/api/feedback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ category: selectedFeedbackCategory, message, photo })
     });
     const result = await readFeedbackResponse(response);
-    appendFeedbackMessage(message, 'client', photo ? 'Photo attached' : '');
-    appendFeedbackMessage(result.message, 'assistant');
+    typing.remove();
+    typing = null;
+    appendFeedbackTicket({ category: selectedFeedbackCategory, message, status: 'new', created_at: new Date().toISOString(), has_photo: Boolean(photo) });
+    scrollFeedbackToEnd();
+    appendFeedbackMessage(`${result.message} You can follow its status here.`, 'assistant');
     feedbackChatForm.reset();
+    updateFeedbackComposer();
     clearFeedbackPhoto();
     feedbackChatStatus.textContent = '';
     showFeedbackCategories();
   } catch (error) {
+    if (typing) typing.remove();
     feedbackChatStatus.textContent = error.message;
     feedbackChatStatus.classList.add('error');
   } finally {
     feedbackSending = false;
     submitButton.disabled = false;
     feedbackChatPhoto.disabled = false;
+  }
+});
+
+function updateFeedbackComposer() {
+  feedbackChatInput.style.height = 'auto';
+  feedbackChatInput.style.height = `${Math.min(feedbackChatInput.scrollHeight, 140)}px`;
+  feedbackCharCount.textContent = `${feedbackChatInput.value.length} / 2000`;
+}
+
+feedbackChatInput.addEventListener('input', updateFeedbackComposer);
+feedbackChatInput.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+    event.preventDefault();
+    feedbackChatForm.requestSubmit();
+  }
+});
+document.getElementById('feedback-photo-remove').addEventListener('click', () => {
+  clearFeedbackPhoto();
+  feedbackChatInput.focus();
+});
+document.getElementById('feedback-topic-change').addEventListener('click', () => {
+  feedbackChatStatus.textContent = '';
+  showFeedbackCategories();
+  feedbackChatCategories.querySelector('button').focus();
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !feedbackChatPanel.hidden) {
+    feedbackChatPanel.hidden = true;
+    feedbackChatToggle.setAttribute('aria-expanded', 'false');
+    feedbackChatToggle.focus();
   }
 });

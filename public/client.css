@@ -2776,3 +2776,598 @@
 @media (prefers-reduced-motion: reduce) {
   .dm-ring, .dm-bar > span, .dm-week-track span { transition: none; }
 }
+
+/* --------------------------------------------------------------------------
+   Feedback chat (redesign)
+   -------------------------------------------------------------------------- */
+.client-body .fbx {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.client-body .fbx-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 20px 13px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink);
+  box-shadow: 0 14px 34px rgba(24, 16, 12, 0.3);
+  color: #fff;
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.client-body .fbx-toggle::before {
+  display: none;
+}
+
+.client-body .fbx-toggle .icon {
+  width: 20px;
+  height: 20px;
+  color: var(--saffron);
+}
+
+.client-body .fbx-toggle:hover,
+.client-body .fbx-toggle:focus-visible {
+  background: var(--terracotta);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.client-body .fbx-toggle[aria-expanded="true"] {
+  background: var(--terracotta);
+}
+
+.client-body .fbx-panel {
+  position: absolute;
+  right: 0;
+  bottom: 66px;
+  display: flex;
+  flex-direction: column;
+  width: min(390px, calc(100vw - 32px));
+  height: min(620px, calc(100vh - 120px));
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 30px 70px rgba(24, 16, 12, 0.28);
+  animation: fbx-in 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.client-body .fbx-panel[hidden] {
+  display: none;
+}
+
+@keyframes fbx-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+.fbx-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 16px 16px 18px;
+  background:
+    radial-gradient(80% 140% at 100% 0%, rgba(224, 181, 106, 0.28), transparent 60%),
+    var(--ink);
+  color: #fff;
+}
+
+.fbx-avatar,
+.fbx-msg-avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e0b56a, #c0703f);
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+.fbx-avatar {
+  width: 42px;
+  height: 42px;
+  font-size: 1.2rem;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.12);
+}
+
+.fbx-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.client-body .fbx-header h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.1rem;
+}
+
+.fbx-header p {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.78rem;
+}
+
+.fbx-online {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #7fd69a;
+  box-shadow: 0 0 0 3px rgba(127, 214, 154, 0.25);
+}
+
+.fbx-close {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+}
+
+.fbx-close:hover,
+.fbx-close:focus-visible {
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+}
+
+.fbx-messages {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+  background: #faf6f0;
+  scrollbar-width: thin;
+  scrollbar-color: #d9cdbf transparent;
+}
+
+.fbx-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0;
+  color: var(--muted-ink);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.fbx-divider::before,
+.fbx-divider::after {
+  flex: 1;
+  height: 1px;
+  background: var(--line-strong);
+  content: "";
+}
+
+.fbx-msg {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: 88%;
+}
+
+.fbx-msg--assistant {
+  align-self: flex-start;
+}
+
+.fbx-msg--client {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  align-self: flex-end;
+}
+
+.fbx-msg-avatar {
+  width: 28px;
+  height: 28px;
+  font-size: 0.8rem;
+}
+
+.fbx-bubble {
+  padding: 10px 14px;
+  border-radius: 18px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.fbx-bubble p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.fbx-msg--assistant .fbx-bubble {
+  border: 1px solid var(--line);
+  border-bottom-left-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.fbx-msg--client .fbx-bubble {
+  border-bottom-right-radius: 6px;
+  background: var(--terracotta);
+  color: #fff;
+}
+
+.fbx-meta {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.72rem;
+  opacity: 0.75;
+}
+
+.fbx-ticket-topic {
+  display: inline-block;
+  margin-bottom: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.fbx-ticket-status {
+  --tone: #8a5e12;
+  --tone-bg: #fbf0d9;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--tone-bg);
+  color: var(--tone);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.fbx-ticket-status::before {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  content: "";
+}
+
+.fbx-ticket-status[data-tone="reviewing"] { --tone: #2f6f9f; --tone-bg: #e2eef7; }
+.fbx-ticket-status[data-tone="resolved"] { --tone: #2f6b43; --tone-bg: #e5f2e8; }
+
+.fbx-typing .fbx-bubble {
+  display: flex;
+  gap: 4px;
+  padding: 14px 16px;
+}
+
+.fbx-typing i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #c9b8a6;
+  animation: fbx-dot 1.2s infinite ease-in-out;
+}
+
+.fbx-typing i:nth-child(2) { animation-delay: 0.15s; }
+.fbx-typing i:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes fbx-dot {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.5; }
+  40% { transform: translateY(-4px); opacity: 1; }
+}
+
+/* Topics */
+.fbx-topics {
+  padding: 14px 16px 16px;
+  border-top: 1px solid var(--line);
+  background: #fff;
+}
+
+.fbx-topics[hidden] {
+  display: none;
+}
+
+.fbx-topics > p {
+  margin: 0 0 10px;
+  color: var(--ink-soft);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.fbx-topic-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.fbx-topic-grid button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fbx-topic-grid button .icon {
+  grid-row: 1 / 3;
+  width: 34px;
+  height: 34px;
+  padding: 8px;
+  border-radius: 10px;
+  background: #f8e9e2;
+  color: var(--terracotta);
+}
+
+.fbx-topic-grid button span {
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.fbx-topic-grid button small {
+  color: var(--muted-ink);
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+
+.fbx-topic-grid button:hover,
+.fbx-topic-grid button:focus-visible {
+  border-color: var(--terracotta);
+  background: #fdf6f2;
+  outline: none;
+}
+
+.fbx-topic-grid button:focus-visible {
+  box-shadow: var(--ring);
+}
+
+.fbx-topic-grid .fbx-topic-wide {
+  grid-column: 1 / -1;
+}
+
+/* Composer */
+.fbx-composer {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--line);
+  background: #fff;
+}
+
+.fbx-composer[hidden] {
+  display: none;
+}
+
+.fbx-composer-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fbx-topic-chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f8e9e2;
+  color: var(--terracotta-dark);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.fbx-change {
+  border: 0;
+  background: none;
+  color: var(--terracotta);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fbx-change:hover,
+.fbx-change:focus-visible {
+  text-decoration: underline;
+}
+
+.fbx-photo {
+  position: relative;
+  width: 72px;
+  height: 72px;
+}
+
+.fbx-photo[hidden] {
+  display: none;
+}
+
+.fbx-photo img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.fbx-photo-remove {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  cursor: pointer;
+}
+
+.fbx-photo-remove .icon {
+  width: 12px;
+  height: 12px;
+}
+
+.fbx-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: 18px;
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fbx-input-row:focus-within {
+  border-color: var(--terracotta);
+  box-shadow: var(--ring);
+}
+
+.fbx-attach,
+.fbx-send {
+  display: grid;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.fbx-attach {
+  background: #f4ede4;
+  color: var(--ink-soft);
+}
+
+.fbx-attach:hover {
+  background: #ece2d6;
+  color: var(--terracotta);
+}
+
+.fbx-file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.fbx-file:focus-visible + label,
+.fbx-input-row:has(.fbx-file:focus-visible) .fbx-attach {
+  box-shadow: var(--ring);
+}
+
+.client-body .fbx-input-row textarea {
+  flex: 1;
+  min-width: 0;
+  min-height: 38px;
+  max-height: 140px;
+  margin: 0;
+  padding: 9px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  resize: none;
+  box-shadow: none;
+  outline: none;
+}
+
+.fbx-send {
+  background: var(--terracotta);
+  color: #fff;
+}
+
+.fbx-send:hover:not(:disabled) {
+  background: var(--terracotta-dark);
+}
+
+.fbx-send:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.fbx-send .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.fbx-composer-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted-ink);
+  font-size: 0.72rem;
+}
+
+.fbx-status {
+  margin: 0;
+  padding: 0 16px;
+  background: #fff;
+  color: var(--muted-ink);
+  font-size: 0.8rem;
+}
+
+.fbx-status:not(:empty) {
+  padding: 0 16px 12px;
+}
+
+.fbx-status.error {
+  color: #a33a22;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .client-body .fbx {
+    right: 12px;
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    left: auto;
+  }
+
+  .client-body .fbx-panel {
+    width: calc(100vw - 24px);
+    height: min(560px, calc(100vh - 230px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .client-body .fbx-panel,
+  .fbx-typing i {
+    animation: none;
+  }
+}
