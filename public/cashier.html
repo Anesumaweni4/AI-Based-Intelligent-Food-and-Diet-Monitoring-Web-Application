@@ -3,110 +3,331 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Student Credit | THE KITCHEN</title>
+    <title>Cashier Desk | THE KITCHEN</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="styles.css?v=ingredient-stock-ledger-1" />
+    <link rel="stylesheet" href="theme.css?v=redesign-11" />
   </head>
-  <body class="dashboard-body">
-    <header class="topbar dashboard-header">
-      <div class="container nav">
-        <div class="brand">
-          <span class="brand-mark">F</span>
+  <body class="dashboard-body admin-body" data-app-title="Cashier Desk" data-logout-redirect="login.html">
+    <div class="admin-shell">
+      <aside class="admin-sidebar" id="admin-sidebar" aria-label="Cashier navigation">
+        <div class="admin-sidebar-brand">
+          <span class="brand-mark">K</span>
           <div>
-            <h1>Cashier Desk</h1>
-            <p>Student credit and deposits</p>
+            <strong>THE KITCHEN</strong>
+            <small>Cashier desk</small>
           </div>
         </div>
-        <nav>
-          <a href="restaurant.html">Orders</a>
-          <a href="delivery.html">Delivery</a>
-          <a href="login.html" id="cashier-logout">Logout</a>
+
+        <nav class="admin-side-nav" aria-label="Cashier sections">
+          <span class="nav-label">Desk</span>
+          <a href="#overview">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+            Overview
+          </a>
+          <a href="#stock">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+            Stock control
+          </a>
+
+          <span class="nav-label">Students</span>
+          <a href="#credit">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="9" r="6"/><path d="M15.5 9.3A6 6 0 1 1 9.3 15.5"/></svg>
+            Student credit
+          </a>
+          <a href="#wallets">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h13v4"/><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 13.5h2"/></svg>
+            Wallet balances
+          </a>
+
+          <span class="nav-label">Service</span>
+          <a href="restaurant.html" class="admin-side-external">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"/><path d="M9 8h6M9 12h6"/></svg>
+            Orders
+          </a>
+          <a href="delivery.html" class="admin-side-external">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="17" r="3"/><circle cx="18.5" cy="17" r="3"/><path d="M8.5 17h6l3-7h-4"/><path d="M5.5 17l3-6h5"/><path d="M15 6h3l1.5 4"/></svg>
+            Delivery
+          </a>
         </nav>
+
+        <div class="admin-sidebar-foot">
+          <div class="admin-profile">
+            <span class="admin-avatar" id="admin-avatar" aria-hidden="true">C</span>
+            <div>
+              <strong id="admin-profile-name">Cashier</strong>
+              <small>Signed in</small>
+            </div>
+          </div>
+          <button type="button" class="sidebar-action is-danger" id="admin-logout">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5M5 12h11"/></svg>
+            Log out
+          </button>
+        </div>
+      </aside>
+      <div class="admin-scrim" id="admin-scrim" aria-hidden="true"></div>
+
+      <div class="admin-workspace">
+        <header class="admin-topbar">
+          <div class="container admin-topbar-inner">
+            <div class="admin-topbar-title">
+              <button type="button" class="topbar-button admin-menu-toggle" id="admin-menu-toggle" aria-controls="admin-sidebar" aria-expanded="false" aria-label="Open navigation">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+              </button>
+              <div>
+                <a class="admin-back" id="admin-back" href="#overview" hidden>
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+                  Overview
+                </a>
+                <h1 id="admin-page-title"><span id="admin-greeting">Welcome</span> 👋</h1>
+                <p id="admin-date">Cashier desk</p>
+              </div>
+            </div>
+            <div class="admin-topbar-actions">
+              <span class="live-pill">Live</span>
+              <a class="topbar-button" href="restaurant.html">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"/><path d="M9 8h6M9 12h6"/></svg>
+                <span class="topbar-button-label">Orders</span>
+              </a>
+            </div>
+          </div>
+        </header>
+
+        <main class="dashboard-main">
+          <div class="container">
+            <section class="admin-overview" id="overview" aria-labelledby="overview-title">
+              <div class="admin-section-head">
+                <div>
+                  <p class="eyebrow">Today at the desk</p>
+                  <h2 id="overview-title">Overview</h2>
+                </div>
+              </div>
+
+              <div class="admin-summary">
+                <div class="stats-grid cashier-stats">
+                  <div class="stat-card"><span>Total credit held</span><strong id="cashier-total-credit">—</strong></div>
+                  <div class="stat-card"><span>Students with credit</span><strong id="cashier-with-credit">—</strong></div>
+                  <div class="stat-card"><span>Stock items</span><strong id="cashier-items">—</strong></div>
+                  <div class="stat-card"><span>Out of stock</span><strong id="cashier-out-of-stock">—</strong></div>
+                </div>
+              </div>
+
+              <div class="admin-section-head quick-head">
+                <div>
+                  <p class="eyebrow">Get to work</p>
+                  <h2>Jump to</h2>
+                </div>
+              </div>
+              <nav class="quick-grid" aria-label="Cashier areas">
+                <a class="quick-tile" href="#credit" data-tone="blue">
+                  <span class="quick-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="9" r="6"/><path d="M15.5 9.3A6 6 0 1 1 9.3 15.5"/></svg></span>
+                  <span class="quick-text"><strong>Student credit</strong><small>Record a cash deposit for a student</small></span>
+                </a>
+                <a class="quick-tile" href="#stock" data-tone="green">
+                  <span class="quick-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span>
+                  <span class="quick-text"><strong>Stock control</strong><small>Record stock added or used</small></span>
+                  <span class="quick-badge" data-quick-badge="stock" hidden></span>
+                </a>
+                <a class="quick-tile" href="#wallets" data-tone="amber">
+                  <span class="quick-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h13v4"/><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 13.5h2"/></svg></span>
+                  <span class="quick-text"><strong>Wallet balances</strong><small>Every student's credit and history</small></span>
+                </a>
+                <a class="quick-tile" href="restaurant.html" data-tone="terracotta">
+                  <span class="quick-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"/><path d="M9 8h6M9 12h6"/></svg></span>
+                  <span class="quick-text"><strong>Orders</strong><small>Update order status in the restaurant view</small></span>
+                </a>
+                <a class="quick-tile" href="delivery.html" data-tone="ink">
+                  <span class="quick-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="17" r="3"/><circle cx="18.5" cy="17" r="3"/><path d="M8.5 17h6l3-7h-4"/><path d="M5.5 17l3-6h5"/><path d="M15 6h3l1.5 4"/></svg></span>
+                  <span class="quick-text"><strong>Delivery</strong><small>Orders out for delivery</small></span>
+                </a>
+              </nav>
+            </section>
+
+            <section class="weekly-menu-section" id="credit" aria-labelledby="credit-title">
+              <div class="section-title left">
+                <p class="eyebrow">Record cash deposits</p>
+                <h3 id="credit-title">Student Credit</h3>
+              </div>
+              <ol class="credit-steps" aria-label="How to record a deposit">
+                <li><span>1</span> Find the student</li>
+                <li><span>2</span> Confirm the account</li>
+                <li><span>3</span> Enter the cash amount</li>
+              </ol>
+              <form id="student-search-form" class="cashier-search-form credit-search">
+                <div class="field-group">
+                  <label for="student-search">Student name or username</label>
+                  <div class="input-shell">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+                    <input id="student-search" type="search" minlength="2" placeholder="e.g. Munashe or dabvu" autocomplete="off" required />
+                  </div>
+                </div>
+                <button class="submit-btn" type="submit">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+                  Find student
+                </button>
+              </form>
+              <p id="cashier-status" class="schedule-status credit-status" role="status"></p>
+              <div id="student-search-results" class="order-list credit-results"></div>
+              <form id="deposit-form" class="cashier-deposit-form credit-deposit" hidden>
+                <div class="credit-deposit-head">
+                  <span class="credit-avatar credit-avatar--lg" id="selected-student-avatar" aria-hidden="true"></span>
+                  <div class="credit-deposit-who">
+                    <p class="eyebrow">Recording cash for</p>
+                    <h4 id="selected-student"></h4>
+                    <span id="selected-student-username" class="credit-username"></span>
+                  </div>
+                  <div class="credit-deposit-balance">
+                    <span>Current balance</span>
+                    <strong id="selected-student-balance">$0.00</strong>
+                  </div>
+                </div>
+                <div class="credit-deposit-body">
+                  <div class="field-group">
+                    <label for="deposit-amount">Deposit amount (USD)</label>
+                    <div class="money-input">
+                      <span aria-hidden="true">$</span>
+                      <input id="deposit-amount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00" required />
+                    </div>
+                  </div>
+                  <div class="quick-amounts" role="group" aria-label="Quick amounts">
+                    <button type="button" data-quick-amount="1">$1</button>
+                    <button type="button" data-quick-amount="5">$5</button>
+                    <button type="button" data-quick-amount="10">$10</button>
+                    <button type="button" data-quick-amount="20">$20</button>
+                  </div>
+                  <p class="credit-preview" id="deposit-preview" hidden>
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                    New balance after this deposit: <strong id="deposit-preview-value">$0.00</strong>
+                  </p>
+                  <div class="credit-deposit-actions">
+                    <button class="submit-btn" type="submit">
+                      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>
+                      Record deposit
+                    </button>
+                    <button class="credit-cancel" type="button" id="deposit-cancel">Choose a different student</button>
+                  </div>
+                </div>
+              </form>
+            </section>
+
+            <section class="weekly-menu-section" id="stock" aria-labelledby="stock-title">
+              <div class="stock-head">
+                <div class="section-title left">
+                  <p class="eyebrow">Inventory control</p>
+                  <h3 id="stock-title">Stock Control</h3>
+                </div>
+                <span class="stock-count" id="stock-count" hidden></span>
+              </div>
+              <p class="schedule-help">Track kitchen ingredients separately from the customer menu. Record stock added and used in each item's unit; customer orders do not change these balances.</p>
+
+              <h4 class="stock-subhead">Stock on hand <span class="stock-filter-note" id="stock-filter-note" hidden></span></h4>
+              <div class="stock-onhand" id="stock-onhand" aria-label="Current stock levels">
+                <div class="stock-onhand-empty">Loading stock levels…</div>
+              </div>
+
+              <div class="stock-entry">
+                <div class="stock-entry-head">
+                  <h4>Record a stock movement</h4>
+                  <span>Pick an item above or from the list</span>
+                </div>
+                <form id="stock-receipt-form" class="cashier-stock-form stock-form">
+                  <div class="field-group">
+                    <label for="stock-item-search">Stock item</label>
+                    <div class="combo" id="stock-combo">
+                      <div class="input-shell">
+                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+                        <input id="stock-item-search" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false"
+                          aria-controls="stock-item-options" aria-describedby="stock-item-hint" autocomplete="off" spellcheck="false"
+                          placeholder="Type to search, e.g. water" />
+                        <button type="button" class="combo-clear" id="stock-item-clear" aria-label="Clear stock item" hidden>
+                          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+                        </button>
+                      </div>
+                      <ul class="combo-list" id="stock-item-options" role="listbox" aria-label="Matching stock items" hidden></ul>
+                    </div>
+                    <span class="visually-hidden" id="stock-item-hint">Type part of a name, then use the arrow keys and Enter, or click an item.</span>
+                    <!-- The original list stays as the form's value; the search box above drives it. -->
+                    <select id="inventory-item-select" class="visually-hidden" tabindex="-1" aria-hidden="true">
+                      <option value="">Loading stock items…</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <label for="stock-quantity">Quantity (<span id="stock-unit">kg</span>)</label>
+                    <div class="unit-input">
+                      <input id="stock-quantity" type="number" min="0.001" max="1000000" step="0.001" inputmode="decimal" placeholder="0" required />
+                      <span id="stock-unit-suffix" aria-hidden="true">kg</span>
+                    </div>
+                  </div>
+                  <div class="cashier-stock-actions stock-actions">
+                    <button class="submit-btn stock-btn-add" type="submit" name="stockAction" value="received">
+                      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                      Record added
+                    </button>
+                    <button class="cashier-stock-remove-button stock-btn-use" type="submit" name="stockAction" value="used">
+                      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg>
+                      Record used
+                    </button>
+                  </div>
+                </form>
+                <p id="stock-status" class="schedule-status credit-status" role="status" aria-live="polite"></p>
+              </div>
+
+              <div class="cashier-stock-ledger-wrap stock-ledger">
+                <div class="stock-entry-head">
+                  <h4>Stock ledger</h4>
+                  <span class="stock-legend"><i class="is-used"></i> Used <i class="is-added"></i> Added</span>
+                </div>
+                <div class="schedule-table-wrap">
+                  <table class="schedule-table cashier-stock-ledger">
+                    <thead>
+                      <tr>
+                        <th scope="col">Date</th>
+                        <th scope="col">Item</th>
+                        <th scope="col">Opening</th>
+                        <th scope="col">Used</th>
+                        <th scope="col">Added</th>
+                        <th scope="col">Closing</th>
+                      </tr>
+                    </thead>
+                    <tbody id="stock-ledger-body"></tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+
+            <section class="weekly-menu-section" id="wallets" aria-labelledby="wallets-title">
+              <div class="section-title left">
+                <p class="eyebrow">Student accounts</p>
+                <h3 id="wallets-title">Wallet Balances</h3>
+              </div>
+              <div class="wallet-stats" id="wallet-stats" aria-label="Wallet totals"></div>
+              <div class="wallet-toolbar">
+                <div class="input-shell wallet-search">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+                  <label class="visually-hidden" for="wallet-search">Search student accounts</label>
+                  <input id="wallet-search" type="search" placeholder="Search name or username" autocomplete="off" />
+                </div>
+                <div class="wallet-sort">
+                  <label for="wallet-sort">Sort by</label>
+                  <select id="wallet-sort">
+                    <option value="balance">Highest balance</option>
+                    <option value="activity">Recent activity</option>
+                    <option value="name">Name (A–Z)</option>
+                  </select>
+                </div>
+              </div>
+              <div id="credit-transactions" class="wallet-list" aria-live="polite"></div>
+              <p class="wallet-footnote">History shows each student's transactions from the 40 most recent credit movements.</p>
+            </section>
+          </div>
+        </main>
       </div>
-    </header>
+    </div>
 
-    <main class="dashboard-main">
-      <div class="container">
-        <section class="weekly-menu-section">
-          <div class="section-title left">
-            <p class="eyebrow">Inventory control</p>
-            <h3>Stock Control</h3>
-          </div>
-          <p class="schedule-help">Track ingredients separately from the customer menu. Record stock added and used in kilograms; customer orders do not change these balances.</p>
-          <form id="stock-receipt-form" class="cashier-stock-form">
-            <div class="field-group">
-              <label for="inventory-item-select">Stock item</label>
-              <select id="inventory-item-select" required>
-                <option value="">Loading stock items…</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <label for="stock-quantity">Quantity (<span id="stock-unit">kg</span>)</label>
-              <input id="stock-quantity" type="number" min="0.001" max="1000000" step="0.001" required />
-            </div>
-            <div class="cashier-stock-actions">
-              <button class="submit-btn" type="submit" name="stockAction" value="received">Record Added</button>
-              <button class="cashier-stock-remove-button" type="submit" name="stockAction" value="used">Record Used</button>
-            </div>
-          </form>
-          <p id="stock-status" class="schedule-status" role="status" aria-live="polite"></p>
-          <div class="cashier-stock-ledger-wrap">
-            <h4>Stock ledger</h4>
-            <div class="schedule-table-wrap">
-              <table class="schedule-table cashier-stock-ledger">
-                <thead>
-                  <tr>
-                    <th scope="col">Date</th>
-                    <th scope="col">Item</th>
-                    <th scope="col">Opening</th>
-                    <th scope="col">Used</th>
-                    <th scope="col">Added</th>
-                    <th scope="col">Closing</th>
-                  </tr>
-                </thead>
-                <tbody id="stock-ledger-body"></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <section class="weekly-menu-section">
-          <div class="section-title left">
-            <p class="eyebrow">Record cash deposits</p>
-            <h3>Student Credit</h3>
-          </div>
-          <p class="schedule-help">Find the student account first, confirm the name, then enter the cash deposit amount in USD.</p>
-          <form id="student-search-form" class="cashier-search-form">
-            <div class="field-group">
-              <label for="student-search">Student name or username</label>
-              <input id="student-search" type="search" minlength="2" required />
-            </div>
-            <button class="submit-btn" type="submit">Find Student</button>
-          </form>
-          <p id="cashier-status" class="schedule-status" role="status"></p>
-          <div id="student-search-results" class="order-list"></div>
-          <form id="deposit-form" class="cashier-deposit-form" hidden>
-            <h4 id="selected-student"></h4>
-            <div class="field-group">
-              <label for="deposit-amount">Deposit amount (USD)</label>
-              <input id="deposit-amount" type="number" min="0.01" step="0.01" required />
-            </div>
-            <button class="submit-btn" type="submit">Record Deposit</button>
-          </form>
-        </section>
-
-        <section class="weekly-menu-section">
-          <div class="section-title left">
-            <p class="eyebrow">Student accounts</p>
-            <h3>Wallet Balances</h3>
-          </div>
-          <details class="wallet-balances-dropdown">
-            <summary>Show student accounts</summary>
-            <div id="credit-transactions" class="order-list wallet-balances-list"></div>
-          </details>
-        </section>
-      </div>
-    </main>
-    <script src="cashier.js?v=ingredient-stock-ledger-1"></script>
+    <script src="admin-shell.js?v=views-2"></script>
+    <script src="cashier.js?v=cashier-redesign-1"></script>
     <script src="staff-dashboard-links.js?v=20261026-1"></script>
   </body>
 </html>

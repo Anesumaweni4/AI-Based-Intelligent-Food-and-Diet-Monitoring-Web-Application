@@ -83,7 +83,8 @@
       }
     }
     if (backLink) backLink.hidden = isHome;
-    document.title = isHome ? 'Admin Dashboard | THE KITCHEN' : `${views.get(id).label} | Admin | THE KITCHEN`;
+    const appTitle = body.dataset.appTitle || 'Admin Dashboard';
+    document.title = isHome ? `${appTitle} | THE KITCHEN` : `${views.get(id).label} | ${appTitle} | THE KITCHEN`;
     body.dataset.adminView = id;
 
     window.scrollTo({ top: 0, behavior: 'auto' });
@@ -152,7 +153,7 @@
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || 'Unable to log out safely.');
       localStorage.removeItem('foodieUser');
-      window.location.href = 'admin-login.html';
+      window.location.href = body.dataset.logoutRedirect || 'admin-login.html';
     } catch (error) {
       window.alert(error.message);
     }
