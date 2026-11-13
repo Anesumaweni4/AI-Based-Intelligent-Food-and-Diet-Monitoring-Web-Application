@@ -1035,6 +1035,11 @@
   transform: translateY(-1px);
 }
 
+.admin-body .submit-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(162, 74, 48, 0.22), 0 6px 16px rgba(162, 74, 48, 0.22);
+}
+
 .admin-body .submit-btn:disabled {
   filter: grayscale(0.4);
   opacity: 0.6;
@@ -1466,6 +1471,412 @@
 @media (prefers-reduced-motion: reduce) {
   .admin-body .admin-view {
     animation: none;
+  }
+}
+
+/* ---- Monthly billing ---- */
+.billing-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 14px 0 14px;
+}
+
+.billing-month-label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.billing-month-picker {
+  display: inline-flex;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.billing-step {
+  display: grid;
+  width: 46px;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.billing-step:hover:not(:disabled),
+.billing-step:focus-visible {
+  background: #f6efe6;
+  color: var(--terracotta);
+  outline: none;
+}
+
+.billing-step:disabled {
+  color: #cdbfb1;
+  cursor: not-allowed;
+}
+
+.billing-month-current {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 210px;
+  padding: 12px 18px;
+  border-right: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.billing-month-current:hover {
+  background: #fcf8f2;
+}
+
+.billing-month-current:focus-within {
+  box-shadow: inset var(--ring);
+}
+
+.billing-month-current .icon {
+  color: var(--terracotta);
+}
+
+.billing-month-current strong {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+/* The native month field sits invisibly underneath; it supplies the value and the picker. */
+.billing-month-current input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.billing-month-current.no-picker strong {
+  display: none;
+}
+
+.billing-month-current.no-picker input {
+  position: static;
+  height: auto;
+  opacity: 1;
+  pointer-events: auto;
+  font: inherit;
+}
+
+.admin-body .billing-generate {
+  gap: 8px;
+  width: auto;
+  min-height: 50px;
+  margin: 0;
+  padding: 0 22px;
+}
+
+.billing-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 820px;
+  margin: 0 0 16px;
+  color: var(--muted-ink);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.billing-info .icon {
+  width: 17px;
+  height: 17px;
+  margin-top: 2px;
+  color: #3d6a8a;
+}
+
+.billing-info strong {
+  color: var(--ink-soft);
+}
+
+.billing-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.billing-stats:empty {
+  display: none;
+}
+
+.billing-stat-paid strong { color: #2f7a4a; }
+.billing-stat-due strong { color: #a8661a; }
+
+.billing-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
+  gap: 14px;
+}
+
+.billing-empty {
+  display: grid;
+  grid-column: 1 / -1;
+  justify-items: center;
+  gap: 6px;
+  padding: 36px 24px;
+  border: 1.5px dashed var(--line-strong);
+  border-radius: 18px;
+  background: #fcf9f5;
+  color: var(--muted-ink);
+  text-align: center;
+}
+
+.billing-empty-icon {
+  display: grid;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 6px;
+  place-items: center;
+  border-radius: 16px;
+  background: #f1e1cf;
+  color: var(--terracotta);
+}
+
+.billing-empty-icon .icon {
+  width: 26px;
+  height: 26px;
+}
+
+.billing-empty strong {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.billing-empty b {
+  color: var(--ink-soft);
+}
+
+.invoice-card {
+  --state: #c9902a;
+  --state-bg: #fbf0d9;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(36, 24, 19, 0.04);
+}
+
+.invoice-card.is-paid {
+  --state: var(--ok);
+  --state-bg: #e5f2e8;
+}
+
+.invoice-card::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background: var(--state);
+  content: "";
+}
+
+.invoice-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 18px 0;
+}
+
+.invoice-who strong {
+  display: block;
+}
+
+.invoice-status {
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--state-bg);
+  color: var(--state);
+  font-size: 0.78rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.invoice-total {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin: 14px 18px 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #faf6f0;
+}
+
+.invoice-total small {
+  display: block;
+  color: var(--muted-ink);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.invoice-total strong {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.invoice-meta {
+  color: var(--muted-ink);
+  font-size: 0.84rem;
+  text-align: right;
+}
+
+.invoice-orders-toggle {
+  align-self: flex-start;
+  margin: 12px 18px 0;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  color: var(--terracotta);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.invoice-orders-toggle:hover,
+.invoice-orders-toggle:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  outline: none;
+}
+
+.invoice-orders {
+  margin: 8px 18px 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  list-style: none;
+}
+
+.invoice-orders[hidden] {
+  display: none;
+}
+
+.invoice-orders li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  font-size: 0.86rem;
+}
+
+.invoice-orders li + li {
+  border-top: 1px solid var(--line);
+}
+
+.invoice-order-id {
+  font-weight: 700;
+}
+
+.invoice-order-date {
+  color: var(--muted-ink);
+}
+
+.invoice-order-status {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e5f2e8;
+  color: #2f6b43;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.invoice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  padding: 16px 18px 18px;
+}
+
+.invoice-actions:first-child {
+  margin-top: 16px;
+}
+
+.admin-body .invoice-pay {
+  gap: 8px;
+  width: auto;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 18px;
+}
+
+.admin-body .invoice-pay.is-confirm {
+  background: linear-gradient(135deg, #4c8a60, #2f6b43);
+  box-shadow: 0 6px 16px rgba(47, 107, 67, 0.25);
+}
+
+.invoice-confirm-text {
+  flex-basis: 100%;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.invoice-card:not(:has(.invoice-actions)) {
+  padding-bottom: 18px;
+}
+
+@media (max-width: 900px) {
+  .billing-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .billing-bar,
+  .billing-month,
+  .billing-month-picker {
+    width: 100%;
+  }
+
+  .billing-month-current {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .admin-body .billing-generate {
+    width: 100%;
+  }
+
+  .invoice-orders li {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .invoice-order-status {
+    display: none;
   }
 }
 

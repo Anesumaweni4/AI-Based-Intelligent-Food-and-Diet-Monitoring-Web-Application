@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="styles.css?v=ingredient-stock-ledger-1" />
-    <link rel="stylesheet" href="theme.css?v=redesign-9" />
+    <link rel="stylesheet" href="theme.css?v=redesign-10" />
   </head>
   <body class="dashboard-body admin-body">
     <div class="admin-shell">
@@ -419,16 +419,35 @@
                 <p class="eyebrow">Approved client accounts</p>
                 <h3 id="monthly-billing-title">Monthly Billing</h3>
               </div>
-              <p class="schedule-help">Generate statements for a completed month. Only collected or delivered monthly-account orders are included. Unpaid statements can receive any later-completed orders for that month when generated again.</p>
-              <div class="monthly-billing-controls">
-                <div class="field-group">
-                  <label for="monthly-billing-period">Billing month</label>
-                  <input id="monthly-billing-period" type="month" required />
+              <div class="billing-bar">
+                <div class="billing-month" role="group" aria-labelledby="billing-month-label">
+                  <span class="billing-month-label" id="billing-month-label">Billing month</span>
+                  <div class="billing-month-picker">
+                    <button type="button" class="billing-step" id="billing-prev" aria-label="Previous month">
+                      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+                    </button>
+                    <label class="billing-month-current" for="monthly-billing-period">
+                      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+                      <strong id="billing-month-text">—</strong>
+                      <input id="monthly-billing-period" type="month" required aria-label="Choose billing month" />
+                    </label>
+                    <button type="button" class="billing-step" id="billing-next" aria-label="Next month">
+                      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+                    </button>
+                  </div>
                 </div>
-                <button type="button" class="submit-btn" id="generate-monthly-invoices">Generate Statements</button>
+                <button type="button" class="submit-btn billing-generate" id="generate-monthly-invoices">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9l-6-6z"/><path d="M14 3v6h6M12 12v6M9 15h6"/></svg>
+                  Generate statements
+                </button>
               </div>
-              <p id="monthly-billing-status" class="schedule-status" role="status" aria-live="polite"></p>
-              <div id="monthly-invoices" class="order-list monthly-invoices"></div>
+              <p class="billing-info">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+                <span>Statements include only <strong>collected or delivered</strong> orders charged to approved monthly accounts. Generating again adds any orders completed later to <strong>unpaid</strong> statements for that month.</span>
+              </p>
+              <p id="monthly-billing-status" class="schedule-status credit-status" role="status" aria-live="polite"></p>
+              <div class="billing-stats" id="billing-stats" aria-label="Month totals"></div>
+              <div id="monthly-invoices" class="billing-list"></div>
             </section>
 
             <section class="weekly-menu-section" id="feedback" aria-labelledby="feedback-title">
@@ -602,7 +621,7 @@
     </dialog>
 
     <script src="admin-shell.js?v=views-1"></script>
-    <script src="admin.js?v=wallets-1"></script>
+    <script src="admin.js?v=billing-1"></script>
     <script src="staff-dashboard-links.js?v=20261026-1"></script>
   </body>
 </html>

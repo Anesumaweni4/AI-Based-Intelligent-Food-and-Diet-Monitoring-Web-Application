@@ -1827,66 +1827,166 @@ function getPreviousBillingPeriod() {
 
 monthlyBillingPeriodInput.value = getPreviousBillingPeriod();
 
+// --- Monthly billing: month stepper, totals, statement cards, confirmed payments ---
+const billingStats = document.getElementById('billing-stats');
+const billingMonthText = document.getElementById('billing-month-text');
+const billingPrev = document.getElementById('billing-prev');
+const billingNext = document.getElementById('billing-next');
+const openInvoiceOrders = new Set();
+let billingLoadedPeriod = '';
+let billingSignature = '';
+let billingInvoices = [];
+let pendingPayInvoice = null;
+
+function formatBillingMonth(period) {
+  const [year, month] = String(period || '').split('-').map(Number);
+  if (!year || !month) return '—';
+  return new Date(year, month - 1, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+}
+
+function shiftBillingMonth(period, delta) {
+  const [year, month] = period.split('-').map(Number);
+  const date = new Date(year, month - 1 + delta, 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function currentBillingMonth() {
+  const today = new Date();
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function syncBillingMonth() {
+  const period = monthlyBillingPeriodInput.value;
+  billingMonthText.textContent = formatBillingMonth(period);
+  monthlyBillingPeriodInput.max = currentBillingMonth();
+  billingNext.disabled = !period || period >= currentBillingMonth();
+}
+
+function setBillingStatus(message, tone = 'info') {
+  monthlyBillingStatus.textContent = message;
+  monthlyBillingStatus.classList.toggle('error', tone === 'error');
+  monthlyBillingStatus.classList.toggle('is-success', tone === 'success');
+}
+
 function renderMonthlyInvoices(invoices) {
+  billingInvoices = invoices;
+  const monthName = formatBillingMonth(monthlyBillingPeriodInput.value);
+
   if (!invoices.length) {
-    monthlyInvoicesContainer.innerHTML = '<div class="empty-state">No monthly statements have been generated for this month.</div>';
+    billingStats.innerHTML = '';
+    monthlyInvoicesContainer.innerHTML = `
+      <div class="billing-empty">
+        <span class="billing-empty-icon" aria-hidden="true">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9l-6-6z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>
+        </span>
+        <strong>No statements for ${escapeHtml(monthName)} yet</strong>
+        <span>Press <b>Generate statements</b> to create them from this month's completed monthly-account orders.</span>
+      </div>
+    `;
     return;
   }
 
-  monthlyInvoicesContainer.innerHTML = invoices.map((invoice) => `
-    <article class="order-card monthly-invoice-card">
-      <div class="monthly-invoice-heading">
-        <div>
-          <strong>Statement #${Number(invoice.id)} · ${escapeHtml(invoice.full_name)}</strong>
-          <span>@${escapeHtml(invoice.username)} · ${escapeHtml(invoice.billing_period)}</span>
-        </div>
-        <span class="monthly-invoice-status ${invoice.status === 'paid' ? 'paid' : ''}">${escapeHtml(invoice.status)}</span>
-      </div>
-      <div class="monthly-invoice-total">
-        <span>${invoice.orders.length} completed order${invoice.orders.length === 1 ? '' : 's'} · ${invoice.status === 'paid' ? `Paid ${escapeHtml(formatSaleDate(invoice.paid_at))}` : 'Payment due'}</span>
-        <strong>${formatCredit(invoice.total_cents)}</strong>
-      </div>
-      <details class="monthly-invoice-orders">
-        <summary>View included orders</summary>
-        ${invoice.orders.map((order) => `
-          <div class="monthly-invoice-order">
-            <span>Order #${Number(order.order_id)} · ${escapeHtml(formatSaleDate(order.created_at))} · ${escapeHtml(order.status)}</span>
-            <strong>${formatCurrency(order.total)}</strong>
+  const totalCents = invoices.reduce((sum, invoice) => sum + Number(invoice.total_cents || 0), 0);
+  const paidCents = invoices.filter((invoice) => invoice.status === 'paid')
+    .reduce((sum, invoice) => sum + Number(invoice.total_cents || 0), 0);
+  const unpaidCount = invoices.filter((invoice) => invoice.status !== 'paid').length;
+  billingStats.innerHTML = `
+    <div class="wallet-stat"><span>Statements</span><strong>${invoices.length}</strong></div>
+    <div class="wallet-stat"><span>Total billed</span><strong>${formatCredit(totalCents)}</strong></div>
+    <div class="wallet-stat billing-stat-paid"><span>Paid</span><strong>${formatCredit(paidCents)}</strong></div>
+    <div class="wallet-stat billing-stat-due"><span>Outstanding${unpaidCount ? ` · ${unpaidCount}` : ''}</span><strong>${formatCredit(totalCents - paidCents)}</strong></div>
+  `;
+
+  monthlyInvoicesContainer.innerHTML = invoices.map((invoice) => {
+    const id = Number(invoice.id);
+    const isPaid = invoice.status === 'paid';
+    const isOpen = openInvoiceOrders.has(id);
+    const isConfirming = pendingPayInvoice === id;
+    return `
+      <article class="invoice-card${isPaid ? ' is-paid' : ''}">
+        <header class="invoice-head">
+          <span class="credit-avatar" aria-hidden="true">${escapeHtml(getInitials(invoice.full_name))}</span>
+          <div class="invoice-who">
+            <strong>${escapeHtml(invoice.full_name)}</strong>
+            <span class="credit-username">@${escapeHtml(invoice.username)}</span>
           </div>
-        `).join('')}
-      </details>
-      ${invoice.status === 'unpaid' ? `
-        <button type="button" class="submit-btn monthly-invoice-pay" data-pay-invoice="${Number(invoice.id)}">
-          Mark as paid
-        </button>
-      ` : ''}
-    </article>
-  `).join('');
+          <span class="invoice-status">${isPaid ? 'Paid' : 'Payment due'}</span>
+        </header>
+        <div class="invoice-total">
+          <div>
+            <small>Statement #${id} · ${escapeHtml(formatBillingMonth(invoice.billing_period))}</small>
+            <strong>${formatCredit(invoice.total_cents)}</strong>
+          </div>
+          <span class="invoice-meta">
+            ${invoice.orders.length} completed order${invoice.orders.length === 1 ? '' : 's'}
+            ${isPaid ? `<br>Paid ${escapeHtml(formatSaleDate(invoice.paid_at))}` : ''}
+          </span>
+        </div>
+        ${invoice.orders.length ? `
+          <button type="button" class="invoice-orders-toggle" data-invoice-toggle="${id}"
+            aria-expanded="${isOpen}" aria-controls="invoice-orders-${id}">
+            ${isOpen ? 'Hide' : 'View'} included orders
+          </button>
+          <ul class="invoice-orders" id="invoice-orders-${id}" ${isOpen ? '' : 'hidden'}>
+            ${invoice.orders.map((order) => `
+              <li>
+                <span class="invoice-order-id">#${Number(order.order_id)}</span>
+                <span class="invoice-order-date">${escapeHtml(formatSaleDate(order.created_at))}</span>
+                <span class="invoice-order-status">${escapeHtml(order.status)}</span>
+                <strong>${formatCurrency(order.total)}</strong>
+              </li>
+            `).join('')}
+          </ul>
+        ` : ''}
+        ${isPaid ? '' : `
+          <div class="invoice-actions">
+            ${isConfirming ? `
+              <span class="invoice-confirm-text">Record ${formatCredit(invoice.total_cents)} as received from ${escapeHtml(invoice.full_name)}?</span>
+              <button type="button" class="submit-btn invoice-pay is-confirm" data-pay-invoice="${id}">Yes, mark as paid</button>
+              <button type="button" class="credit-cancel" data-pay-cancel>Cancel</button>
+            ` : `
+              <button type="button" class="submit-btn invoice-pay" data-pay-ask="${id}">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>
+                Mark as paid
+              </button>
+            `}
+          </div>
+        `}
+      </article>
+    `;
+  }).join('');
 }
 
-async function loadMonthlyInvoices({ preserveStatus = false } = {}) {
+async function loadMonthlyInvoices({ force = false } = {}) {
   const period = monthlyBillingPeriodInput.value;
   if (!period) return;
-  if (!preserveStatus) {
-    monthlyBillingStatus.textContent = 'Loading monthly statements…';
-    monthlyBillingStatus.classList.remove('error');
-  }
+  syncBillingMonth();
+  const periodChanged = period !== billingLoadedPeriod;
+  if (periodChanged) setBillingStatus('Loading monthly statements…');
   try {
     const response = await fetch(`/api/admin/monthly-invoices?period=${encodeURIComponent(period)}`);
     const result = await response.json();
     if (!response.ok) throw new Error(result.message || 'Unable to load monthly statements.');
-    renderMonthlyInvoices(result.invoices);
-    if (!preserveStatus) monthlyBillingStatus.textContent = '';
+    if (monthlyBillingPeriodInput.value !== period) return; // the admin moved on to another month
+    const invoices = Array.isArray(result.invoices) ? result.invoices : [];
+    // Re-render only when something changed, so open order lists and messages stay put.
+    const signature = JSON.stringify([period, invoices.map((invoice) => [
+      invoice.id, invoice.status, invoice.total_cents, invoice.orders.length
+    ])]);
+    if (force || periodChanged || signature !== billingSignature) {
+      billingSignature = signature;
+      renderMonthlyInvoices(invoices);
+    }
+    if (periodChanged) setBillingStatus('');
+    billingLoadedPeriod = period;
   } catch (error) {
-    monthlyBillingStatus.textContent = error.message;
-    monthlyBillingStatus.classList.add('error');
+    setBillingStatus(error.message, 'error');
   }
 }
 
 generateMonthlyInvoicesButton.addEventListener('click', async () => {
   generateMonthlyInvoicesButton.disabled = true;
-  monthlyBillingStatus.textContent = 'Generating monthly statements…';
-  monthlyBillingStatus.classList.remove('error');
+  setBillingStatus(`Generating statements for ${formatBillingMonth(monthlyBillingPeriodInput.value)}…`);
   try {
     const response = await fetch('/api/admin/monthly-invoices/generate', {
       method: 'POST',
@@ -1895,35 +1995,91 @@ generateMonthlyInvoicesButton.addEventListener('click', async () => {
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.message || 'Unable to generate monthly statements.');
-    monthlyBillingStatus.textContent = result.message;
-    await loadMonthlyInvoices({ preserveStatus: true });
+    await loadMonthlyInvoices({ force: true });
+    setBillingStatus(result.message, 'success');
   } catch (error) {
-    monthlyBillingStatus.textContent = error.message;
-    monthlyBillingStatus.classList.add('error');
+    setBillingStatus(error.message, 'error');
   } finally {
     generateMonthlyInvoicesButton.disabled = false;
   }
 });
 
-monthlyBillingPeriodInput.addEventListener('change', loadMonthlyInvoices);
+function changeBillingMonth(period) {
+  monthlyBillingPeriodInput.value = period;
+  pendingPayInvoice = null;
+  openInvoiceOrders.clear();
+  loadMonthlyInvoices();
+}
+
+monthlyBillingPeriodInput.addEventListener('change', () => changeBillingMonth(monthlyBillingPeriodInput.value));
+
+// Clicking the month name opens the browser's month picker. Browsers without a
+// month picker (input.type falls back to "text") show the plain field instead.
+const billingMonthCurrent = document.querySelector('.billing-month-current');
+if (monthlyBillingPeriodInput.type !== 'month') {
+  billingMonthCurrent.classList.add('no-picker');
+} else {
+  billingMonthCurrent.addEventListener('click', (event) => {
+    if (event.target === monthlyBillingPeriodInput) return;
+    event.preventDefault();
+    try {
+      monthlyBillingPeriodInput.showPicker();
+    } catch {
+      monthlyBillingPeriodInput.focus();
+    }
+  });
+}
+billingPrev.addEventListener('click', () => changeBillingMonth(shiftBillingMonth(monthlyBillingPeriodInput.value, -1)));
+billingNext.addEventListener('click', () => {
+  const next = shiftBillingMonth(monthlyBillingPeriodInput.value, 1);
+  if (next <= currentBillingMonth()) changeBillingMonth(next);
+});
 
 monthlyInvoicesContainer.addEventListener('click', async (event) => {
+  const toggle = event.target.closest('[data-invoice-toggle]');
+  if (toggle) {
+    const id = Number(toggle.dataset.invoiceToggle);
+    const list = document.getElementById(toggle.getAttribute('aria-controls'));
+    const open = toggle.getAttribute('aria-expanded') !== 'true';
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.textContent = `${open ? 'Hide' : 'View'} included orders`;
+    if (list) list.hidden = !open;
+    if (open) openInvoiceOrders.add(id);
+    else openInvoiceOrders.delete(id);
+    return;
+  }
+
+  const ask = event.target.closest('[data-pay-ask]');
+  if (ask) {
+    pendingPayInvoice = Number(ask.dataset.payAsk);
+    renderMonthlyInvoices(billingInvoices);
+    monthlyInvoicesContainer.querySelector(`[data-pay-invoice="${pendingPayInvoice}"]`)?.focus();
+    return;
+  }
+
+  if (event.target.closest('[data-pay-cancel]')) {
+    const id = pendingPayInvoice;
+    pendingPayInvoice = null;
+    renderMonthlyInvoices(billingInvoices);
+    monthlyInvoicesContainer.querySelector(`[data-pay-ask="${id}"]`)?.focus();
+    return;
+  }
+
   const button = event.target.closest('[data-pay-invoice]');
   if (!button) return;
   button.disabled = true;
-  monthlyBillingStatus.textContent = 'Recording statement payment…';
-  monthlyBillingStatus.classList.remove('error');
+  setBillingStatus('Recording statement payment…');
   try {
     const response = await fetch(`/api/admin/monthly-invoices/${Number(button.dataset.payInvoice)}/pay`, {
       method: 'PATCH'
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.message || 'Unable to record statement payment.');
-    monthlyBillingStatus.textContent = result.message;
-    await loadMonthlyInvoices({ preserveStatus: true });
+    pendingPayInvoice = null;
+    await loadMonthlyInvoices({ force: true });
+    setBillingStatus(result.message, 'success');
   } catch (error) {
-    monthlyBillingStatus.textContent = error.message;
-    monthlyBillingStatus.classList.add('error');
+    setBillingStatus(error.message, 'error');
     button.disabled = false;
   }
 });
