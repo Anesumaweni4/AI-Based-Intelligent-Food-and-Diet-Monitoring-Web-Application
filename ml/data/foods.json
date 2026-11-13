@@ -1,0 +1,2977 @@
+{
+  "exportedAt": "2026-11-13T11:13:49.325Z",
+  "foods": [
+    {
+      "source": "menu",
+      "id": 1,
+      "name": "Beef Burger",
+      "category": "Burgers",
+      "calories": 480,
+      "protein": 25,
+      "carbohydrates": 40,
+      "fat": 24,
+      "fiber": 2.5,
+      "sugar": 7,
+      "isDrink": false,
+      "components": [
+        "beef burger"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 2,
+      "name": "Chicken Wrap",
+      "category": "Wraps",
+      "calories": 520,
+      "protein": 30,
+      "carbohydrates": 48,
+      "fat": 22,
+      "fiber": 5,
+      "sugar": 4,
+      "isDrink": false,
+      "components": [
+        "chicken wrap"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 3,
+      "name": "Rice & Stew",
+      "category": "Meals",
+      "calories": 605,
+      "protein": 32.5,
+      "carbohydrates": 75,
+      "fat": 17.7,
+      "fiber": 2,
+      "sugar": 2.1,
+      "isDrink": false,
+      "components": [
+        "beef stew",
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 4,
+      "name": "Noodles Special",
+      "category": "Noodles",
+      "calories": 380,
+      "protein": 9,
+      "carbohydrates": 54,
+      "fat": 14,
+      "fiber": 2.5,
+      "sugar": 1.5,
+      "isDrink": false,
+      "components": [
+        "noodles"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 5,
+      "name": "Chips & Chicken",
+      "category": "Sides",
+      "calories": 790,
+      "protein": 35.5,
+      "carbohydrates": 64,
+      "fat": 43,
+      "fiber": 6,
+      "sugar": 1.5,
+      "isDrink": false,
+      "components": [
+        "chicken",
+        "chips"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 6,
+      "name": "Fruit Smoothie",
+      "category": "Drink",
+      "calories": 230,
+      "protein": 6,
+      "carbohydrates": 45,
+      "fat": 3,
+      "fiber": 4,
+      "sugar": 33,
+      "isDrink": true,
+      "components": [
+        "fruit smoothie"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 7,
+      "name": "Minute Maid Orange",
+      "category": "Drink",
+      "calories": 170,
+      "protein": 0.5,
+      "carbohydrates": 41,
+      "fat": 0,
+      "fiber": 0.3,
+      "sugar": 38,
+      "isDrink": true,
+      "components": [
+        "fruit juice drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 8,
+      "name": "Pepsi",
+      "category": "Drink",
+      "calories": 210,
+      "protein": 0,
+      "carbohydrates": 53,
+      "fat": 0,
+      "fiber": 0,
+      "sugar": 53,
+      "isDrink": true,
+      "components": [
+        "soft drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 9,
+      "name": "Coca-Cola",
+      "category": "Drink",
+      "calories": 210,
+      "protein": 0,
+      "carbohydrates": 53,
+      "fat": 0,
+      "fiber": 0,
+      "sugar": 53,
+      "isDrink": true,
+      "components": [
+        "soft drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 10,
+      "name": "Beef Burger & Chips",
+      "category": "Burgers",
+      "calories": 950,
+      "protein": 30.5,
+      "carbohydrates": 100,
+      "fat": 47,
+      "fiber": 8,
+      "sugar": 7.5,
+      "isDrink": false,
+      "components": [
+        "beef burger",
+        "chips"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 11,
+      "name": "Sadza and Pork",
+      "category": "Traditional Meals",
+      "calories": 660,
+      "protein": 31,
+      "carbohydrates": 76,
+      "fat": 25.5,
+      "fiber": 5,
+      "sugar": 1.5,
+      "isDrink": false,
+      "components": [
+        "pork",
+        "sadza"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 12,
+      "name": "Sadza and Pork Bones",
+      "category": "Traditional Meals",
+      "calories": 650,
+      "protein": 25,
+      "carbohydrates": 75,
+      "fat": 27.5,
+      "fiber": 5,
+      "sugar": 1.5,
+      "isDrink": false,
+      "components": [
+        "pork bones",
+        "sadza"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 13,
+      "name": "Sadza and Pork Trotters",
+      "category": "Traditional Meals",
+      "calories": 620,
+      "protein": 27,
+      "carbohydrates": 74,
+      "fat": 23.5,
+      "fiber": 4.5,
+      "sugar": 1,
+      "isDrink": false,
+      "components": [
+        "pork trotters",
+        "sadza"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 14,
+      "name": "Sadza and T-Bone",
+      "category": "Traditional Meals",
+      "calories": 760,
+      "protein": 45,
+      "carbohydrates": 72,
+      "fat": 31.5,
+      "fiber": 4.5,
+      "sugar": 0.5,
+      "isDrink": false,
+      "components": [
+        "T-bone steak",
+        "sadza"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 15,
+      "name": "Sadza Pork",
+      "category": "Traditional Meals",
+      "calories": 660,
+      "protein": 31,
+      "carbohydrates": 76,
+      "fat": 25.5,
+      "fiber": 5,
+      "sugar": 1.5,
+      "isDrink": false,
+      "components": [
+        "pork",
+        "sadza"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 16,
+      "name": "Sadza + Haifiridzi",
+      "category": "Traditional Meals",
+      "calories": 550,
+      "protein": 37,
+      "carbohydrates": 74,
+      "fat": 11.5,
+      "fiber": 4.5,
+      "sugar": 0.5,
+      "isDrink": false,
+      "components": [
+        "haifiridzi",
+        "sadza"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 17,
+      "name": "Offals",
+      "category": "Meals",
+      "calories": 260,
+      "protein": 25,
+      "carbohydrates": 3,
+      "fat": 16,
+      "fiber": 0,
+      "sugar": 0.5,
+      "isDrink": false,
+      "components": [
+        "offals"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 18,
+      "name": "Salad and T-Bone",
+      "category": "Traditional Meals",
+      "calories": 510,
+      "protein": 40,
+      "carbohydrates": 8,
+      "fat": 34.5,
+      "fiber": 3,
+      "sugar": 4,
+      "isDrink": false,
+      "components": [
+        "T-bone steak",
+        "salad"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 19,
+      "name": "Minute Maid Berry",
+      "category": "Drink",
+      "calories": 170,
+      "protein": 0.5,
+      "carbohydrates": 41,
+      "fat": 0,
+      "fiber": 0.3,
+      "sugar": 38,
+      "isDrink": true,
+      "components": [
+        "fruit juice drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 20,
+      "name": "Minute Maid Lemon",
+      "category": "Drink",
+      "calories": 170,
+      "protein": 0.5,
+      "carbohydrates": 41,
+      "fat": 0,
+      "fiber": 0.3,
+      "sugar": 38,
+      "isDrink": true,
+      "components": [
+        "fruit juice drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 21,
+      "name": "Miranda Green Apple",
+      "category": "Drink",
+      "calories": 210,
+      "protein": 0,
+      "carbohydrates": 53,
+      "fat": 0,
+      "fiber": 0,
+      "sugar": 53,
+      "isDrink": true,
+      "components": [
+        "soft drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 22,
+      "name": "Miranda Grape",
+      "category": "Drink",
+      "calories": 210,
+      "protein": 0,
+      "carbohydrates": 53,
+      "fat": 0,
+      "fiber": 0,
+      "sugar": 53,
+      "isDrink": true,
+      "components": [
+        "soft drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 23,
+      "name": "Miranda Orange",
+      "category": "Drink",
+      "calories": 210,
+      "protein": 0,
+      "carbohydrates": 53,
+      "fat": 0,
+      "fiber": 0,
+      "sugar": 53,
+      "isDrink": true,
+      "components": [
+        "soft drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 24,
+      "name": "Miranda Pineapple",
+      "category": "Drink",
+      "calories": 210,
+      "protein": 0,
+      "carbohydrates": 53,
+      "fat": 0,
+      "fiber": 0,
+      "sugar": 53,
+      "isDrink": true,
+      "components": [
+        "soft drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 25,
+      "name": "Sprite",
+      "category": "Drink",
+      "calories": 210,
+      "protein": 0,
+      "carbohydrates": 53,
+      "fat": 0,
+      "fiber": 0,
+      "sugar": 53,
+      "isDrink": true,
+      "components": [
+        "soft drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 26,
+      "name": "Stoney 350ml",
+      "category": "Drink",
+      "calories": 147,
+      "protein": 0,
+      "carbohydrates": 37.1,
+      "fat": 0,
+      "fiber": 0,
+      "sugar": 37.1,
+      "isDrink": true,
+      "components": [
+        "soft drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 27,
+      "name": "Water - $0.25",
+      "category": "Drink",
+      "calories": 0,
+      "protein": 0,
+      "carbohydrates": 0,
+      "fat": 0,
+      "fiber": 0,
+      "sugar": 0,
+      "isDrink": true,
+      "components": [
+        "water"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 28,
+      "name": "Water - $0.50",
+      "category": "Drink",
+      "calories": 0,
+      "protein": 0,
+      "carbohydrates": 0,
+      "fat": 0,
+      "fiber": 0,
+      "sugar": 0,
+      "isDrink": true,
+      "components": [
+        "water"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 29,
+      "name": "Stir fry and chips",
+      "category": "Meals",
+      "calories": 760,
+      "protein": 27.5,
+      "carbohydrates": 74,
+      "fat": 39,
+      "fiber": 9,
+      "sugar": 6.5,
+      "isDrink": false,
+      "components": [
+        "beef & vegetable stir-fry",
+        "chips"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 30,
+      "name": "Stirfry",
+      "category": "Meals",
+      "calories": 290,
+      "protein": 22,
+      "carbohydrates": 14,
+      "fat": 16,
+      "fiber": 3.5,
+      "sugar": 6,
+      "isDrink": false,
+      "components": [
+        "beef & vegetable stir-fry"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 31,
+      "name": "T-Bone and Rice",
+      "category": "Meals",
+      "calories": 755,
+      "protein": 44.5,
+      "carbohydrates": 70,
+      "fat": 30.7,
+      "fiber": 1,
+      "sugar": 0.1,
+      "isDrink": false,
+      "components": [
+        "T-bone steak",
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 32,
+      "name": "T-Bone",
+      "category": "Meals",
+      "calories": 430,
+      "protein": 38,
+      "carbohydrates": 0,
+      "fat": 30,
+      "fiber": 0,
+      "sugar": 0,
+      "isDrink": false,
+      "components": [
+        "T-bone steak"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 33,
+      "name": "Beans",
+      "category": "Meals",
+      "calories": 230,
+      "protein": 14,
+      "carbohydrates": 38,
+      "fat": 2,
+      "fiber": 12,
+      "sugar": 4,
+      "isDrink": false,
+      "components": [
+        "beans"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 34,
+      "name": "Beef",
+      "category": "Meals",
+      "calories": 280,
+      "protein": 26,
+      "carbohydrates": 5,
+      "fat": 17,
+      "fiber": 1,
+      "sugar": 2,
+      "isDrink": false,
+      "components": [
+        "beef stew"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 35,
+      "name": "Beef and rice",
+      "category": "Meals",
+      "calories": 605,
+      "protein": 32.5,
+      "carbohydrates": 75,
+      "fat": 17.7,
+      "fiber": 2,
+      "sugar": 2.1,
+      "isDrink": false,
+      "components": [
+        "beef stew",
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 36,
+      "name": "Beef bones",
+      "category": "Meals",
+      "calories": 300,
+      "protein": 20,
+      "carbohydrates": 3,
+      "fat": 23,
+      "fiber": 0.5,
+      "sugar": 1,
+      "isDrink": false,
+      "components": [
+        "beef bones"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 37,
+      "name": "Beef bones and Rice",
+      "category": "Meals",
+      "calories": 625,
+      "protein": 26.5,
+      "carbohydrates": 73,
+      "fat": 23.7,
+      "fiber": 1.5,
+      "sugar": 1.1,
+      "isDrink": false,
+      "components": [
+        "beef bones",
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 38,
+      "name": "Beef bones and Sadza",
+      "category": "Meals",
+      "calories": 630,
+      "protein": 27,
+      "carbohydrates": 75,
+      "fat": 24.5,
+      "fiber": 5,
+      "sugar": 1.5,
+      "isDrink": false,
+      "components": [
+        "beef bones",
+        "sadza"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 39,
+      "name": "Boerewors",
+      "category": "Meals",
+      "calories": 330,
+      "protein": 15,
+      "carbohydrates": 3,
+      "fat": 29,
+      "fiber": 0,
+      "sugar": 1,
+      "isDrink": false,
+      "components": [
+        "boerewors"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 40,
+      "name": "Boerewors and chips",
+      "category": "Meals",
+      "calories": 800,
+      "protein": 20.5,
+      "carbohydrates": 63,
+      "fat": 52,
+      "fiber": 5.5,
+      "sugar": 1.5,
+      "isDrink": false,
+      "components": [
+        "boerewors",
+        "chips"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 41,
+      "name": "Sadza and beef",
+      "category": "Meals",
+      "calories": 610,
+      "protein": 33,
+      "carbohydrates": 77,
+      "fat": 18.5,
+      "fiber": 5.5,
+      "sugar": 2.5,
+      "isDrink": false,
+      "components": [
+        "beef stew",
+        "sadza"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 42,
+      "name": "Sadza and Beef $1",
+      "category": "Meals",
+      "calories": 427,
+      "protein": 23.1,
+      "carbohydrates": 53.9,
+      "fat": 13,
+      "fiber": 3.9,
+      "sugar": 1.8,
+      "isDrink": false,
+      "components": [
+        "beef stew",
+        "sadza"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 43,
+      "name": "Sadza and chicken",
+      "category": "Meals",
+      "calories": 650,
+      "protein": 37,
+      "carbohydrates": 76,
+      "fat": 21.5,
+      "fiber": 5,
+      "sugar": 1.5,
+      "isDrink": false,
+      "components": [
+        "chicken",
+        "sadza"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 44,
+      "name": "Sadza and chicken curry",
+      "category": "Meals",
+      "calories": 660,
+      "protein": 34,
+      "carbohydrates": 81,
+      "fat": 21.5,
+      "fiber": 6.5,
+      "sugar": 3.5,
+      "isDrink": false,
+      "components": [
+        "chicken curry",
+        "sadza"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 45,
+      "name": "Sadza and chicken stew",
+      "category": "Meals",
+      "calories": 630,
+      "protein": 35,
+      "carbohydrates": 78,
+      "fat": 19.5,
+      "fiber": 5.5,
+      "sugar": 2.5,
+      "isDrink": false,
+      "components": [
+        "chicken stew",
+        "sadza"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 46,
+      "name": "Sadza and chicken stirfry",
+      "category": "Meals",
+      "calories": 610,
+      "protein": 33,
+      "carbohydrates": 84,
+      "fat": 15.5,
+      "fiber": 7,
+      "sugar": 5.5,
+      "isDrink": false,
+      "components": [
+        "chicken stir-fry",
+        "sadza"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 47,
+      "name": "Sadza and Guru",
+      "category": "Meals",
+      "calories": 550,
+      "protein": 28,
+      "carbohydrates": 75,
+      "fat": 14.5,
+      "fiber": 4.5,
+      "sugar": 0.5,
+      "isDrink": false,
+      "components": [
+        "guru (tripe)",
+        "sadza"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 48,
+      "name": "Spaghetti and meatballs",
+      "category": "Meals",
+      "calories": 680,
+      "protein": 32,
+      "carbohydrates": 82,
+      "fat": 24,
+      "fiber": 5,
+      "sugar": 5.5,
+      "isDrink": false,
+      "components": [
+        "meatballs",
+        "pasta"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 49,
+      "name": "Spaghetti and mince",
+      "category": "Meals",
+      "calories": 650,
+      "protein": 35,
+      "carbohydrates": 76,
+      "fat": 22,
+      "fiber": 5.5,
+      "sugar": 4.5,
+      "isDrink": false,
+      "components": [
+        "mince",
+        "pasta"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 50,
+      "name": "Spaghetti and Pork",
+      "category": "Meals",
+      "calories": 680,
+      "protein": 36,
+      "carbohydrates": 74,
+      "fat": 26,
+      "fiber": 4.5,
+      "sugar": 2.5,
+      "isDrink": false,
+      "components": [
+        "pork",
+        "pasta"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 51,
+      "name": "Spar letta Cherry",
+      "category": "Drink",
+      "calories": 210,
+      "protein": 0,
+      "carbohydrates": 53,
+      "fat": 0,
+      "fiber": 0,
+      "sugar": 53,
+      "isDrink": true,
+      "components": [
+        "soft drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 52,
+      "name": "Sparletta cherry 350 ml",
+      "category": "Drink",
+      "calories": 147,
+      "protein": 0,
+      "carbohydrates": 37.1,
+      "fat": 0,
+      "fiber": 0,
+      "sugar": 37.1,
+      "isDrink": true,
+      "components": [
+        "soft drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 53,
+      "name": "Sparletta cream soda",
+      "category": "Drink",
+      "calories": 210,
+      "protein": 0,
+      "carbohydrates": 53,
+      "fat": 0,
+      "fiber": 0,
+      "sugar": 53,
+      "isDrink": true,
+      "components": [
+        "soft drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 54,
+      "name": "Rice and Russian",
+      "category": "Meals",
+      "calories": 625,
+      "protein": 17.5,
+      "carbohydrates": 74,
+      "fat": 27.7,
+      "fiber": 1,
+      "sugar": 1.1,
+      "isDrink": false,
+      "components": [
+        "russian sausage",
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 55,
+      "name": "Rice and beans",
+      "category": "Meals",
+      "calories": 555,
+      "protein": 20.5,
+      "carbohydrates": 108,
+      "fat": 2.7,
+      "fiber": 13,
+      "sugar": 4.1,
+      "isDrink": false,
+      "components": [
+        "beans",
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 56,
+      "name": "Rice and chicken",
+      "category": "Meals",
+      "calories": 645,
+      "protein": 36.5,
+      "carbohydrates": 74,
+      "fat": 20.7,
+      "fiber": 1.5,
+      "sugar": 1.1,
+      "isDrink": false,
+      "components": [
+        "chicken",
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 57,
+      "name": "Rice and chicken stew",
+      "category": "Meals",
+      "calories": 625,
+      "protein": 34.5,
+      "carbohydrates": 76,
+      "fat": 18.7,
+      "fiber": 2,
+      "sugar": 2.1,
+      "isDrink": false,
+      "components": [
+        "chicken stew",
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 58,
+      "name": "Rice and Guru",
+      "category": "Meals",
+      "calories": 545,
+      "protein": 27.5,
+      "carbohydrates": 73,
+      "fat": 13.7,
+      "fiber": 1,
+      "sugar": 0.1,
+      "isDrink": false,
+      "components": [
+        "guru (tripe)",
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 59,
+      "name": "Rice and mince",
+      "category": "Meals",
+      "calories": 625,
+      "protein": 29.5,
+      "carbohydrates": 76,
+      "fat": 20.7,
+      "fiber": 2.5,
+      "sugar": 3.1,
+      "isDrink": false,
+      "components": [
+        "mince",
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 60,
+      "name": "Rice and pork",
+      "category": "Meals",
+      "calories": 655,
+      "protein": 30.5,
+      "carbohydrates": 74,
+      "fat": 24.7,
+      "fiber": 1.5,
+      "sugar": 1.1,
+      "isDrink": false,
+      "components": [
+        "pork",
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 61,
+      "name": "Rice and pork bones",
+      "category": "Meals",
+      "calories": 645,
+      "protein": 24.5,
+      "carbohydrates": 73,
+      "fat": 26.7,
+      "fiber": 1.5,
+      "sugar": 1.1,
+      "isDrink": false,
+      "components": [
+        "pork bones",
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 62,
+      "name": "Freshup",
+      "category": "Drink",
+      "calories": 170,
+      "protein": 0.5,
+      "carbohydrates": 41,
+      "fat": 0,
+      "fiber": 0.3,
+      "sugar": 38,
+      "isDrink": true,
+      "components": [
+        "fruit juice drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 63,
+      "name": "Fruitcana mixed fruit",
+      "category": "Drink",
+      "calories": 170,
+      "protein": 0.5,
+      "carbohydrates": 41,
+      "fat": 0,
+      "fiber": 0.3,
+      "sugar": 38,
+      "isDrink": true,
+      "components": [
+        "fruit juice drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 64,
+      "name": "Fruitcana orange",
+      "category": "Drink",
+      "calories": 170,
+      "protein": 0.5,
+      "carbohydrates": 41,
+      "fat": 0,
+      "fiber": 0.3,
+      "sugar": 38,
+      "isDrink": true,
+      "components": [
+        "fruit juice drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 65,
+      "name": "Fruiticana mixed berry",
+      "category": "Drink",
+      "calories": 170,
+      "protein": 0.5,
+      "carbohydrates": 41,
+      "fat": 0,
+      "fiber": 0.3,
+      "sugar": 38,
+      "isDrink": true,
+      "components": [
+        "fruit juice drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 66,
+      "name": "Fruta Apple",
+      "category": "Drink",
+      "calories": 170,
+      "protein": 0.5,
+      "carbohydrates": 41,
+      "fat": 0,
+      "fiber": 0.3,
+      "sugar": 38,
+      "isDrink": true,
+      "components": [
+        "fruit juice drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 67,
+      "name": "Fruta orange",
+      "category": "Drink",
+      "calories": 170,
+      "protein": 0.5,
+      "carbohydrates": 41,
+      "fat": 0,
+      "fiber": 0.3,
+      "sugar": 38,
+      "isDrink": true,
+      "components": [
+        "fruit juice drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 68,
+      "name": "Fruta Pineapple",
+      "category": "Drink",
+      "calories": 170,
+      "protein": 0.5,
+      "carbohydrates": 41,
+      "fat": 0,
+      "fiber": 0.3,
+      "sugar": 38,
+      "isDrink": true,
+      "components": [
+        "fruit juice drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 69,
+      "name": "Fruticana mango",
+      "category": "Drink",
+      "calories": 170,
+      "protein": 0.5,
+      "carbohydrates": 41,
+      "fat": 0,
+      "fiber": 0.3,
+      "sugar": 38,
+      "isDrink": true,
+      "components": [
+        "fruit juice drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 70,
+      "name": "Chips and beef bones",
+      "category": "Meals",
+      "calories": 770,
+      "protein": 25.5,
+      "carbohydrates": 63,
+      "fat": 46,
+      "fiber": 6,
+      "sugar": 1.5,
+      "isDrink": false,
+      "components": [
+        "beef bones",
+        "chips"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 71,
+      "name": "Chips and pork",
+      "category": "Meals",
+      "calories": 800,
+      "protein": 29.5,
+      "carbohydrates": 64,
+      "fat": 47,
+      "fiber": 6,
+      "sugar": 1.5,
+      "isDrink": false,
+      "components": [
+        "pork",
+        "chips"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 72,
+      "name": "Chips and pork bones",
+      "category": "Meals",
+      "calories": 790,
+      "protein": 23.5,
+      "carbohydrates": 63,
+      "fat": 49,
+      "fiber": 6,
+      "sugar": 1.5,
+      "isDrink": false,
+      "components": [
+        "pork bones",
+        "chips"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 73,
+      "name": "Chips and T-bone",
+      "category": "Meals",
+      "calories": 900,
+      "protein": 43.5,
+      "carbohydrates": 60,
+      "fat": 53,
+      "fiber": 5.5,
+      "sugar": 0.5,
+      "isDrink": false,
+      "components": [
+        "T-bone steak",
+        "chips"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 74,
+      "name": "Coke",
+      "category": "Drink",
+      "calories": 210,
+      "protein": 0,
+      "carbohydrates": 53,
+      "fat": 0,
+      "fiber": 0,
+      "sugar": 53,
+      "isDrink": true,
+      "components": [
+        "soft drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 75,
+      "name": "Coke 350ml",
+      "category": "Drink",
+      "calories": 147,
+      "protein": 0,
+      "carbohydrates": 37.1,
+      "fat": 0,
+      "fiber": 0,
+      "sugar": 37.1,
+      "isDrink": true,
+      "components": [
+        "soft drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 76,
+      "name": "Coleslaw",
+      "category": "Meals",
+      "calories": 150,
+      "protein": 1.2,
+      "carbohydrates": 12,
+      "fat": 11,
+      "fiber": 2.5,
+      "sugar": 9,
+      "isDrink": false,
+      "components": [
+        "coleslaw"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 77,
+      "name": "Cream soda",
+      "category": "Drink",
+      "calories": 210,
+      "protein": 0,
+      "carbohydrates": 53,
+      "fat": 0,
+      "fiber": 0,
+      "sugar": 53,
+      "isDrink": true,
+      "components": [
+        "soft drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 78,
+      "name": "Rice and pork trotters",
+      "category": "Meals",
+      "calories": 615,
+      "protein": 26.5,
+      "carbohydrates": 72,
+      "fat": 22.7,
+      "fiber": 1,
+      "sugar": 0.6,
+      "isDrink": false,
+      "components": [
+        "pork trotters",
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 79,
+      "name": "Rice and stirfry",
+      "category": "Meals",
+      "calories": 615,
+      "protein": 28.5,
+      "carbohydrates": 84,
+      "fat": 16.7,
+      "fiber": 4.5,
+      "sugar": 6.1,
+      "isDrink": false,
+      "components": [
+        "beef & vegetable stir-fry",
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 80,
+      "name": "Rice and T-bone",
+      "category": "Meals",
+      "calories": 755,
+      "protein": 44.5,
+      "carbohydrates": 70,
+      "fat": 30.7,
+      "fiber": 1,
+      "sugar": 0.1,
+      "isDrink": false,
+      "components": [
+        "T-bone steak",
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 81,
+      "name": "Rice dovi and beef",
+      "category": "Meals",
+      "calories": 730,
+      "protein": 37,
+      "carbohydrates": 79,
+      "fat": 30,
+      "fiber": 4,
+      "sugar": 4,
+      "isDrink": false,
+      "components": [
+        "beef stew",
+        "rice with peanut butter (dovi)"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 82,
+      "name": "Rice dovi and chicken",
+      "category": "Meals",
+      "calories": 770,
+      "protein": 41,
+      "carbohydrates": 78,
+      "fat": 33,
+      "fiber": 3.5,
+      "sugar": 3,
+      "isDrink": false,
+      "components": [
+        "chicken",
+        "rice with peanut butter (dovi)"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 83,
+      "name": "Rice dovi and Guru",
+      "category": "Meals",
+      "calories": 670,
+      "protein": 32,
+      "carbohydrates": 77,
+      "fat": 26,
+      "fiber": 3,
+      "sugar": 2,
+      "isDrink": false,
+      "components": [
+        "guru (tripe)",
+        "rice with peanut butter (dovi)"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 84,
+      "name": "Rice dovi and T-bone",
+      "category": "Meals",
+      "calories": 880,
+      "protein": 49,
+      "carbohydrates": 74,
+      "fat": 43,
+      "fiber": 3,
+      "sugar": 2,
+      "isDrink": false,
+      "components": [
+        "T-bone steak",
+        "rice with peanut butter (dovi)"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 85,
+      "name": "Fruticana Pineapple",
+      "category": "Drink",
+      "calories": 170,
+      "protein": 0.5,
+      "carbohydrates": 41,
+      "fat": 0,
+      "fiber": 0.3,
+      "sugar": 38,
+      "isDrink": true,
+      "components": [
+        "fruit juice drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 86,
+      "name": "Garden salad",
+      "category": "Meals",
+      "calories": 80,
+      "protein": 2,
+      "carbohydrates": 8,
+      "fat": 4.5,
+      "fiber": 3,
+      "sugar": 4,
+      "isDrink": false,
+      "components": [
+        "salad"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 87,
+      "name": "Guru",
+      "category": "Meals",
+      "calories": 220,
+      "protein": 21,
+      "carbohydrates": 3,
+      "fat": 13,
+      "fiber": 0,
+      "sugar": 0,
+      "isDrink": false,
+      "components": [
+        "guru (tripe)"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 88,
+      "name": "Hotdog",
+      "category": "Meals",
+      "calories": 290,
+      "protein": 10,
+      "carbohydrates": 26,
+      "fat": 16,
+      "fiber": 1.5,
+      "sugar": 4,
+      "isDrink": false,
+      "components": [
+        "hotdog"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 89,
+      "name": "Hotdog and chips",
+      "category": "Meals",
+      "calories": 760,
+      "protein": 15.5,
+      "carbohydrates": 86,
+      "fat": 39,
+      "fiber": 7,
+      "sugar": 4.5,
+      "isDrink": false,
+      "components": [
+        "hotdog",
+        "chips"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 90,
+      "name": "Juice 2Go",
+      "category": "Drink",
+      "calories": 170,
+      "protein": 0.5,
+      "carbohydrates": 41,
+      "fat": 0,
+      "fiber": 0.3,
+      "sugar": 38,
+      "isDrink": true,
+      "components": [
+        "fruit juice drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 91,
+      "name": "Mince",
+      "category": "Meals",
+      "calories": 300,
+      "protein": 23,
+      "carbohydrates": 6,
+      "fat": 20,
+      "fiber": 1.5,
+      "sugar": 3,
+      "isDrink": false,
+      "components": [
+        "mince"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 92,
+      "name": "Pasta and chicken",
+      "category": "Meals",
+      "calories": 670,
+      "protein": 42,
+      "carbohydrates": 74,
+      "fat": 22,
+      "fiber": 4.5,
+      "sugar": 2.5,
+      "isDrink": false,
+      "components": [
+        "chicken",
+        "pasta"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 93,
+      "name": "Pasta and mince",
+      "category": "Meals",
+      "calories": 650,
+      "protein": 35,
+      "carbohydrates": 76,
+      "fat": 22,
+      "fiber": 5.5,
+      "sugar": 4.5,
+      "isDrink": false,
+      "components": [
+        "mince",
+        "pasta"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 94,
+      "name": "Pasta and pork",
+      "category": "Meals",
+      "calories": 680,
+      "protein": 36,
+      "carbohydrates": 74,
+      "fat": 26,
+      "fiber": 4.5,
+      "sugar": 2.5,
+      "isDrink": false,
+      "components": [
+        "pork",
+        "pasta"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 95,
+      "name": "Pork",
+      "category": "Meals",
+      "calories": 330,
+      "protein": 24,
+      "carbohydrates": 4,
+      "fat": 24,
+      "fiber": 0.5,
+      "sugar": 1,
+      "isDrink": false,
+      "components": [
+        "pork"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 96,
+      "name": "Pork and chips",
+      "category": "Meals",
+      "calories": 800,
+      "protein": 29.5,
+      "carbohydrates": 64,
+      "fat": 47,
+      "fiber": 6,
+      "sugar": 1.5,
+      "isDrink": false,
+      "components": [
+        "pork",
+        "chips"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 97,
+      "name": "Pork bones",
+      "category": "Meals",
+      "calories": 320,
+      "protein": 18,
+      "carbohydrates": 3,
+      "fat": 26,
+      "fiber": 0.5,
+      "sugar": 1,
+      "isDrink": false,
+      "components": [
+        "pork bones"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 98,
+      "name": "Pork trotters",
+      "category": "Meals",
+      "calories": 290,
+      "protein": 20,
+      "carbohydrates": 2,
+      "fat": 22,
+      "fiber": 0,
+      "sugar": 0.5,
+      "isDrink": false,
+      "components": [
+        "pork trotters"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 99,
+      "name": "Cheese burger",
+      "category": "Meals",
+      "calories": 540,
+      "protein": 28,
+      "carbohydrates": 41,
+      "fat": 29,
+      "fiber": 2.5,
+      "sugar": 7.5,
+      "isDrink": false,
+      "components": [
+        "cheeseburger"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 100,
+      "name": "Cheeseburger and chips",
+      "category": "Meals",
+      "calories": 1010,
+      "protein": 33.5,
+      "carbohydrates": 101,
+      "fat": 52,
+      "fiber": 8,
+      "sugar": 8,
+      "isDrink": false,
+      "components": [
+        "cheeseburger",
+        "chips"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 101,
+      "name": "Chicken",
+      "category": "Meals",
+      "calories": 320,
+      "protein": 30,
+      "carbohydrates": 4,
+      "fat": 20,
+      "fiber": 0.5,
+      "sugar": 1,
+      "isDrink": false,
+      "components": [
+        "chicken"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 102,
+      "name": "Chicken and chips",
+      "category": "Meals",
+      "calories": 790,
+      "protein": 35.5,
+      "carbohydrates": 64,
+      "fat": 43,
+      "fiber": 6,
+      "sugar": 1.5,
+      "isDrink": false,
+      "components": [
+        "chicken",
+        "chips"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 103,
+      "name": "Chicken and wedges",
+      "category": "Meals",
+      "calories": 670,
+      "protein": 35,
+      "carbohydrates": 56,
+      "fat": 34,
+      "fiber": 5.5,
+      "sugar": 2,
+      "isDrink": false,
+      "components": [
+        "chicken",
+        "potato wedges"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 104,
+      "name": "Chicken curry",
+      "category": "Meals",
+      "calories": 330,
+      "protein": 27,
+      "carbohydrates": 9,
+      "fat": 20,
+      "fiber": 2,
+      "sugar": 3,
+      "isDrink": false,
+      "components": [
+        "chicken curry"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 105,
+      "name": "Chicken Curry and Chips",
+      "category": "Meals",
+      "calories": 800,
+      "protein": 32.5,
+      "carbohydrates": 69,
+      "fat": 43,
+      "fiber": 7.5,
+      "sugar": 3.5,
+      "isDrink": false,
+      "components": [
+        "chicken curry",
+        "chips"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 106,
+      "name": "Chicken curry and rice",
+      "category": "Meals",
+      "calories": 655,
+      "protein": 33.5,
+      "carbohydrates": 79,
+      "fat": 20.7,
+      "fiber": 3,
+      "sugar": 3.1,
+      "isDrink": false,
+      "components": [
+        "chicken curry",
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 107,
+      "name": "Quarter chicken",
+      "category": "Meals",
+      "calories": 400,
+      "protein": 35,
+      "carbohydrates": 2,
+      "fat": 28,
+      "fiber": 0,
+      "sugar": 0.5,
+      "isDrink": false,
+      "components": [
+        "quarter chicken"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 108,
+      "name": "Quarter chicken and chips",
+      "category": "Meals",
+      "calories": 870,
+      "protein": 40.5,
+      "carbohydrates": 62,
+      "fat": 51,
+      "fiber": 5.5,
+      "sugar": 1,
+      "isDrink": false,
+      "components": [
+        "quarter chicken",
+        "chips"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 109,
+      "name": "Quarter chicken and rice",
+      "category": "Meals",
+      "calories": 725,
+      "protein": 41.5,
+      "carbohydrates": 72,
+      "fat": 28.7,
+      "fiber": 1,
+      "sugar": 0.6,
+      "isDrink": false,
+      "components": [
+        "quarter chicken",
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 110,
+      "name": "Quarter chicken and sadza",
+      "category": "Meals",
+      "calories": 730,
+      "protein": 42,
+      "carbohydrates": 74,
+      "fat": 29.5,
+      "fiber": 4.5,
+      "sugar": 1,
+      "isDrink": false,
+      "components": [
+        "quarter chicken",
+        "sadza"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 111,
+      "name": "Revive orange",
+      "category": "Drink",
+      "calories": 170,
+      "protein": 0.5,
+      "carbohydrates": 41,
+      "fat": 0,
+      "fiber": 0.3,
+      "sugar": 38,
+      "isDrink": true,
+      "components": [
+        "fruit juice drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 112,
+      "name": "Revive peach",
+      "category": "Drink",
+      "calories": 170,
+      "protein": 0.5,
+      "carbohydrates": 41,
+      "fat": 0,
+      "fiber": 0.3,
+      "sugar": 38,
+      "isDrink": true,
+      "components": [
+        "fruit juice drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 113,
+      "name": "Revive Tropical",
+      "category": "Drink",
+      "calories": 170,
+      "protein": 0.5,
+      "carbohydrates": 41,
+      "fat": 0,
+      "fiber": 0.3,
+      "sugar": 38,
+      "isDrink": true,
+      "components": [
+        "fruit juice drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 114,
+      "name": "Rice",
+      "category": "Meals",
+      "calories": 325,
+      "protein": 6.5,
+      "carbohydrates": 70,
+      "fat": 0.7,
+      "fiber": 1,
+      "sugar": 0.1,
+      "isDrink": false,
+      "components": [
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 115,
+      "name": "Rice pork",
+      "category": "Meals",
+      "calories": 655,
+      "protein": 30.5,
+      "carbohydrates": 74,
+      "fat": 24.7,
+      "fiber": 1.5,
+      "sugar": 1.1,
+      "isDrink": false,
+      "components": [
+        "pork",
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 116,
+      "name": "Rice+chicken offals",
+      "category": "Meals",
+      "calories": 585,
+      "protein": 31.5,
+      "carbohydrates": 73,
+      "fat": 16.7,
+      "fiber": 1,
+      "sugar": 0.6,
+      "isDrink": false,
+      "components": [
+        "offals",
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 117,
+      "name": "Rice+haifiridzi",
+      "category": "Meals",
+      "calories": 545,
+      "protein": 36.5,
+      "carbohydrates": 72,
+      "fat": 10.7,
+      "fiber": 1,
+      "sugar": 0.1,
+      "isDrink": false,
+      "components": [
+        "haifiridzi",
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 118,
+      "name": "Russian",
+      "category": "Meals",
+      "calories": 300,
+      "protein": 11,
+      "carbohydrates": 4,
+      "fat": 27,
+      "fiber": 0,
+      "sugar": 1,
+      "isDrink": false,
+      "components": [
+        "russian sausage"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 119,
+      "name": "Russian and chips",
+      "category": "Meals",
+      "calories": 770,
+      "protein": 16.5,
+      "carbohydrates": 64,
+      "fat": 50,
+      "fiber": 5.5,
+      "sugar": 1.5,
+      "isDrink": false,
+      "components": [
+        "russian sausage",
+        "chips"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 120,
+      "name": "Russian and chipss",
+      "category": "Meals",
+      "calories": 770,
+      "protein": 16.5,
+      "carbohydrates": 64,
+      "fat": 50,
+      "fiber": 5.5,
+      "sugar": 1.5,
+      "isDrink": false,
+      "components": [
+        "russian sausage",
+        "chips"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 121,
+      "name": "Sadza",
+      "category": "Meals",
+      "calories": 330,
+      "protein": 7,
+      "carbohydrates": 72,
+      "fat": 1.5,
+      "fiber": 4.5,
+      "sugar": 0.5,
+      "isDrink": false,
+      "components": [
+        "sadza"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 122,
+      "name": "Schweppes Lemon 350ml",
+      "category": "Drink",
+      "calories": 147,
+      "protein": 0,
+      "carbohydrates": 37.1,
+      "fat": 0,
+      "fiber": 0,
+      "sugar": 37.1,
+      "isDrink": true,
+      "components": [
+        "soft drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 123,
+      "name": "Sippy lychee",
+      "category": "Drink",
+      "calories": 170,
+      "protein": 0.5,
+      "carbohydrates": 41,
+      "fat": 0,
+      "fiber": 0.3,
+      "sugar": 38,
+      "isDrink": true,
+      "components": [
+        "fruit juice drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 124,
+      "name": "Sippy Mango",
+      "category": "Drink",
+      "calories": 170,
+      "protein": 0.5,
+      "carbohydrates": 41,
+      "fat": 0,
+      "fiber": 0.3,
+      "sugar": 38,
+      "isDrink": true,
+      "components": [
+        "fruit juice drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 125,
+      "name": "Sippy Orange",
+      "category": "Drink",
+      "calories": 170,
+      "protein": 0.5,
+      "carbohydrates": 41,
+      "fat": 0,
+      "fiber": 0.3,
+      "sugar": 38,
+      "isDrink": true,
+      "components": [
+        "fruit juice drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 126,
+      "name": "Sippy Pineapple",
+      "category": "Drink",
+      "calories": 170,
+      "protein": 0.5,
+      "carbohydrates": 41,
+      "fat": 0,
+      "fiber": 0.3,
+      "sugar": 38,
+      "isDrink": true,
+      "components": [
+        "fruit juice drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 127,
+      "name": "Spaghetti and Beef",
+      "category": "Meals",
+      "calories": 630,
+      "protein": 38,
+      "carbohydrates": 75,
+      "fat": 19,
+      "fiber": 5,
+      "sugar": 3.5,
+      "isDrink": false,
+      "components": [
+        "beef stew",
+        "pasta"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 128,
+      "name": "Spaghetti and chicken",
+      "category": "Meals",
+      "calories": 670,
+      "protein": 42,
+      "carbohydrates": 74,
+      "fat": 22,
+      "fiber": 4.5,
+      "sugar": 2.5,
+      "isDrink": false,
+      "components": [
+        "chicken",
+        "pasta"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 129,
+      "name": "Spaghetti and chicken stew",
+      "category": "Meals",
+      "calories": 650,
+      "protein": 40,
+      "carbohydrates": 76,
+      "fat": 20,
+      "fiber": 5,
+      "sugar": 3.5,
+      "isDrink": false,
+      "components": [
+        "chicken stew",
+        "pasta"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 130,
+      "name": "Chicken curry and vegetables",
+      "category": "Meals",
+      "calories": 420,
+      "protein": 30,
+      "carbohydrates": 18,
+      "fat": 25,
+      "fiber": 6,
+      "sugar": 5,
+      "isDrink": false,
+      "components": [
+        "chicken curry",
+        "vegetables"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 131,
+      "name": "Chicken pasta",
+      "category": "Meals",
+      "calories": 670,
+      "protein": 42,
+      "carbohydrates": 74,
+      "fat": 22,
+      "fiber": 4.5,
+      "sugar": 2.5,
+      "isDrink": false,
+      "components": [
+        "chicken",
+        "pasta"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 132,
+      "name": "Chicken stirfry",
+      "category": "Meals",
+      "calories": 280,
+      "protein": 26,
+      "carbohydrates": 12,
+      "fat": 14,
+      "fiber": 2.5,
+      "sugar": 5,
+      "isDrink": false,
+      "components": [
+        "chicken stir-fry"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 133,
+      "name": "Chicken stirfry and chips",
+      "category": "Meals",
+      "calories": 750,
+      "protein": 31.5,
+      "carbohydrates": 72,
+      "fat": 37,
+      "fiber": 8,
+      "sugar": 5.5,
+      "isDrink": false,
+      "components": [
+        "chicken stir-fry",
+        "chips"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 134,
+      "name": "Chicken stirfry and rice",
+      "category": "Meals",
+      "calories": 605,
+      "protein": 32.5,
+      "carbohydrates": 82,
+      "fat": 14.7,
+      "fiber": 3.5,
+      "sugar": 5.1,
+      "isDrink": false,
+      "components": [
+        "chicken stir-fry",
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 135,
+      "name": "Chips",
+      "category": "Meals",
+      "calories": 470,
+      "protein": 5.5,
+      "carbohydrates": 60,
+      "fat": 23,
+      "fiber": 5.5,
+      "sugar": 0.5,
+      "isDrink": false,
+      "components": [
+        "chips"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 136,
+      "name": "Chips + chicken offals",
+      "category": "Meals",
+      "calories": 730,
+      "protein": 30.5,
+      "carbohydrates": 63,
+      "fat": 39,
+      "fiber": 5.5,
+      "sugar": 1,
+      "isDrink": false,
+      "components": [
+        "offals",
+        "chips"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 137,
+      "name": "Chips and beef",
+      "category": "Meals",
+      "calories": 750,
+      "protein": 31.5,
+      "carbohydrates": 65,
+      "fat": 40,
+      "fiber": 6.5,
+      "sugar": 2.5,
+      "isDrink": false,
+      "components": [
+        "beef stew",
+        "chips"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 138,
+      "name": "Fanta 350ml",
+      "category": "Drink",
+      "calories": 147,
+      "protein": 0,
+      "carbohydrates": 37.1,
+      "fat": 0,
+      "fiber": 0,
+      "sugar": 37.1,
+      "isDrink": true,
+      "components": [
+        "soft drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 139,
+      "name": "Fanta orange",
+      "category": "Drink",
+      "calories": 210,
+      "protein": 0,
+      "carbohydrates": 53,
+      "fat": 0,
+      "fiber": 0,
+      "sugar": 53,
+      "isDrink": true,
+      "components": [
+        "soft drink"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 140,
+      "name": "Fish",
+      "category": "Meals",
+      "calories": 320,
+      "protein": 30,
+      "carbohydrates": 8,
+      "fat": 18,
+      "fiber": 0.5,
+      "sugar": 0.5,
+      "isDrink": false,
+      "components": [
+        "fish"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 141,
+      "name": "Fish and chips",
+      "category": "Meals",
+      "calories": 790,
+      "protein": 35.5,
+      "carbohydrates": 68,
+      "fat": 41,
+      "fiber": 6,
+      "sugar": 1,
+      "isDrink": false,
+      "components": [
+        "fish",
+        "chips"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 142,
+      "name": "Fish and rice",
+      "category": "Meals",
+      "calories": 645,
+      "protein": 36.5,
+      "carbohydrates": 78,
+      "fat": 18.7,
+      "fiber": 1.5,
+      "sugar": 0.6,
+      "isDrink": false,
+      "components": [
+        "fish",
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 143,
+      "name": "Fish and Sadza",
+      "category": "Meals",
+      "calories": 650,
+      "protein": 37,
+      "carbohydrates": 80,
+      "fat": 19.5,
+      "fiber": 5,
+      "sugar": 1,
+      "isDrink": false,
+      "components": [
+        "fish",
+        "sadza"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 144,
+      "name": "Boerewors and rice",
+      "category": "Meals",
+      "calories": 655,
+      "protein": 21.5,
+      "carbohydrates": 73,
+      "fat": 29.7,
+      "fiber": 1,
+      "sugar": 1.1,
+      "isDrink": false,
+      "components": [
+        "boerewors",
+        "rice"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 145,
+      "name": "Boerewors and Sadza",
+      "category": "Meals",
+      "calories": 660,
+      "protein": 22,
+      "carbohydrates": 75,
+      "fat": 30.5,
+      "fiber": 4.5,
+      "sugar": 1.5,
+      "isDrink": false,
+      "components": [
+        "boerewors",
+        "sadza"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 146,
+      "name": "Boerewors Roll",
+      "category": "Meals",
+      "calories": 490,
+      "protein": 20,
+      "carbohydrates": 32,
+      "fat": 31.5,
+      "fiber": 1.5,
+      "sugar": 4,
+      "isDrink": false,
+      "components": [
+        "boerewors",
+        "bread roll"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 147,
+      "name": "Boerewors roll and chips",
+      "category": "Meals",
+      "calories": 960,
+      "protein": 25.5,
+      "carbohydrates": 92,
+      "fat": 54.5,
+      "fiber": 7,
+      "sugar": 4.5,
+      "isDrink": false,
+      "components": [
+        "boerewors",
+        "chips",
+        "bread roll"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 148,
+      "name": "Burger",
+      "category": "Meals",
+      "calories": 480,
+      "protein": 25,
+      "carbohydrates": 40,
+      "fat": 24,
+      "fiber": 2.5,
+      "sugar": 7,
+      "isDrink": false,
+      "components": [
+        "beef burger"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 149,
+      "name": "Burger and chips",
+      "category": "Meals",
+      "calories": 950,
+      "protein": 30.5,
+      "carbohydrates": 100,
+      "fat": 47,
+      "fiber": 8,
+      "sugar": 7.5,
+      "isDrink": false,
+      "components": [
+        "beef burger",
+        "chips"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 150,
+      "name": "Cake",
+      "category": "Meals",
+      "calories": 350,
+      "protein": 4,
+      "carbohydrates": 50,
+      "fat": 15,
+      "fiber": 1,
+      "sugar": 32,
+      "isDrink": false,
+      "components": [
+        "cake"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "menu",
+      "id": 151,
+      "name": "Cheese",
+      "category": "Meals",
+      "calories": 160,
+      "protein": 10,
+      "carbohydrates": 0.5,
+      "fat": 13,
+      "fiber": 0,
+      "sugar": 0.2,
+      "isDrink": false,
+      "components": [
+        "cheese"
+      ],
+      "estimateType": "component estimate"
+    },
+    {
+      "source": "outside",
+      "id": "bread-margarine",
+      "category": "Home food",
+      "key": "bread-margarine",
+      "name": "Bread, 2 slices with margarine",
+      "calories": 230,
+      "protein": 6,
+      "carbohydrates": 30,
+      "fat": 9,
+      "fiber": 2,
+      "sugar": 3,
+      "isDrink": false,
+      "components": [
+        "Bread, 2 slices with margarine"
+      ],
+      "estimateType": "standard portion"
+    },
+    {
+      "source": "outside",
+      "id": "peanut-butter-sandwich",
+      "category": "Home food",
+      "key": "peanut-butter-sandwich",
+      "name": "Peanut butter sandwich",
+      "calories": 350,
+      "protein": 12,
+      "carbohydrates": 34,
+      "fat": 18,
+      "fiber": 4,
+      "sugar": 6,
+      "isDrink": false,
+      "components": [
+        "Peanut butter sandwich"
+      ],
+      "estimateType": "standard portion"
+    },
+    {
+      "source": "outside",
+      "id": "tea-sugar",
+      "category": "Drink",
+      "key": "tea-sugar",
+      "name": "Tea with milk and 2 sugars",
+      "calories": 60,
+      "protein": 1,
+      "carbohydrates": 11,
+      "fat": 1,
+      "fiber": 0,
+      "sugar": 10,
+      "isDrink": true,
+      "components": [
+        "Tea with milk and 2 sugars"
+      ],
+      "estimateType": "standard portion"
+    },
+    {
+      "source": "outside",
+      "id": "porridge",
+      "category": "Home food",
+      "key": "porridge",
+      "name": "Maize porridge (bota), 1 bowl",
+      "calories": 180,
+      "protein": 4,
+      "carbohydrates": 38,
+      "fat": 1,
+      "fiber": 2,
+      "sugar": 6,
+      "isDrink": false,
+      "components": [
+        "Maize porridge (bota), 1 bowl"
+      ],
+      "estimateType": "standard portion"
+    },
+    {
+      "source": "outside",
+      "id": "eggs",
+      "category": "Home food",
+      "key": "eggs",
+      "name": "Eggs, 2 boiled or fried",
+      "calories": 170,
+      "protein": 13,
+      "carbohydrates": 1,
+      "fat": 12,
+      "fiber": 0,
+      "sugar": 1,
+      "isDrink": false,
+      "components": [
+        "Eggs, 2 boiled or fried"
+      ],
+      "estimateType": "standard portion"
+    },
+    {
+      "source": "outside",
+      "id": "banana",
+      "category": "Home food",
+      "key": "banana",
+      "name": "Banana",
+      "calories": 105,
+      "protein": 1.3,
+      "carbohydrates": 27,
+      "fat": 0.4,
+      "fiber": 3.1,
+      "sugar": 14,
+      "isDrink": false,
+      "components": [
+        "Banana"
+      ],
+      "estimateType": "standard portion"
+    },
+    {
+      "source": "outside",
+      "id": "apple-orange",
+      "category": "Home food",
+      "key": "apple-orange",
+      "name": "Apple or orange",
+      "calories": 80,
+      "protein": 0.5,
+      "carbohydrates": 20,
+      "fat": 0.2,
+      "fiber": 3.5,
+      "sugar": 15,
+      "isDrink": false,
+      "components": [
+        "Apple or orange"
+      ],
+      "estimateType": "standard portion"
+    },
+    {
+      "source": "outside",
+      "id": "instant-noodles",
+      "category": "Home food",
+      "key": "instant-noodles",
+      "name": "Instant noodles, 1 pack",
+      "calories": 380,
+      "protein": 8,
+      "carbohydrates": 52,
+      "fat": 15,
+      "fiber": 2,
+      "sugar": 2,
+      "isDrink": false,
+      "components": [
+        "Instant noodles, 1 pack"
+      ],
+      "estimateType": "standard portion"
+    },
+    {
+      "source": "outside",
+      "id": "home-sadza-veg",
+      "category": "Home food",
+      "key": "home-sadza-veg",
+      "name": "Home-cooked sadza with vegetables",
+      "calories": 420,
+      "protein": 10,
+      "carbohydrates": 81,
+      "fat": 6,
+      "fiber": 9,
+      "sugar": 3,
+      "isDrink": false,
+      "components": [
+        "Home-cooked sadza with vegetables"
+      ],
+      "estimateType": "standard portion"
+    },
+    {
+      "source": "outside",
+      "id": "home-rice-beans",
+      "category": "Home food",
+      "key": "home-rice-beans",
+      "name": "Home-cooked rice and beans",
+      "calories": 480,
+      "protein": 17,
+      "carbohydrates": 92,
+      "fat": 4,
+      "fiber": 11,
+      "sugar": 3,
+      "isDrink": false,
+      "components": [
+        "Home-cooked rice and beans"
+      ],
+      "estimateType": "standard portion"
+    },
+    {
+      "source": "outside",
+      "id": "milk",
+      "category": "Drink",
+      "key": "milk",
+      "name": "Milk, 1 glass (250 ml)",
+      "calories": 150,
+      "protein": 8,
+      "carbohydrates": 12,
+      "fat": 8,
+      "fiber": 0,
+      "sugar": 12,
+      "isDrink": true,
+      "components": [
+        "Milk, 1 glass (250 ml)"
+      ],
+      "estimateType": "standard portion"
+    },
+    {
+      "source": "outside",
+      "id": "maheu",
+      "category": "Drink",
+      "key": "maheu",
+      "name": "Maheu, 500 ml",
+      "calories": 250,
+      "protein": 4,
+      "carbohydrates": 52,
+      "fat": 2,
+      "fiber": 1,
+      "sugar": 22,
+      "isDrink": true,
+      "components": [
+        "Maheu, 500 ml"
+      ],
+      "estimateType": "standard portion"
+    },
+    {
+      "source": "outside",
+      "id": "yoghurt",
+      "category": "Home food",
+      "key": "yoghurt",
+      "name": "Yoghurt, 1 cup",
+      "calories": 150,
+      "protein": 6,
+      "carbohydrates": 22,
+      "fat": 4,
+      "fiber": 0,
+      "sugar": 18,
+      "isDrink": false,
+      "components": [
+        "Yoghurt, 1 cup"
+      ],
+      "estimateType": "standard portion"
+    },
+    {
+      "source": "outside",
+      "id": "maputi",
+      "category": "Home food",
+      "key": "maputi",
+      "name": "Maputi (puffed maize), 1 cup",
+      "calories": 110,
+      "protein": 3,
+      "carbohydrates": 23,
+      "fat": 1,
+      "fiber": 2,
+      "sugar": 0,
+      "isDrink": false,
+      "components": [
+        "Maputi (puffed maize), 1 cup"
+      ],
+      "estimateType": "standard portion"
+    },
+    {
+      "source": "outside",
+      "id": "biscuits",
+      "category": "Home food",
+      "key": "biscuits",
+      "name": "Biscuits, 4",
+      "calories": 200,
+      "protein": 2.5,
+      "carbohydrates": 28,
+      "fat": 9,
+      "fiber": 1,
+      "sugar": 11,
+      "isDrink": false,
+      "components": [
+        "Biscuits, 4"
+      ],
+      "estimateType": "standard portion"
+    },
+    {
+      "source": "outside",
+      "id": "crisps",
+      "category": "Home food",
+      "key": "crisps",
+      "name": "Crisps, small packet",
+      "calories": 160,
+      "protein": 2,
+      "carbohydrates": 15,
+      "fat": 10,
+      "fiber": 1,
+      "sugar": 0.5,
+      "isDrink": false,
+      "components": [
+        "Crisps, small packet"
+      ],
+      "estimateType": "standard portion"
+    },
+    {
+      "source": "outside",
+      "id": "fat-cakes",
+      "category": "Home food",
+      "key": "fat-cakes",
+      "name": "Fat cakes (magwinya), 2",
+      "calories": 360,
+      "protein": 6,
+      "carbohydrates": 44,
+      "fat": 18,
+      "fiber": 2,
+      "sugar": 6,
+      "isDrink": false,
+      "components": [
+        "Fat cakes (magwinya), 2"
+      ],
+      "estimateType": "standard portion"
+    },
+    {
+      "source": "outside",
+      "id": "soft-drink-outside",
+      "category": "Drink",
+      "key": "soft-drink-outside",
+      "name": "Soft drink, 500 ml",
+      "calories": 210,
+      "protein": 0,
+      "carbohydrates": 53,
+      "fat": 0,
+      "fiber": 0,
+      "sugar": 53,
+      "isDrink": true,
+      "components": [
+        "Soft drink, 500 ml"
+      ],
+      "estimateType": "standard portion"
+    }
+  ]
+}

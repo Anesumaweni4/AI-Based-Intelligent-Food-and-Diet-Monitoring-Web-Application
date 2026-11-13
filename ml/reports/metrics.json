@@ -1,0 +1,306 @@
+{
+  "dataset": {
+    "simulated": true,
+    "students": 300,
+    "days": 60,
+    "studentDays": 18000,
+    "loggedDays": 15528,
+    "windows": 13753,
+    "atRiskRate": 0.143,
+    "description": "Simulated student food diaries (see ml/simulate.py); retrain on real diaries as they accumulate."
+  },
+  "clustering": {
+    "algorithm": "kmeans",
+    "k": 4,
+    "featureIndexes": [
+      0,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "featureNames": [
+      "energy_ratio_mean",
+      "protein_ratio_mean",
+      "fiber_ratio_mean",
+      "sugar_ratio_mean",
+      "fat_energy_pct_mean",
+      "meals_per_day_mean",
+      "breakfast_rate",
+      "late_meal_rate",
+      "active_minutes_mean"
+    ],
+    "clusters": [
+      {
+        "id": 0,
+        "name": "Sugary-drink lover",
+        "description": "Much of the day's sugar comes from soft drinks, juices and snacks.",
+        "tip": "Swap one soft drink a day for water. One 500 ml soft drink has about 53 g of sugar.",
+        "size": 2250,
+        "profile": {
+          "energy_ratio_mean": 1.052,
+          "energy_ratio_std": 0.28,
+          "protein_ratio_mean": 1.314,
+          "fiber_ratio_mean": 0.555,
+          "sugar_ratio_mean": 2.507,
+          "fat_energy_pct_mean": 0.3,
+          "meals_per_day_mean": 2.011,
+          "breakfast_rate": 0.401,
+          "late_meal_rate": 0.324,
+          "active_minutes_mean": 17.617,
+          "score_mean": 62.151,
+          "score_trend": -0.014,
+          "recent_score_mean": 62.092
+        }
+      },
+      {
+        "id": 1,
+        "name": "Balanced eater",
+        "description": "Regular meals with a good mix of energy, protein and fibre.",
+        "tip": "Keep it up. Add a fruit or a side salad on busy days to stay on track.",
+        "size": 4846,
+        "profile": {
+          "energy_ratio_mean": 0.844,
+          "energy_ratio_std": 0.215,
+          "protein_ratio_mean": 1.595,
+          "fiber_ratio_mean": 0.879,
+          "sugar_ratio_mean": 1.01,
+          "fat_energy_pct_mean": 0.307,
+          "meals_per_day_mean": 2.541,
+          "breakfast_rate": 0.752,
+          "late_meal_rate": 0.169,
+          "active_minutes_mean": 45.772,
+          "score_mean": 78.876,
+          "score_trend": -0.028,
+          "recent_score_mean": 78.803
+        }
+      },
+      {
+        "id": 2,
+        "name": "Meal skipper",
+        "description": "Breakfast and lunch are often missed, so the body runs short of energy and protein.",
+        "tip": "Start with a quick breakfast (porridge, eggs or a peanut butter sandwich) before lectures.",
+        "size": 3938,
+        "profile": {
+          "energy_ratio_mean": 0.713,
+          "energy_ratio_std": 0.243,
+          "protein_ratio_mean": 1.018,
+          "fiber_ratio_mean": 0.425,
+          "sugar_ratio_mean": 1.03,
+          "fat_energy_pct_mean": 0.354,
+          "meals_per_day_mean": 1.542,
+          "breakfast_rate": 0.155,
+          "late_meal_rate": 0.401,
+          "active_minutes_mean": 15.957,
+          "score_mean": 58.216,
+          "score_trend": -0.037,
+          "recent_score_mean": 58.148
+        }
+      },
+      {
+        "id": 3,
+        "name": "Fast-food & late-night eater",
+        "description": "Fried foods such as chips and burgers make up many meals, portions are large and eating often happens late at night.",
+        "tip": "Choose rice or sadza instead of chips twice a week, add a vegetable side and keep late-night snacks small.",
+        "size": 2719,
+        "profile": {
+          "energy_ratio_mean": 1.309,
+          "energy_ratio_std": 0.293,
+          "protein_ratio_mean": 1.635,
+          "fiber_ratio_mean": 0.751,
+          "sugar_ratio_mean": 1.673,
+          "fat_energy_pct_mean": 0.375,
+          "meals_per_day_mean": 2.375,
+          "breakfast_rate": 0.538,
+          "late_meal_rate": 0.621,
+          "active_minutes_mean": 9.839,
+          "score_mean": 64.451,
+          "score_trend": -0.035,
+          "recent_score_mean": 64.395
+        }
+      }
+    ],
+    "silhouette": 0.296,
+    "adjustedRandIndexVsHiddenPersona": 0.509,
+    "kSearch": [
+      {
+        "k": 2,
+        "inertia": 86393.67891737711,
+        "silhouette": 0.2762797698678563
+      },
+      {
+        "k": 3,
+        "inertia": 64535.257652860404,
+        "silhouette": 0.29440958281914426
+      },
+      {
+        "k": 4,
+        "inertia": 55387.17292538428,
+        "silhouette": 0.2958328845337362
+      },
+      {
+        "k": 5,
+        "inertia": 49539.42792439433,
+        "silhouette": 0.277575598020837
+      },
+      {
+        "k": 6,
+        "inertia": 45269.98733300124,
+        "silhouette": 0.22398295109508284
+      },
+      {
+        "k": 7,
+        "inertia": 43117.87932192795,
+        "silhouette": 0.21087770310147505
+      },
+      {
+        "k": 8,
+        "inertia": 41176.78326828699,
+        "silhouette": 0.18030879042777964
+      },
+      {
+        "k": 9,
+        "inertia": 39637.94412675964,
+        "silhouette": 0.17023225971450362
+      }
+    ]
+  },
+  "risk": {
+    "label": "Random Forest",
+    "threshold": 0.58,
+    "featureIndexes": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "riskScoreThreshold": 55,
+    "horizonDays": 7,
+    "metrics": {
+      "accuracy": 0.84,
+      "precision": 0.424,
+      "recall": 0.603,
+      "f1": 0.498,
+      "rocAuc": 0.87
+    },
+    "metricsAtHalf": {
+      "accuracy": 0.801,
+      "precision": 0.37,
+      "recall": 0.726,
+      "f1": 0.49,
+      "rocAuc": 0.87
+    },
+    "comparison": [
+      {
+        "model": "Rule baseline (last week score < 55)",
+        "cv": {
+          "accuracy": 0.83,
+          "precision": 0.413,
+          "recall": 0.409,
+          "f1": 0.41,
+          "rocAuc": 0.766
+        },
+        "cvF1Std": 0.059,
+        "test": {
+          "accuracy": 0.836,
+          "precision": 0.377,
+          "recall": 0.373,
+          "f1": 0.375,
+          "rocAuc": 0.801
+        }
+      },
+      {
+        "model": "Logistic Regression",
+        "cv": {
+          "accuracy": 0.72,
+          "precision": 0.311,
+          "recall": 0.765,
+          "f1": 0.441,
+          "rocAuc": 0.819
+        },
+        "cvF1Std": 0.046,
+        "test": {
+          "accuracy": 0.79,
+          "precision": 0.361,
+          "recall": 0.774,
+          "f1": 0.493,
+          "rocAuc": 0.871
+        }
+      },
+      {
+        "model": "Decision Tree",
+        "cv": {
+          "accuracy": 0.706,
+          "precision": 0.297,
+          "recall": 0.723,
+          "f1": 0.416,
+          "rocAuc": 0.796
+        },
+        "cvF1Std": 0.047,
+        "test": {
+          "accuracy": 0.803,
+          "precision": 0.371,
+          "recall": 0.713,
+          "f1": 0.488,
+          "rocAuc": 0.857
+        }
+      },
+      {
+        "model": "Random Forest",
+        "cv": {
+          "accuracy": 0.754,
+          "precision": 0.334,
+          "recall": 0.698,
+          "f1": 0.451,
+          "rocAuc": 0.822
+        },
+        "cvF1Std": 0.041,
+        "test": {
+          "accuracy": 0.801,
+          "precision": 0.37,
+          "recall": 0.726,
+          "f1": 0.49,
+          "rocAuc": 0.87
+        },
+        "testTuned": {
+          "accuracy": 0.84,
+          "precision": 0.424,
+          "recall": 0.603,
+          "f1": 0.498,
+          "rocAuc": 0.87
+        }
+      }
+    ],
+    "featureImportance": {
+      "energy_ratio_mean": 0.0699,
+      "energy_ratio_std": 0.0171,
+      "protein_ratio_mean": 0.0643,
+      "fiber_ratio_mean": 0.0763,
+      "sugar_ratio_mean": 0.07,
+      "fat_energy_pct_mean": 0.0197,
+      "meals_per_day_mean": 0.1918,
+      "breakfast_rate": 0.0769,
+      "late_meal_rate": 0.0136,
+      "active_minutes_mean": 0.0892,
+      "score_mean": 0.2253,
+      "score_trend": 0.0081,
+      "recent_score_mean": 0.0779
+    },
+    "trainRows": 10296,
+    "testRows": 3457,
+    "algorithm": "random_forest"
+  }
+}

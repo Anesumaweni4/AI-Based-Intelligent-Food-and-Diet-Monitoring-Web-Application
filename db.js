@@ -944,6 +944,89 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     `);
   }
 
+  // Diet monitoring v2: sex for energy targets, richer meal logs, activity logs.
+  if (postgresPool) {
+    await postgresPool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS sex VARCHAR(8)');
+    await postgresPool.query('ALTER TABLE diet_meal_logs ADD COLUMN IF NOT EXISTS sugar DECIMAL(8,1) NOT NULL DEFAULT 0');
+    await postgresPool.query('ALTER TABLE diet_meal_logs ADD COLUMN IF NOT EXISTS meal_slot VARCHAR(16)');
+    await postgresPool.query("ALTER TABLE diet_meal_logs ADD COLUMN IF NOT EXISTS source VARCHAR(16) NOT NULL DEFAULT 'manual'");
+    await postgresPool.query('ALTER TABLE diet_meal_logs ADD COLUMN IF NOT EXISTS order_id BIGINT');
+    await postgresPool.query('ALTER TABLE diet_meal_logs ADD COLUMN IF NOT EXISTS is_drink BOOLEAN NOT NULL DEFAULT FALSE');
+    await postgresPool.query('CREATE INDEX IF NOT EXISTS idx_diet_meal_logs_order ON diet_meal_logs (order_id)');
+    await postgresPool.query(`
+      CREATE TABLE IF NOT EXISTS diet_activity_logs (
+        id BIGSERIAL PRIMARY KEY,
+        user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        minutes INTEGER NOT NULL,
+        intensity VARCHAR(16) NOT NULL,
+        activity_type VARCHAR(40) NOT NULL DEFAULT 'other',
+        logged_at TIMESTAMP NOT NULL
+      )
+    `);
+    await postgresPool.query('CREATE INDEX IF NOT EXISTS idx_diet_activity_user_date ON diet_activity_logs (user_id, logged_at)');
+  } else if (sqliteDb) {
+    const userColumns = new Set((await sqliteAll('PRAGMA table_info(users)')).map((column) => column.name));
+    if (!userColumns.has('sex')) await sqliteRun('ALTER TABLE users ADD COLUMN sex TEXT');
+    const mealColumns = new Set((await sqliteAll('PRAGMA table_info(diet_meal_logs)')).map((column) => column.name));
+    const mealColumnDefinitions = [
+      ['sugar', 'ALTER TABLE diet_meal_logs ADD COLUMN sugar DECIMAL(8,1) NOT NULL DEFAULT 0'],
+      ['meal_slot', 'ALTER TABLE diet_meal_logs ADD COLUMN meal_slot TEXT'],
+      ['source', "ALTER TABLE diet_meal_logs ADD COLUMN source TEXT NOT NULL DEFAULT 'manual'"],
+      ['order_id', 'ALTER TABLE diet_meal_logs ADD COLUMN order_id INTEGER'],
+      ['is_drink', 'ALTER TABLE diet_meal_logs ADD COLUMN is_drink INTEGER NOT NULL DEFAULT 0']
+    ];
+    for (const [name, sql] of mealColumnDefinitions) {
+      if (!mealColumns.has(name)) await sqliteRun(sql);
+    }
+    await sqliteRun('CREATE INDEX IF NOT EXISTS idx_diet_meal_logs_order ON diet_meal_logs (order_id)');
+    await sqliteRun(`
+      CREATE TABLE IF NOT EXISTS diet_activity_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        minutes INTEGER NOT NULL,
+        intensity TEXT NOT NULL,
+        activity_type TEXT NOT NULL DEFAULT 'other',
+        logged_at DATETIME NOT NULL
+      )
+    `);
+    await sqliteRun('CREATE INDEX IF NOT EXISTS idx_diet_activity_user_date ON diet_activity_logs (user_id, logged_at)');
+  } else {
+    const [userRows] = await pool.query(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'users'`,
+      [dbConfig.database]
+    );
+    if (!userRows.some((row) => row.COLUMN_NAME === 'sex')) {
+      await pool.query('ALTER TABLE users ADD COLUMN sex VARCHAR(8) NULL');
+    }
+    const [mealRows] = await pool.query(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'diet_meal_logs'`,
+      [dbConfig.database]
+    );
+    const mealColumns = new Set(mealRows.map((row) => row.COLUMN_NAME));
+    const mealColumnDefinitions = [
+      ['sugar', 'ALTER TABLE diet_meal_logs ADD COLUMN sugar DECIMAL(8,1) NOT NULL DEFAULT 0'],
+      ['meal_slot', 'ALTER TABLE diet_meal_logs ADD COLUMN meal_slot VARCHAR(16) NULL'],
+      ['source', "ALTER TABLE diet_meal_logs ADD COLUMN source VARCHAR(16) NOT NULL DEFAULT 'manual'"],
+      ['order_id', 'ALTER TABLE diet_meal_logs ADD COLUMN order_id INT NULL, ADD INDEX idx_diet_meal_logs_order (order_id)'],
+      ['is_drink', 'ALTER TABLE diet_meal_logs ADD COLUMN is_drink TINYINT(1) NOT NULL DEFAULT 0']
+    ];
+    for (const [name, sql] of mealColumnDefinitions) {
+      if (!mealColumns.has(name)) await pool.query(sql);
+    }
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS diet_activity_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        minutes INT NOT NULL,
+        intensity VARCHAR(16) NOT NULL,
+        activity_type VARCHAR(40) NOT NULL DEFAULT 'other',
+        logged_at DATETIME NOT NULL,
+        INDEX idx_diet_activity_user_date (user_id, logged_at),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+  }
+
   if (postgresPool) {
     await postgresPool.query(`
       CREATE TABLE IF NOT EXISTS fitbit_connections (
@@ -1066,6 +1149,7 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
       'diet_profiles',
       'diet_meal_logs',
       'diet_feedback',
+      'diet_activity_logs',
       'fitbit_connections',
       'client_feedback',
       'client_feedback_photos'

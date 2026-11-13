@@ -6,7 +6,11 @@
   "scripts": {
     "start": "node server.js",
     "migrate:neon": "node scripts/migrate-sqlite-to-neon.js",
-    "sync:stock:neon": "node scripts/sync-stock-to-neon.js"
+    "sync:stock:neon": "node scripts/sync-stock-to-neon.js",
+    "ml:export-foods": "node scripts/export-diet-foods.js",
+    "ml:simulate": "cd ml && .venv\\Scripts\\python simulate.py",
+    "ml:train": "node scripts/export-diet-foods.js && cd ml && .venv\\Scripts\\python simulate.py && .venv\\Scripts\\python train.py",
+    "ml:test": "node scripts/test-diet-ml.js"
   },
   "dependencies": {
     "express": "^4.21.2",

@@ -4,7 +4,8 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const { initializeDatabase, get, all, run, withTransaction, replaceMenuSchedule } = require('./db');
 const { hashPassword, verifyPassword, passwordNeedsRehash } = require('./passwords');
-const { getNutrition, recommendFoods, GOALS } = require('./diet-model');
+const { getNutrition, GOALS, MEAL_SLOTS } = require('./diet-model');
+const dietService = require('./diet-service');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -718,7 +719,7 @@ app.post('/api/auth/logout', async (req, res) => {
 
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { fullName, username, password, age, weight, height } = req.body;
+    const { fullName, username, password } = req.body;
     const email = normalizeEmail(req.body.email);
 
     if (!fullName || !username || !password || !email) {
@@ -728,13 +729,11 @@ app.post('/api/auth/register', async (req, res) => {
       return res.status(400).json({ message: 'Enter a valid email address.' });
     }
 
-    const parsedAge = Number(age);
-    const parsedWeight = Number(weight);
-    const parsedHeight = Number(height);
-
-    if (!Number.isFinite(parsedAge) || parsedAge <= 0 || !Number.isFinite(parsedWeight) || parsedWeight <= 0 || !Number.isFinite(parsedHeight) || parsedHeight <= 0) {
-      return res.status(400).json({ message: 'Please provide valid age, weight, and height values.' });
+    const bodyProfile = parseBodyProfile(req.body);
+    if (bodyProfile.error) {
+      return res.status(400).json({ message: bodyProfile.error });
     }
+    const { age: parsedAge, weight: parsedWeight, height: parsedHeight, sex } = bodyProfile;
 
     const existingUser = await get('SELECT id FROM users WHERE username = ?', [username.trim()]);
     if (existingUser) {
@@ -745,8 +744,8 @@ app.post('/api/auth/register', async (req, res) => {
     }
 
     const user = await run(
-      'INSERT INTO users (full_name, username, password, role, email, age, weight, height) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [fullName.trim(), username.trim(), await hashPassword(password), 'staff', email, parsedAge, parsedWeight, parsedHeight]
+      'INSERT INTO users (full_name, username, password, role, email, age, weight, height, sex) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [fullName.trim(), username.trim(), await hashPassword(password), 'staff', email, parsedAge, parsedWeight, parsedHeight, sex]
     );
 
     res.status(201).json({
@@ -758,6 +757,7 @@ app.post('/api/auth/register', async (req, res) => {
         age: parsedAge,
         weight: parsedWeight,
         height: parsedHeight,
+        sex,
         role: 'staff'
       }
     });
@@ -1248,129 +1248,116 @@ app.delete('/api/diet/fitbit/connection', requireStudentApi, async (req, res) =>
 
 app.get('/api/diet', requireStudentApi, async (req, res) => {
   try {
-    const todayRange = getLocalDayRange();
-    const weekRange = getLocalDayRange(6);
-    const todayMeals = await all(
-      `SELECT id, menu_item_id, food_name, servings, calories, protein, carbohydrates, fat, fiber, eaten_at
-       FROM diet_meal_logs
-       WHERE user_id = ? AND eaten_at >= ? AND eaten_at < ?
-       ORDER BY eaten_at DESC, id DESC`,
-      [req.accountUser.id, todayRange.start, todayRange.end]
-    );
-    const weekMeals = await all(
-      `SELECT food_name, servings, calories, protein, carbohydrates, fat, fiber, eaten_at
-       FROM diet_meal_logs
-       WHERE user_id = ? AND eaten_at >= ? AND eaten_at < ?
-       ORDER BY eaten_at ASC, id ASC`,
-      [req.accountUser.id, weekRange.start, todayRange.end]
-    );
-    const profile = await get('SELECT goal FROM diet_profiles WHERE user_id = ?', [req.accountUser.id]);
-    const menuItems = await all('SELECT id, name, category FROM menu_items ORDER BY name');
-    const feedback = await all(
-      'SELECT rating, calories, protein, carbohydrates, fat, fiber FROM diet_feedback WHERE user_id = ?',
-      [req.accountUser.id]
-    );
-    const orderStart = getLocalDayRange(29).start;
-    const orderEnd = getLocalDayRange().end;
-    const orderedFoods = await all(
-      `SELECT oi.menu_item_id, SUM(oi.quantity) AS purchase_count, MAX(o.created_at) AS last_ordered_at
-       FROM orders o
-       JOIN order_items oi ON oi.order_id = o.id
-       WHERE o.user_id = ? AND o.status <> 'Cancelled' AND o.created_at >= ? AND o.created_at < ?
-       GROUP BY oi.menu_item_id`,
-      [req.accountUser.id, orderStart, orderEnd]
-    );
-    const todayTotals = sumDietNutrition(todayMeals);
-    const dailyTotals = {
-      ...todayTotals,
-      foodNames: new Set(todayMeals.map((meal) => String(meal.food_name).toLowerCase()))
-    };
-    const groupedDays = new Map();
-    for (const meal of weekMeals) {
-      const date = String(meal.eaten_at).slice(0, 10);
-      if (!groupedDays.has(date)) {
-        groupedDays.set(date, { date, meals: 0, ...sumDietNutrition([]) });
-      }
-      const totals = groupedDays.get(date);
-      totals.meals += Number(meal.servings);
-      for (const field of ['calories', 'protein', 'carbohydrates', 'fat', 'fiber']) {
-        totals[field] += Number(meal[field]) * Number(meal.servings);
-      }
-    }
-    const recommendation = recommendFoods({
-      foods: menuItems,
-      feedback,
-      goal: profile ? profile.goal : 'balanced',
-      dailyTotals
-    });
-    const menuItemsById = new Map(menuItems.map((item) => [Number(item.id), item]));
-    const purchasedMenuItems = orderedFoods
-      .map((orderedFood) => {
-        const menuItem = menuItemsById.get(Number(orderedFood.menu_item_id));
-        return menuItem ? { ...menuItem, purchaseCount: Number(orderedFood.purchase_count), lastOrderedAt: orderedFood.last_ordered_at } : null;
-      })
-      .filter(Boolean);
-    const orderRecommendation = recommendFoods({
-      foods: purchasedMenuItems,
-      feedback,
-      goal: profile ? profile.goal : 'balanced',
-      dailyTotals
-    });
-    const purchasedFoodsById = new Map(
-      purchasedMenuItems.map((item) => [Number(item.id), item])
-    );
-
-    res.json({
-      goal: profile ? profile.goal : 'balanced',
-      foods: menuItems.map((item) => ({ ...item, ...getNutrition(item) })),
-      meals: todayMeals,
-      totals: todayTotals,
-      weekly: Array.from(groupedDays.values()),
-      recommendations: recommendation.items,
-      mealIdeas: orderRecommendation.items.map((food) => {
-        const purchase = purchasedFoodsById.get(Number(food.id));
-        return {
-          ...food,
-          purchaseCount: purchase.purchaseCount,
-          lastOrderedAt: purchase.lastOrderedAt
-        };
-      }),
-      model: recommendation.model
-    });
+    res.json(await dietService.getStudentDashboard(req.accountUser.id));
   } catch (error) {
     console.error('Error loading diet monitoring data:', error);
     res.status(500).json({ message: 'Unable to load diet monitoring data.' });
   }
 });
 
+function parseDietDay(value) {
+  return value === 'yesterday' ? 'yesterday' : 'today';
+}
+
 app.post('/api/diet/meals', requireStudentApi, async (req, res) => {
   const menuItemId = Number(req.body.menuItemId);
+  const foodKey = typeof req.body.foodKey === 'string' ? req.body.foodKey : '';
   const servings = Number(req.body.servings);
-  if (!Number.isSafeInteger(menuItemId) || menuItemId <= 0 ||
-      !Number.isFinite(servings) || servings <= 0 || servings > 5 ||
-      Math.round(servings * 2) !== servings * 2) {
-    return res.status(400).json({ message: 'Choose a menu food and enter a serving amount from 0.5 to 5.' });
+  const slot = typeof req.body.slot === 'string' && req.body.slot ? req.body.slot : null;
+  if (!foodKey && (!Number.isSafeInteger(menuItemId) || menuItemId <= 0)) {
+    return res.status(400).json({ message: 'Choose a food to log.' });
+  }
+  if (!Number.isFinite(servings) || servings <= 0 || servings > 5 || Math.round(servings * 2) !== servings * 2) {
+    return res.status(400).json({ message: 'Enter a serving amount from 0.5 to 5.' });
+  }
+  if (slot && !MEAL_SLOTS.includes(slot)) {
+    return res.status(400).json({ message: 'Choose breakfast, lunch, supper, snack or late night.' });
   }
 
   try {
-    const food = await get('SELECT id, name, category FROM menu_items WHERE id = ?', [menuItemId]);
-    if (!food) {
-      return res.status(404).json({ message: 'That food is no longer available in the menu.' });
-    }
-    const nutrition = getNutrition(food);
-    const result = await run(
-      `INSERT INTO diet_meal_logs
-       (user_id, menu_item_id, food_name, servings, calories, protein, carbohydrates, fat, fiber)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        req.accountUser.id, food.id, food.name, servings,
-        nutrition.calories, nutrition.protein, nutrition.carbohydrates, nutrition.fat, nutrition.fiber
-      ]
-    );
-    res.status(201).json({ message: 'Meal added to your food diary.', id: result.id });
+    const result = await dietService.logMeal(req.accountUser.id, {
+      menuItemId, foodKey, servings, slot, day: parseDietDay(req.body.day)
+    });
+    res.status(result.status).json({ message: result.message, id: result.id });
   } catch (error) {
     console.error('Error recording diet meal:', error);
     res.status(500).json({ message: 'Unable to record that meal.' });
+  }
+});
+
+app.delete('/api/diet/meals/:id', requireStudentApi, async (req, res) => {
+  const logId = Number(req.params.id);
+  if (!Number.isSafeInteger(logId) || logId <= 0) {
+    return res.status(400).json({ message: 'Invalid diary entry.' });
+  }
+  try {
+    const removed = await dietService.deleteMeal(req.accountUser.id, logId);
+    if (!removed) return res.status(404).json({ message: 'That diary entry was not found.' });
+    res.json({ message: 'Removed from your food diary.' });
+  } catch (error) {
+    console.error('Error removing diet meal:', error);
+    res.status(500).json({ message: 'Unable to remove that entry.' });
+  }
+});
+
+app.post('/api/diet/activity', requireStudentApi, async (req, res) => {
+  const minutes = Number(req.body.minutes);
+  const intensity = typeof req.body.intensity === 'string' ? req.body.intensity : '';
+  const type = typeof req.body.type === 'string' && req.body.type ? req.body.type : 'other';
+  if (!Number.isInteger(minutes) || minutes < 5 || minutes > 300) {
+    return res.status(400).json({ message: 'Enter between 5 and 300 minutes of activity.' });
+  }
+  if (!Object.prototype.hasOwnProperty.call(dietService.INTENSITY_WEIGHT, intensity)) {
+    return res.status(400).json({ message: 'Choose light, moderate or vigorous.' });
+  }
+  if (!dietService.ACTIVITY_TYPES.includes(type)) {
+    return res.status(400).json({ message: 'Choose an activity type from the list.' });
+  }
+  try {
+    const id = await dietService.logActivity(req.accountUser.id, { minutes, intensity, type, day: parseDietDay(req.body.day) });
+    res.status(201).json({ message: `${minutes} minutes of activity saved. Nice work!`, id });
+  } catch (error) {
+    console.error('Error recording activity:', error);
+    res.status(500).json({ message: 'Unable to save that activity.' });
+  }
+});
+
+app.delete('/api/diet/activity/:id', requireStudentApi, async (req, res) => {
+  const activityId = Number(req.params.id);
+  if (!Number.isSafeInteger(activityId) || activityId <= 0) {
+    return res.status(400).json({ message: 'Invalid activity entry.' });
+  }
+  try {
+    const removed = await dietService.deleteActivity(req.accountUser.id, activityId);
+    if (!removed) return res.status(404).json({ message: 'That activity was not found.' });
+    res.json({ message: 'Activity removed.' });
+  } catch (error) {
+    console.error('Error removing activity:', error);
+    res.status(500).json({ message: 'Unable to remove that activity.' });
+  }
+});
+
+function parseBodyProfile(body) {
+  const age = Number(body.age);
+  const weight = Number(body.weight);
+  const height = Number(body.height);
+  const sex = body.sex;
+  if (!Number.isInteger(age) || age < 10 || age > 100) return { error: 'Enter an age between 10 and 100.' };
+  if (!Number.isFinite(weight) || weight < 25 || weight > 250) return { error: 'Enter a weight between 25 and 250 kg.' };
+  if (!Number.isFinite(height) || height < 100 || height > 230) return { error: 'Enter a height between 100 and 230 cm.' };
+  if (sex !== 'female' && sex !== 'male') return { error: 'Choose female or male.' };
+  return { age, weight: Math.round(weight * 10) / 10, height: Math.round(height * 10) / 10, sex };
+}
+
+app.put('/api/diet/profile', requireStudentApi, async (req, res) => {
+  const profile = parseBodyProfile(req.body);
+  if (profile.error) return res.status(400).json({ message: profile.error });
+  try {
+    await dietService.updateProfile(req.accountUser.id, profile);
+    res.json({ message: 'Your body profile was saved. Targets updated.' });
+  } catch (error) {
+    console.error('Error saving body profile:', error);
+    res.status(500).json({ message: 'Unable to save your profile.' });
   }
 });
 
@@ -1431,6 +1418,15 @@ app.post('/api/diet/feedback', requireStudentApi, async (req, res) => {
 });
 
 app.use('/api/admin', requireAdminApi);
+
+app.get('/api/admin/diet-insights', async (req, res) => {
+  try {
+    res.json(await dietService.getAdminInsights());
+  } catch (error) {
+    console.error('Error loading diet insights:', error);
+    res.status(500).json({ message: 'Unable to load diet insights.' });
+  }
+});
 
 app.get('/api/admin/feedback', async (req, res) => {
   try {
@@ -2555,6 +2551,11 @@ app.patch('/api/orders/:id/status', requireCashierOrAdminApi, async (req, res) =
       }
       return transaction.get('SELECT * FROM orders WHERE id = ?', [req.params.id]);
     });
+    if (updatedOrder && updatedOrder.user_id && ['Collected', 'Delivered'].includes(updatedOrder.status)) {
+      dietService.syncOrderMeals(Number(updatedOrder.user_id))
+        .then(() => dietService.invalidateCohort())
+        .catch((error) => console.error('Error adding collected order to food diary:', error));
+    }
     res.json({ message: 'Order status updated.', order: updatedOrder });
   } catch (error) {
     if (error.statusCode) {

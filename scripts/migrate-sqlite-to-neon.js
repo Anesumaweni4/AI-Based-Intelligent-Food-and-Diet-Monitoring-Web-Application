@@ -20,6 +20,7 @@ const tableOrder = [
   'diet_profiles',
   'diet_meal_logs',
   'diet_feedback',
+  'diet_activity_logs',
   'fitbit_connections',
   'client_feedback',
   'client_feedback_photos',
@@ -38,6 +39,7 @@ const tablesWithIdentity = new Set([
   'account_transactions',
   'diet_meal_logs',
   'diet_feedback',
+  'diet_activity_logs',
   'client_feedback',
   'password_reset_tokens'
 ]);

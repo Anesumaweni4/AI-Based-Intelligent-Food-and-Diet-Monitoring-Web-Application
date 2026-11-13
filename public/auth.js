@@ -82,6 +82,7 @@ if (registerForm) {
       age: Number(document.getElementById('registerAge').value),
       weight: Number(document.getElementById('registerWeight').value),
       height: Number(document.getElementById('registerHeight').value),
+      sex: (document.querySelector('input[name="registerSex"]:checked') || {}).value || '',
       password: document.getElementById('registerPassword').value
     };
 

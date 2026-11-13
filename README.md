@@ -22,11 +22,10 @@ This project is a simple web-based food ordering system designed for small and m
 - Admins and cashiers track ingredients separately from prepared menu items in a daily Date / Item / Opening / Used / Added / Closing ledger; potatoes are counted in packets, staples and sausages in kilograms, cooking oil in litres, and burgers, patties, Russians, and hotdogs in pieces
 - Every drink on the menu, including water and smoothies, is available in stock control and measured in bottles; both water price options share one bottled-water balance
 - Ingredient receipts and usage are recorded manually, and customer orders do not change ingredient stock; admin and cashier inventory refreshes every 12 seconds
-- Diet Monitoring highlights an hourly activity check-in and prompts the signed-in student while the page is open
-- Diet Monitoring explains nutrition estimates and suggests meal ideas based on each student's non-cancelled orders from the last 30 days
-- Diet Monitoring includes general wellbeing tips for balanced meals, hydration, movement, and rest
-- Diet Monitoring explains how to log eaten meals and adjust servings for nutrition estimates
-- Students can connect Fitbit to view daily steps and resting heart rate in Diet Monitoring
+- AI diet monitoring for students: collected orders are added to the food diary automatically, students log other food and activity, and every day gets a 0-100 diet score against personal targets (Mifflin-St Jeor energy needs, WHO sugar, fat and fibre guidance)
+- Machine learning: K-means finds each student's eating pattern, a Random Forest warns early when a student's diet is likely to be poor next week, and recommendations combine nutrition gaps, a per-student preference model and what similar students buy (see `ml/README.md`)
+- Admins see anonymous diet insights: eating-pattern counts, risk levels, the most common concerns and the average daily score
+- The hourly activity check-in saves the student's minutes of activity; students can also connect Fitbit to view daily steps and resting heart rate
 - Students can request password reset links by email; administrators can assign recovery email addresses to existing student accounts
 
 ## Tech Stack
@@ -277,13 +276,30 @@ For SMTP port 465, set `SMTP_SECURE` to `"true"`. The app does not load `.env` f
 
 A Gmail App password requires 2-Step Verification on the Google account (Google Account → Security → App passwords). Any other SMTP provider works the same way with its own host, port and login.
 
-## Diet monitoring model demo
+## AI diet monitoring
 
-After starting the app and signing in with a student account, open **Diet Monitoring** from the student home page. The page lets the student choose a general suggestion focus, log menu meals and serving sizes, review estimated nutrition totals and recent logged meals, and rate menu recommendations as helpful or not helpful.
+Sign in as a student and open **Diet** in the top menu. Registration asks for age, weight, height and sex so the app can work out personal targets; existing students are asked to complete their profile on the Diet page.
 
-The demo combines a nutrition-fit cold-start ranker with a small per-student logistic preference model. It trains from the student's recommendation feedback and activates the personalized ranking after receiving both positive and negative feedback. Meal records, focus settings, and feedback are stored in the application's database and isolated by student account. New database tables are created automatically on startup.
+| Part | What it does | Where |
+| --- | --- | --- |
+| Nutrition | Each menu item is split into its parts (rice + chicken stew) and summed from food composition values; 18 common outside foods are included | `nutrition.js` |
+| Diary | Orders marked **Collected** or **Delivered** go into the diary automatically; students add other food (breakfast, lunch, supper, snack, late night; today or yesterday) and activity | `diet-service.js` |
+| Daily score | 0-100 from energy vs target, protein, fibre, sugar, fat, regular meals with breakfast, and active minutes | `diet-model.js` |
+| Model A | K-means eating patterns from the last 7 logged days | `ml/train.py` |
+| Model B | Random Forest predicts an average score below 55 over the next 7 days (compared with Logistic Regression, a Decision Tree and a rule baseline) | `ml/train.py` |
+| Model C | Recommendations: nutrition-gap fit + personal logistic preference model + popularity among students with the same pattern | `diet-model.js` |
+| Admin view | Anonymous totals under **Admin Panel → Diet insights** | `public/admin-diet.js` |
 
-Nutrition values in `diet-model.js` are illustrative estimates per serving, not verified nutrient-label data. Unlisted foods use a category estimate. Expand and validate that catalog against a trustworthy nutrition source before using it for real dietary decisions. The feature is an educational prototype, not medical advice; its general preference options are not treatment plans or individualized calorie prescriptions.
+Models are trained offline in Python and saved to `ml/models/diet_models.json`, which the Node server loads, so Render needs no Python. To retrain (Windows):
+
+```powershell
+python -m venv ml\.venv
+ml\.venv\Scripts\python -m pip install -r ml\requirements.txt
+npm.cmd run ml:train   # export foods, simulate diaries, train, write ml/reports/
+npm.cmd run ml:test    # check Node gives the same answers as Python
+```
+
+The training data is simulated because the app does not yet have months of real diaries; `ml/README.md` explains the simulator, the features, the evaluation and the limitations. Meal times use the `APP_TIMEZONE` environment variable (default `Africa/Harare`). The feature gives general guidance and is not medical advice.
 
 ## Client feedback chatbot
 

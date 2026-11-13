@@ -141,6 +141,10 @@
   watch(document.getElementById('stock-onhand'), () => {
     setBadge('stock', document.querySelectorAll('#stock-onhand .stock-item.is-empty').length, 'out of stock', 'red');
   });
+  watch(document.getElementById('di-risk'), () => {
+    const high = Number(document.querySelector('#di-risk [data-risk-count="high"]')?.textContent) || 0;
+    setBadge('diet', high, 'at high risk', 'red');
+  });
   watch(document.getElementById('client-feedback-list'), () => {
     const newCount = Number(document.querySelector('#client-feedback-list [data-feedback-filter="new"] span')?.textContent) || 0;
     setBadge('feedback', newCount, 'new', 'red');

@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="styles.css?v=password-reset-1" />
-    <link rel="stylesheet" href="theme.css?v=redesign-12" />
+    <link rel="stylesheet" href="theme.css?v=diet-ai-1" />
   </head>
   <body class="auth-body">
     <div class="auth-split">
@@ -89,18 +89,26 @@
               </div>
 
               <p class="auth-form-section">About you</p>
+              <p class="field-hint auth-about-hint">Used to work out your personal energy and protein targets on the Diet page.</p>
+              <fieldset class="field-group auth-choice-group">
+                <legend>Sex <span class="field-required">Required</span></legend>
+                <div class="auth-choice">
+                  <label><input type="radio" name="registerSex" value="female" required /><span>Female</span></label>
+                  <label><input type="radio" name="registerSex" value="male" /><span>Male</span></label>
+                </div>
+              </fieldset>
               <div class="auth-field-row auth-field-row--3">
                 <div class="field-group">
                   <label for="registerAge">Age</label>
-                  <input id="registerAge" type="number" min="1" max="120" placeholder="Years" required />
+                  <input id="registerAge" type="number" min="10" max="100" placeholder="Years" required />
                 </div>
                 <div class="field-group">
                   <label for="registerWeight">Weight (kg)</label>
-                  <input id="registerWeight" type="number" min="1" step="0.1" placeholder="kg" required />
+                  <input id="registerWeight" type="number" min="25" max="250" step="0.1" placeholder="kg" required />
                 </div>
                 <div class="field-group">
                   <label for="registerHeight">Height (cm)</label>
-                  <input id="registerHeight" type="number" min="1" step="0.1" placeholder="cm" required />
+                  <input id="registerHeight" type="number" min="100" max="230" step="0.1" placeholder="cm" required />
                 </div>
               </div>
 
@@ -133,7 +141,7 @@
 
     <div id="toast" class="toast"></div>
     <script src="auth-ui.js?v=redesign-1"></script>
-    <script src="auth.js?v=password-reset-1"></script>
+    <script src="auth.js?v=diet-ai-1"></script>
     <script src="staff-dashboard-links.js?v=20261113-1"></script>
   </body>
 </html>
