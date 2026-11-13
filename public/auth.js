@@ -108,34 +108,26 @@ if (registerForm) {
 }
 
 if (passwordResetRequestForm) {
-  const deliverySelect = document.getElementById('reset-delivery');
   const submitButton = document.getElementById('reset-request-submit');
-  const updateResetSubmitLabel = () => {
-    submitButton.textContent = deliverySelect.value === 'whatsapp'
-      ? 'WhatsApp me a reset link'
-      : 'Email me a reset link';
-  };
-  deliverySelect.addEventListener('change', updateResetSubmitLabel);
 
   passwordResetRequestForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     const status = document.getElementById('password-reset-request-status');
-    status.textContent = 'Sending reset link…';
-    status.classList.remove('error');
+    const emailInput = document.getElementById('reset-email');
+    status.textContent = 'Sending your reset link…';
+    status.classList.remove('error', 'is-success');
     submitButton.disabled = true;
     try {
       const response = await fetch('/api/auth/password-reset/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: document.getElementById('reset-email').value.trim(),
-          delivery: deliverySelect.value
-        })
+        body: JSON.stringify({ email: emailInput.value.trim(), delivery: 'email' })
       });
       const result = await readApiResponse(response);
       if (!response.ok) throw new Error(result.message || 'Unable to request a reset link.');
-      status.textContent = result.message;
-      document.getElementById('reset-email').value = '';
+      status.textContent = `${result.message} Check your inbox (and spam folder) for an email from THE KITCHEN. The link works for one hour.`;
+      status.classList.add('is-success');
+      emailInput.value = '';
     } catch (error) {
       status.textContent = error.message;
       status.classList.add('error');
@@ -153,10 +145,14 @@ if (passwordResetCompleteForm) {
   if (resetToken) {
     requestForm.hidden = true;
     passwordResetCompleteForm.hidden = false;
+    const heading = document.getElementById('reset-heading');
+    const subtitle = document.getElementById('reset-subtitle');
+    if (heading) heading.textContent = 'Choose a new password';
+    if (subtitle) subtitle.textContent = 'You opened the link from your email. Enter a new password (at least 8 characters) and confirm it.';
     window.history.replaceState(null, '', window.location.pathname);
   } else {
     passwordResetCompleteForm.hidden = true;
-    requestStatus.textContent = 'Enter your account email address and we will send a reset link if it is registered.';
+    requestStatus.textContent = '';
   }
 
   passwordResetCompleteForm.addEventListener('submit', async (event) => {
@@ -182,7 +178,8 @@ if (passwordResetCompleteForm) {
       const result = await readApiResponse(response);
       if (!response.ok) throw new Error(result.message || 'Unable to reset your password.');
       passwordResetCompleteForm.reset();
-      completeStatus.textContent = result.message;
+      completeStatus.textContent = `${result.message} Taking you to the login page…`;
+      completeStatus.classList.add('is-success');
       window.setTimeout(() => { window.location.href = 'login.html'; }, 1800);
     } catch (error) {
       completeStatus.textContent = error.message;

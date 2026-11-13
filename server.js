@@ -278,59 +278,6 @@ function getPasswordResetMailer() {
   };
 }
 
-function getWhatsAppPasswordResetConfig() {
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
-  const templateName = process.env.WHATSAPP_RESET_TEMPLATE;
-  const apiVersion = process.env.WHATSAPP_API_VERSION;
-  const baseUrl = getPasswordResetBaseUrl();
-  if (!phoneNumberId || !/^\d+$/.test(phoneNumberId) ||
-      !accessToken || !templateName || !/^[a-z0-9_]+$/i.test(templateName) ||
-      !apiVersion || !/^v\d+\.\d+$/.test(apiVersion) || !baseUrl) {
-    return null;
-  }
-
-  return {
-    phoneNumberId,
-    accessToken,
-    templateName,
-    language: process.env.WHATSAPP_RESET_TEMPLATE_LANGUAGE || 'en',
-    apiVersion,
-    baseUrl
-  };
-}
-
-async function sendWhatsAppPasswordReset(config, phoneNumber, resetUrl) {
-  const response = await fetch(
-    `https://graph.facebook.com/${config.apiVersion}/${config.phoneNumberId}/messages`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${config.accessToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        recipient_type: 'individual',
-        to: phoneNumber.slice(1),
-        type: 'template',
-        template: {
-          name: config.templateName,
-          language: { code: config.language },
-          components: [{
-            type: 'body',
-            parameters: [{ type: 'text', text: resetUrl }]
-          }]
-        }
-      }),
-      signal: AbortSignal.timeout(10000)
-    }
-  );
-  if (!response.ok) {
-    throw new Error(`WhatsApp Cloud API returned HTTP ${response.status}.`);
-  }
-}
-
 function allowPasswordResetRequest(ip) {
   const now = Date.now();
   const windowMs = 15 * 60 * 1000;
@@ -825,17 +772,13 @@ app.post('/api/auth/password-reset/request', async (req, res) => {
     return res.status(429).json({ message: 'Too many reset requests. Please wait 15 minutes and try again.' });
   }
 
-  const delivery = req.body.delivery === undefined ? 'email' : req.body.delivery;
-  if (!['email', 'whatsapp'].includes(delivery)) {
-    return res.status(400).json({ message: 'Choose email or WhatsApp as the reset-link delivery method.' });
+  // Password resets are delivered by email only.
+  if (req.body.delivery !== undefined && req.body.delivery !== 'email') {
+    return res.status(400).json({ message: 'Password reset links are sent by email only.' });
   }
-  const mailer = delivery === 'email' ? getPasswordResetMailer() : null;
-  const whatsapp = delivery === 'whatsapp' ? getWhatsAppPasswordResetConfig() : null;
-  if (delivery === 'email' && !mailer) {
+  const mailer = getPasswordResetMailer();
+  if (!mailer) {
     return res.status(503).json({ message: 'Password reset email is not configured. Please contact the administrator.' });
-  }
-  if (delivery === 'whatsapp' && !whatsapp) {
-    return res.status(503).json({ message: 'WhatsApp password reset is not configured yet. Please contact the administrator or choose email.' });
   }
   const email = normalizeEmail(req.body.email);
   if (!isValidEmail(email)) {
@@ -844,11 +787,10 @@ app.post('/api/auth/password-reset/request', async (req, res) => {
 
   try {
     const user = await get(
-      "SELECT id, full_name, email, recovery_whatsapp FROM users WHERE email = ? AND role = 'staff'",
+      "SELECT id, full_name, email FROM users WHERE email = ? AND role = 'staff'",
       [email]
     );
-    const canDeliver = user && (delivery === 'email' ? user.email : user.recovery_whatsapp);
-    if (canDeliver) {
+    if (user && user.email) {
       const rawToken = crypto.randomBytes(32).toString('hex');
       const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
       await withTransaction(async (transaction) => {
@@ -860,36 +802,25 @@ app.post('/api/auth/password-reset/request', async (req, res) => {
         );
       });
 
-      const resetUrl = new URL('/reset-password.html', delivery === 'email' ? mailer.baseUrl : whatsapp.baseUrl);
+      const resetUrl = new URL('/reset-password.html', mailer.baseUrl);
       resetUrl.searchParams.set('token', rawToken);
       try {
-        if (delivery === 'email') {
-          await mailer.transporter.sendMail({
-            from: mailer.from,
-            to: user.email,
-            subject: 'Reset your THE KITCHEN password',
-            text: `Hello ${user.full_name},\n\nUse this link within one hour to reset your password:\n${resetUrl.toString()}\n\nIf you did not request a password reset, you can ignore this email.`
-          });
-        } else {
-          await sendWhatsAppPasswordReset(whatsapp, user.recovery_whatsapp, resetUrl.toString());
-        }
+        await mailer.transporter.sendMail({
+          from: mailer.from,
+          to: user.email,
+          subject: 'Reset your THE KITCHEN password',
+          text: `Hello ${user.full_name},\n\nUse this link within one hour to reset your password:\n${resetUrl.toString()}\n\nIf you did not request a password reset, you can ignore this email.`
+        });
       } catch (error) {
         await run('DELETE FROM password_reset_tokens WHERE token_hash = ?', [tokenHash]);
         throw error;
       }
     }
-    res.json({
-      message: delivery === 'email'
-        ? 'If an account is registered with that email, a password reset link will be sent shortly.'
-        : 'If an account with a confirmed WhatsApp recovery number is registered with that email, a reset link will be sent shortly.'
-    });
+    // Same reply whether or not the email is registered, so accounts cannot be discovered.
+    res.json({ message: 'If an account is registered with that email, a password reset link will be sent shortly.' });
   } catch (error) {
-    console.error(`Error sending password reset via ${delivery}:`, error);
-    res.status(500).json({
-      message: delivery === 'email'
-        ? 'Unable to send the password reset email right now. Please try again later.'
-        : 'Unable to send the password reset WhatsApp message right now. Please try again later.'
-    });
+    console.error('Error sending password reset email:', error);
+    res.status(500).json({ message: 'Unable to send the password reset email right now. Please try again later.' });
   }
 });
 

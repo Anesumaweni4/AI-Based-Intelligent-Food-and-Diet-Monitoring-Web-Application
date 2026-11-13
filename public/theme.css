@@ -525,6 +525,51 @@
   line-height: 1.55;
 }
 
+/* theme.css gives .auth-form display:grid, which would otherwise override [hidden]
+   (this is what made the "New password" form show on the request step). */
+.auth-body [hidden] {
+  display: none !important;
+}
+
+.field-required {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #fbe3d9;
+  color: #9a3f24;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: 1px;
+}
+
+.field-hint {
+  margin: 8px 0 0;
+  color: var(--muted-ink);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.auth-hint--after {
+  margin: 14px 0 0;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+.auth-body .schedule-status.is-success {
+  border: 1px solid #cfe2d3;
+  background: #eef6ef;
+  color: #2f6b43;
+}
+
+.auth-body .schedule-status.error {
+  border: 1px solid #f1cfc7;
+  background: #fcefec;
+  color: #a12f1a;
+}
+
 .auth-body .schedule-status:empty {
   display: none;
 }

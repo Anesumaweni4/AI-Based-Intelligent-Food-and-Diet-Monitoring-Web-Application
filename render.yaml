@@ -14,3 +14,18 @@ services:
         generateValue: true
       - key: FITBIT_TOKEN_ENCRYPTION_KEY
         generateValue: true
+      # Password reset emails (fill these in on Render; never commit real values)
+      - key: APP_BASE_URL
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_SECURE
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false

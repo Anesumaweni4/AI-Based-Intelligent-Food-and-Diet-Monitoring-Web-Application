@@ -242,9 +242,9 @@ are retained in the database.
 
 ## Student password reset
 
-The login page's **Forgot password?** link lets students request a one-hour, single-use reset link by email or, when configured, WhatsApp. Reset tokens are stored as hashes, and resetting a password signs out that student's existing sessions.
+The login page's **Forgot password?** link lets students request a one-hour, single-use reset link **by email**. Reset tokens are stored as hashes, and resetting a password signs out that student's existing sessions. The page shows the same message whether or not an email is registered, so accounts cannot be discovered through it.
 
-New student registrations must provide an email address. To set a recovery address for an existing student, open **Admin Panel → Account directory**, choose **Clients**, enter the student's email in the **Recovery email** column, and save it. The administrator must confirm the address with the student.
+New student registrations must provide an email address; the server rejects a missing or invalid address and does not allow the same address on two accounts. To set a recovery address for an existing student, open **Admin Panel → Accounts**, choose **Clients**, enter the student's email in the **Recovery email** column, and save it. The administrator must confirm the address with the student.
 
 Configure an SMTP account and the public base URL in the same environment used to start the app. Do not commit SMTP credentials or paste them into chat. For local use, `APP_BASE_URL` must be reachable by the student opening the email link (for example, the computer's LAN address on the same Wi-Fi); for deployment, use the site's HTTPS URL.
 
@@ -259,25 +259,23 @@ $env:SMTP_FROM = "THE KITCHEN <no-reply@example.com>"
 npm.cmd start
 ```
 
-For SMTP port 465, set `SMTP_SECURE` to `"true"`. The app does not load `.env` files automatically; set these variables in the terminal before starting the server.
+For SMTP port 465, set `SMTP_SECURE` to `"true"`. The app does not load `.env` files automatically; set these variables in the terminal before starting the server. Until they are all set, the reset page replies "Password reset email is not configured."
 
-### WhatsApp password-reset links (optional)
+### Setting up reset emails on Render
 
-WhatsApp password reset uses Meta's WhatsApp Business Cloud API. Create and approve a utility message template with one body text placeholder for the reset URL (for example: “Use this link to reset your password within one hour: {{1}}”). Configure the sender's phone-number ID, access token, API version, approved template name, and template language in the server environment. Keep the access token private and never commit it.
+`render.yaml` lists the email settings, so a Blueprint deploy asks for them. For an existing service, add them under **Render dashboard → your service → Environment**, then redeploy:
 
-```powershell
-$env:APP_BASE_URL = "https://your-app.example.com"
-$env:WHATSAPP_PHONE_NUMBER_ID = "your-meta-phone-number-id"
-$env:WHATSAPP_ACCESS_TOKEN = "your-private-meta-access-token"
-$env:WHATSAPP_API_VERSION = "vXX.X"
-$env:WHATSAPP_RESET_TEMPLATE = "your_approved_reset_template"
-$env:WHATSAPP_RESET_TEMPLATE_LANGUAGE = "en"
-npm.cmd start
-```
+| Variable | Example (Gmail) |
+| --- | --- |
+| `APP_BASE_URL` | `https://your-app.onrender.com` (your service URL, HTTPS) |
+| `SMTP_HOST` | `smtp.gmail.com` |
+| `SMTP_PORT` | `465` |
+| `SMTP_SECURE` | `true` |
+| `SMTP_USER` | the Gmail address that sends the emails |
+| `SMTP_PASS` | a Google **App password** for that account (not the normal password) |
+| `SMTP_FROM` | `THE KITCHEN <the same Gmail address>` |
 
-Use the current API version supported by your Meta app instead of `vXX.X`. For local testing, `APP_BASE_URL` must be reachable from the phone opening the WhatsApp message; `localhost` is only reachable from the same computer, so use a secure, reachable development URL when testing on a phone.
-
-Before a student can choose WhatsApp recovery, an administrator must open **Admin Panel → Account directory → Clients**, enter the student's phone number in international E.164 format (for example, `+263771234567`), confirm the student agreed to use it for recovery, and save it. This is an administrator-confirmed recovery number; the app does not independently verify phone ownership. Keep email recovery available as a fallback.
+A Gmail App password requires 2-Step Verification on the Google account (Google Account → Security → App passwords). Any other SMTP provider works the same way with its own host, port and login.
 
 ## Diet monitoring model demo
 
