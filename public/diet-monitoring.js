@@ -137,6 +137,7 @@ function renderHero(data) {
     chips.push(`<span class="dm-chip dm-chip--risk-${escapeHtml(level)}">${label}</span>`);
   }
   chips.push(`<span class="dm-chip">💧 ${data.water.glasses}/${data.water.targetGlasses} glasses</span>`);
+  if (data.health && data.health.today) chips.push(`<span class="dm-chip">👟 ${formatNumber(data.health.today.steps)} steps</span>`);
   $('dm-hero-chips').innerHTML = chips.join('');
 }
 
@@ -624,6 +625,97 @@ function renderBody(data) {
 let planSeed = 0;
 
 // ---------------------------------------------------------------------------
+// iPhone steps (Apple Health via Shortcuts)
+// ---------------------------------------------------------------------------
+function formatSyncTime(value) {
+  if (!value) return '';
+  const text = String(value).replace(' ', 'T').slice(0, 19);
+  const date = new Date(text);
+  if (Number.isNaN(date.getTime())) return '';
+  const today = new Date();
+  const sameDay = date.toDateString() === today.toDateString();
+  const time = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  return sameDay ? `today at ${time}` : `${date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })} at ${time}`;
+}
+
+function renderIphone(data) {
+  const health = data.health;
+  const status = $('dm-iphone-status');
+  status.textContent = health.connected
+    ? (health.lastSyncAt ? `Synced ${formatSyncTime(health.lastSyncAt)}` : 'Waiting for first sync')
+    : 'Not connected';
+  status.classList.toggle('dm2-pill--green', Boolean(health.connected && health.lastSyncAt));
+
+  const today = health.today;
+  $('dm-steps').innerHTML = today
+    ? `
+      <span class="dm2-steps-label">Today from your iPhone</span>
+      <strong>${formatNumber(today.steps)}</strong>
+      <span class="dm2-steps-unit">steps</span>
+      <div class="dm2-steps-meta">
+        <span><b>${today.stepMinutes}</b> active min</span>
+        <span><b>${formatNumber(today.activeKcal)}</b> Move kcal</span>
+      </div>`
+    : `
+      <span class="dm2-steps-label">Today from your iPhone</span>
+      <strong class="is-empty">—</strong>
+      <span class="dm2-steps-unit">${health.connected ? 'No steps synced yet today. Run the shortcut or wait for 21:00.' : 'Connect your iPhone to bring in steps automatically.'}</span>`;
+
+  $('dm-iphone-actions').innerHTML = health.connected
+    ? `
+      <button type="button" class="dm-btn dm-btn--ghost" data-health-action="new">Get a new key</button>
+      <button type="button" class="dm-btn dm-btn--ghost dm2-btn-danger" data-health-action="off">Turn off</button>`
+    : `
+      <button type="button" class="dm-btn dm-btn--primary" data-health-action="new">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
+        Set up iPhone sync
+      </button>`;
+  if (!health.connected) $('dm-guide').open = true;
+}
+
+$('dm-iphone-actions').addEventListener('click', async (event) => {
+  const button = event.target.closest('[data-health-action]');
+  if (!button) return;
+  button.disabled = true;
+  try {
+    if (button.dataset.healthAction === 'off') {
+      const result = await requestDietApi('/api/diet/health-key', { method: 'DELETE' });
+      $('dm-key-box').hidden = true;
+      await loadDietData();
+      showDietStatus(result.message);
+      return;
+    }
+    const result = await requestDietApi('/api/diet/health-key', { method: 'POST' });
+    $('dm-sync-url').value = `${window.location.origin}/api/diet/health-sync`;
+    $('dm-sync-key').value = result.key;
+    $('dm-key-box').hidden = false;
+    $('dm-guide').open = true;
+    await loadDietData();
+    showDietStatus(result.message);
+    $('dm-key-box').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } catch (error) {
+    showDietStatus(error.message, true);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+document.querySelector('.dm2-iphone').addEventListener('click', async (event) => {
+  const button = event.target.closest('[data-copy]');
+  if (!button) return;
+  const input = $(button.dataset.copy);
+  try {
+    await navigator.clipboard.writeText(input.value);
+  } catch {
+    input.select();
+    document.execCommand('copy');
+  }
+  const label = button.textContent;
+  button.textContent = 'Copied ✓';
+  setTimeout(() => { button.textContent = label; }, 1500);
+});
+
+// ---------------------------------------------------------------------------
 // Load + render
 // ---------------------------------------------------------------------------
 function renderAll(data) {
@@ -633,6 +725,7 @@ function renderAll(data) {
   renderProfile(data);
   renderTips(data);
   renderWater(data);
+  renderIphone(data);
   renderTargets(data);
   renderInsight(data);
   renderFoodList();

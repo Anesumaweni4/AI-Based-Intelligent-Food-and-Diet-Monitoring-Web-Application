@@ -1361,6 +1361,60 @@ app.put('/api/diet/profile', requireStudentApi, async (req, res) => {
   }
 });
 
+// Phone step sync. The iPhone Shortcuts app posts here with the student's
+// personal key (no browser session), so the key itself is the credential.
+const healthSyncAttempts = new Map();
+function allowHealthSync(ip) {
+  const now = Date.now();
+  const recent = (healthSyncAttempts.get(ip) || []).filter((time) => now - time < 60 * 60 * 1000);
+  if (recent.length >= 60) {
+    healthSyncAttempts.set(ip, recent);
+    return false;
+  }
+  recent.push(now);
+  healthSyncAttempts.set(ip, recent);
+  return true;
+}
+
+app.post('/api/diet/health-sync', async (req, res) => {
+  if (!allowHealthSync(req.ip)) {
+    return res.status(429).json({ message: 'Too many syncs. Please try again in an hour.' });
+  }
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const key = req.get('X-Health-Key') || body.key;
+  try {
+    const result = await dietService.syncHealth({ key, steps: body.steps, kcal: body.kcal, date: body.date });
+    const { status, ...payload } = result;
+    res.status(status).json(payload);
+  } catch (error) {
+    console.error('Error syncing phone steps:', error);
+    res.status(500).json({ message: 'Unable to sync steps right now.' });
+  }
+});
+
+app.post('/api/diet/health-key', requireStudentApi, async (req, res) => {
+  try {
+    const key = await dietService.createHealthKey(req.accountUser.id);
+    res.status(201).json({
+      message: 'Your personal key is ready. Copy it into the shortcut now; it is only shown once.',
+      key
+    });
+  } catch (error) {
+    console.error('Error creating health key:', error);
+    res.status(500).json({ message: 'Unable to create a personal key.' });
+  }
+});
+
+app.delete('/api/diet/health-key', requireStudentApi, async (req, res) => {
+  try {
+    await dietService.revokeHealthKey(req.accountUser.id);
+    res.json({ message: 'iPhone sync turned off. The old key no longer works.' });
+  } catch (error) {
+    console.error('Error revoking health key:', error);
+    res.status(500).json({ message: 'Unable to turn off iPhone sync.' });
+  }
+});
+
 app.put('/api/diet/body-goal', requireStudentApi, async (req, res) => {
   const bodyGoal = typeof req.body.bodyGoal === 'string' ? req.body.bodyGoal : '';
   if (!Object.prototype.hasOwnProperty.call(BODY_GOALS, bodyGoal)) {

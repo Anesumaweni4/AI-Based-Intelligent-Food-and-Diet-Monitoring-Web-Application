@@ -4095,3 +4095,151 @@
 @media (prefers-reduced-motion: reduce) {
   .dm2-ring, .dm2-glass-fill { transition: none; }
 }
+
+/* iPhone steps card */
+.dm2-iphone-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 2fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.dm2-steps {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+  padding: 20px;
+  border-radius: 20px;
+  background: radial-gradient(90% 120% at 100% 0%, rgba(90, 200, 250, 0.25), transparent 60%), #17110e;
+  color: #fff;
+}
+
+.dm2-steps-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.dm2-steps strong {
+  color: #5ac8fa;
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 600;
+  line-height: 1.05;
+}
+
+.dm2-steps strong.is-empty { color: rgba(255, 255, 255, 0.4); }
+
+.dm2-steps-unit {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.dm2-steps-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 12px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.84rem;
+}
+
+.dm2-steps-meta b { color: #fff; }
+
+.dm2-iphone-setup {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.dm2-iphone-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dm2-btn-danger { color: #a33a22; }
+.dm2-btn-danger:hover:not(:disabled) { border-color: #a33a22; }
+
+.dm2-pill--green {
+  background: var(--dm-good-bg);
+  color: #2f6141;
+}
+
+.dm2-key {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #f0d6a8;
+  border-radius: 16px;
+  background: #fffaf0;
+}
+
+.dm2-key[hidden] { display: none; }
+
+.dm2-key-warning {
+  margin: 0;
+  color: #8a5e12;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.dm2-copy-row {
+  display: flex;
+  gap: 8px;
+}
+
+.client-body .dm2-copy-row input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.82rem;
+  background: #fff;
+}
+
+.dm2-guide {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #faf6f0;
+}
+
+.dm2-guide summary {
+  padding: 14px 16px;
+  color: var(--terracotta);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dm2-guide-steps {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0 18px 4px 38px;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.dm2-guide-steps ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.dm2-guide-steps code {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--terracotta-dark);
+  font-size: 0.82rem;
+}
+
+.dm2-guide > p {
+  margin: 8px 16px 14px;
+}
+
+@media (max-width: 760px) {
+  .dm2-iphone-grid { grid-template-columns: minmax(0, 1fr); }
+}

@@ -34,7 +34,7 @@ function postgresSql(sql) {
 }
 
 function postgresRun(client, sql, params = []) {
-  const isInsertWithId = /^\s*INSERT\s+INTO\s+(?!"?(?:menu_schedule|monthly_invoice_orders|client_feedback_photos)\b)/i.test(sql);
+  const isInsertWithId = /^\s*INSERT\s+INTO\s+(?!"?(?:menu_schedule|monthly_invoice_orders|client_feedback_photos|diet_profiles|fitbit_connections|diet_health_keys)\b)/i.test(sql);
   const statement = isInsertWithId && !/\bRETURNING\b/i.test(sql)
     ? `${sql.trim().replace(/;$/, '')} RETURNING id`
     : sql;
@@ -1037,6 +1037,74 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     `);
   }
 
+  // Apple Health / phone step sync: a personal key per student and one row of steps per day.
+  if (postgresPool) {
+    await postgresPool.query(`
+      CREATE TABLE IF NOT EXISTS diet_health_keys (
+        user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        key_hash VARCHAR(64) NOT NULL UNIQUE,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        last_sync_at TIMESTAMP
+      )
+    `);
+    await postgresPool.query(`
+      CREATE TABLE IF NOT EXISTS diet_step_logs (
+        id BIGSERIAL PRIMARY KEY,
+        user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        day VARCHAR(10) NOT NULL,
+        steps INTEGER NOT NULL,
+        active_kcal DECIMAL(8,1) NOT NULL DEFAULT 0,
+        source VARCHAR(20) NOT NULL DEFAULT 'apple-health',
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (user_id, day)
+      )
+    `);
+  } else if (sqliteDb) {
+    await sqliteRun(`
+      CREATE TABLE IF NOT EXISTS diet_health_keys (
+        user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        key_hash TEXT NOT NULL UNIQUE,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        last_sync_at DATETIME
+      )
+    `);
+    await sqliteRun(`
+      CREATE TABLE IF NOT EXISTS diet_step_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        day TEXT NOT NULL,
+        steps INTEGER NOT NULL,
+        active_kcal DECIMAL(8,1) NOT NULL DEFAULT 0,
+        source TEXT NOT NULL DEFAULT 'apple-health',
+        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (user_id, day)
+      )
+    `);
+  } else {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS diet_health_keys (
+        user_id INT PRIMARY KEY,
+        key_hash VARCHAR(64) NOT NULL UNIQUE,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        last_sync_at TIMESTAMP NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS diet_step_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        day VARCHAR(10) NOT NULL,
+        steps INT NOT NULL,
+        active_kcal DECIMAL(8,1) NOT NULL DEFAULT 0,
+        source VARCHAR(20) NOT NULL DEFAULT 'apple-health',
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_diet_step_user_day (user_id, day),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+  }
+
   if (postgresPool) {
     await postgresPool.query(`
       CREATE TABLE IF NOT EXISTS fitbit_connections (
@@ -1160,6 +1228,8 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
       'diet_meal_logs',
       'diet_feedback',
       'diet_activity_logs',
+      'diet_health_keys',
+      'diet_step_logs',
       'fitbit_connections',
       'client_feedback',
       'client_feedback_photos'

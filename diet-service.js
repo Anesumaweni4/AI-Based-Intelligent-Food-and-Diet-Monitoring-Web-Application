@@ -1,5 +1,6 @@
 // Diet monitoring data layer: turns food diaries, collected orders and
 // activity check-ins into daily records, then runs diet-model.js on them.
+const crypto = require('crypto');
 const { get, all, run, withTransaction } = require('./db');
 const model = require('./diet-model');
 const { getNutrition, getOutsideFood, listOutsideFoods } = require('./nutrition');
@@ -10,6 +11,15 @@ const ACTIVITY_TYPES = ['walking', 'running', 'sport', 'gym', 'dancing', 'cyclin
 const INTENSITY_WEIGHT = { light: 0.5, moderate: 1, vigorous: 2 };
 const SLOT_DEFAULT_TIME = { breakfast: '08:00:00', lunch: '13:00:00', supper: '19:00:00', snack: '16:00:00', late: '22:00:00' };
 const MAX_ORDER_SERVINGS = 3;
+// Phone steps -> active minutes: steps above an everyday baseline of 3,000,
+// at about 100 steps a minute of brisk walking (capped at 120 minutes).
+const BASELINE_STEPS = 3000;
+const STEPS_PER_ACTIVE_MINUTE = 100;
+const MAX_STEP_MINUTES = 120;
+
+function stepMinutes(steps) {
+  return Math.min(MAX_STEP_MINUTES, Math.max(0, Math.round((Number(steps) - BASELINE_STEPS) / STEPS_PER_ACTIVE_MINUTE)));
+}
 
 // ---------------------------------------------------------------------------
 // Time helpers. Diet records are stored as local wall-clock time in TIME_ZONE.
@@ -135,11 +145,12 @@ function emptyDay(date, dayIndex) {
   return {
     date, dayIndex,
     calories: 0, protein: 0, carbohydrates: 0, fat: 0, fiber: 0, sugar: 0,
-    meals: 0, breakfast: false, late: false, activeMinutes: 0, items: 0
+    meals: 0, breakfast: false, late: false, activeMinutes: 0, items: 0,
+    steps: null, stepMinutes: 0, loggedActivityMinutes: 0
   };
 }
 
-function summariseDays(dayKeys, logs, activities) {
+function summariseDays(dayKeys, logs, activities, stepLogs = []) {
   const days = new Map(dayKeys.map((date, index) => [date, { ...emptyDay(date, index), _slots: new Set() }]));
   for (const log of logs) {
     const wall = storedWall(log.eaten_at);
@@ -160,8 +171,18 @@ function summariseDays(dayKeys, logs, activities) {
     if (!day) continue;
     day.activeMinutes += (Number(activity.minutes) || 0) * (INTENSITY_WEIGHT[activity.intensity] || 1);
   }
+  for (const stepLog of stepLogs) {
+    const day = days.get(String(stepLog.day));
+    if (!day) continue;
+    day.steps = Number(stepLog.steps) || 0;
+    day.stepMinutes = stepMinutes(day.steps);
+  }
   return dayKeys.map((date) => {
     const day = days.get(date);
+    // Logged activity and phone steps often describe the same walk, so take
+    // whichever is larger instead of adding them.
+    day.loggedActivityMinutes = day.activeMinutes;
+    day.activeMinutes = Math.max(day.activeMinutes, day.stepMinutes);
     day.meals = day._slots.size;
     day.breakfast = day._slots.has('breakfast');
     delete day._slots;
@@ -178,11 +199,11 @@ function isLoggedDay(day) {
 
 // Builds targets, today's score, the 7-day chart and the ML analysis for one
 // student from their raw rows. `history` = 7 complete days before today.
-function analyseStudent(user, logs, activities) {
+function analyseStudent(user, logs, activities, stepLogs = []) {
   const today = todayKey();
   const historyKeys = Array.from({ length: 7 }, (_, index) => addDays(today, index - 7));
-  const history = summariseDays(historyKeys, logs, activities);
-  const [todayRecord] = summariseDays([today], logs, activities);
+  const history = summariseDays(historyKeys, logs, activities, stepLogs);
+  const [todayRecord] = summariseDays([today], logs, activities, stepLogs);
   const averageActiveMinutes = history.reduce((sum, day) => sum + day.activeMinutes, 0) / 7;
   const targets = model.computeTargets({
     age: user.age, weight: user.weight, height: user.height, sex: user.sex, averageActiveMinutes,
@@ -201,13 +222,14 @@ function analyseStudent(user, logs, activities) {
     fiber: day.fiber,
     sugar: day.sugar,
     activeMinutes: day.activeMinutes,
+    steps: day.steps,
     isToday: day.date === today
   }));
   return { targets, analysis, todayRecord, todayScore, week, history };
 }
 
 async function loadRows(userIds) {
-  if (!userIds.length) return { logs: [], activities: [] };
+  if (!userIds.length) return { logs: [], activities: [], steps: [] };
   const today = todayKey();
   const start = `${addDays(today, -7)} 00:00:00`;
   const end = `${addDays(today, 1)} 00:00:00`;
@@ -227,7 +249,13 @@ async function loadRows(userIds) {
      ORDER BY logged_at DESC, id DESC`,
     [...userIds, start, end]
   );
-  return { logs, activities };
+  const steps = await all(
+    `SELECT user_id, day, steps, active_kcal, source, updated_at
+     FROM diet_step_logs
+     WHERE user_id IN (${placeholders}) AND day >= ? AND day <= ?`,
+    [...userIds, addDays(today, -7), today]
+  );
+  return { logs, activities, steps };
 }
 
 // ---------------------------------------------------------------------------
@@ -248,9 +276,14 @@ async function getCohort({ fresh = false } = {}) {
      FROM users u LEFT JOIN diet_profiles p ON p.user_id = u.id
      WHERE u.role = 'staff'`
   );
-  const { logs, activities } = await loadRows(users.map((user) => user.id));
+  const { logs, activities, steps } = await loadRows(users.map((user) => user.id));
   const logsByUser = new Map();
   const activitiesByUser = new Map();
+  const stepsByUser = new Map();
+  for (const stepLog of steps) {
+    if (!stepsByUser.has(Number(stepLog.user_id))) stepsByUser.set(Number(stepLog.user_id), []);
+    stepsByUser.get(Number(stepLog.user_id)).push(stepLog);
+  }
   for (const log of logs) {
     if (!logsByUser.has(Number(log.user_id))) logsByUser.set(Number(log.user_id), []);
     logsByUser.get(Number(log.user_id)).push(log);
@@ -260,7 +293,7 @@ async function getCohort({ fresh = false } = {}) {
     activitiesByUser.get(Number(activity.user_id)).push(activity);
   }
   const students = users.map((user) => {
-    const result = analyseStudent(user, logsByUser.get(Number(user.id)) || [], activitiesByUser.get(Number(user.id)) || []);
+    const result = analyseStudent(user, logsByUser.get(Number(user.id)) || [], activitiesByUser.get(Number(user.id)) || [], stepsByUser.get(Number(user.id)) || []);
     return {
       userId: Number(user.id),
       profileComplete: result.targets.complete,
@@ -298,9 +331,11 @@ async function getPeerPopularity(clusterId, excludeUserId) {
 async function getStudentDashboard(userId) {
   await syncOrderMeals(userId);
   const user = await loadStudent(userId);
-  const { logs, activities } = await loadRows([userId]);
-  const result = analyseStudent(user, logs, activities);
+  const { logs, activities, steps } = await loadRows([userId]);
+  const result = analyseStudent(user, logs, activities, steps);
   const today = todayKey();
+  const healthKey = await get('SELECT created_at, last_sync_at FROM diet_health_keys WHERE user_id = ?', [userId]);
+  const todaySteps = steps.find((stepLog) => String(stepLog.day) === today);
 
   const goal = user.goal || 'balanced';
   const menuItems = await all('SELECT id, name, category, price, stock_quantity FROM menu_items ORDER BY name');
@@ -348,6 +383,15 @@ async function getStudentDashboard(userId) {
     body: coach.bodyMetrics(user),
     bodyGoals: Object.entries(model.BODY_GOALS).map(([key, value]) => ({ key, label: value.label })),
     water: { ml: waterMl, target: waterTarget, glasses: Math.round(waterMl / 250), targetGlasses: Math.round(waterTarget / 250) },
+    health: {
+      connected: Boolean(healthKey),
+      keyCreatedAt: healthKey ? healthKey.created_at : null,
+      lastSyncAt: healthKey && healthKey.last_sync_at ? healthKey.last_sync_at : null,
+      today: todaySteps
+        ? { steps: Number(todaySteps.steps), activeKcal: Number(todaySteps.active_kcal), stepMinutes: stepMinutes(todaySteps.steps), source: todaySteps.source }
+        : null,
+      rule: { baselineSteps: BASELINE_STEPS, stepsPerMinute: STEPS_PER_ACTIVE_MINUTE }
+    },
     tips: coach.coachTips({
       today: result.todayRecord, targets: result.targets, currentSlot, waterMl, waterTarget, mealsBySlot
     }),
@@ -412,10 +456,95 @@ async function loadStudent(userId) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Phone step sync (Apple Health via the Shortcuts app, or any client with a key)
+// ---------------------------------------------------------------------------
+function hashHealthKey(key) {
+  return crypto.createHash('sha256').update(String(key)).digest('hex');
+}
+
+async function createHealthKey(userId) {
+  const key = `tk_${crypto.randomBytes(24).toString('base64url')}`;
+  await withTransaction(async (transaction) => {
+    await transaction.run('DELETE FROM diet_health_keys WHERE user_id = ?', [userId]);
+    await transaction.run('INSERT INTO diet_health_keys (user_id, key_hash) VALUES (?, ?)', [userId, hashHealthKey(key)]);
+  });
+  return key;
+}
+
+async function revokeHealthKey(userId) {
+  const result = await run('DELETE FROM diet_health_keys WHERE user_id = ?', [userId]);
+  return result.changes > 0;
+}
+
+// Shortcuts can send numbers as text, with units or a decimal comma ("33,5 kcal").
+function parseHealthNumber(value) {
+  if (typeof value === 'number') return value;
+  if (typeof value !== 'string') return NaN;
+  let text = value.trim().replace(/[^\d.,-]/g, '');
+  if (/^\d+,\d{1,2}$/.test(text)) text = text.replace(',', '.');
+  else text = text.replace(/,/g, '');
+  return text ? Number(text) : NaN;
+}
+
+async function syncHealth({ key, steps, kcal, date }) {
+  if (typeof key !== 'string' || !/^tk_[A-Za-z0-9_-]{20,}$/.test(key.trim())) {
+    return { status: 401, message: 'Missing or invalid personal key. Copy it again from the Diet page.' };
+  }
+  const owner = await get('SELECT user_id FROM diet_health_keys WHERE key_hash = ?', [hashHealthKey(key.trim())]);
+  if (!owner) {
+    return { status: 401, message: 'This personal key is not active. Create a new one on the Diet page.' };
+  }
+  const parsedSteps = Math.round(parseHealthNumber(steps));
+  const parsedKcal = kcal === undefined || kcal === null || kcal === '' ? 0 : parseHealthNumber(kcal);
+  if (!Number.isFinite(parsedSteps) || parsedSteps < 0 || parsedSteps > 100000) {
+    return { status: 400, message: 'Steps must be a number between 0 and 100,000.' };
+  }
+  if (!Number.isFinite(parsedKcal) || parsedKcal < 0 || parsedKcal > 5000) {
+    return { status: 400, message: 'Move calories must be a number between 0 and 5,000.' };
+  }
+  const today = todayKey();
+  let day = today;
+  if (date !== undefined && date !== null && date !== '') {
+    day = String(date).slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || day > today || day < addDays(today, -7)) {
+      return { status: 400, message: 'The date must be today or within the last 7 days (YYYY-MM-DD).' };
+    }
+  }
+
+  const userId = Number(owner.user_id);
+  const now = wallClock();
+  await withTransaction(async (transaction) => {
+    const existing = await transaction.get('SELECT id FROM diet_step_logs WHERE user_id = ? AND day = ?', [userId, day]);
+    if (existing) {
+      await transaction.run(
+        "UPDATE diet_step_logs SET steps = ?, active_kcal = ?, source = 'apple-health', updated_at = ? WHERE id = ?",
+        [parsedSteps, Math.round(parsedKcal * 10) / 10, now, existing.id]
+      );
+    } else {
+      await transaction.run(
+        "INSERT INTO diet_step_logs (user_id, day, steps, active_kcal, source, updated_at) VALUES (?, ?, ?, ?, 'apple-health', ?)",
+        [userId, day, parsedSteps, Math.round(parsedKcal * 10) / 10, now]
+      );
+    }
+    await transaction.run('UPDATE diet_health_keys SET last_sync_at = ? WHERE user_id = ?', [now, userId]);
+  });
+  invalidateCohort();
+  const minutes = stepMinutes(parsedSteps);
+  return {
+    status: 200,
+    message: `Synced ${parsedSteps.toLocaleString('en-US')} steps to THE KITCHEN${minutes ? ` (${minutes} active minutes)` : ''}.`,
+    day,
+    steps: parsedSteps,
+    activeKcal: Math.round(parsedKcal * 10) / 10,
+    activeMinutes: minutes
+  };
+}
+
 async function getMealPlan(userId, seed = 0) {
   const user = await loadStudent(userId);
-  const { logs, activities } = await loadRows([userId]);
-  const result = analyseStudent(user, logs, activities);
+  const { logs, activities, steps } = await loadRows([userId]);
+  const result = analyseStudent(user, logs, activities, steps);
   const menuItems = await all('SELECT id, name, category, price, stock_quantity FROM menu_items ORDER BY name');
   const inStock = menuItems.filter((item) => item.stock_quantity === null || item.stock_quantity === undefined || Number(item.stock_quantity) > 0);
   const available = inStock.length >= 5 ? inStock : menuItems;
@@ -577,6 +706,9 @@ module.exports = {
   TIME_ZONE,
   getStudentDashboard,
   getMealPlan,
+  createHealthKey,
+  revokeHealthKey,
+  syncHealth,
   saveDietProfile,
   getAdminInsights,
   logMeal,
@@ -587,5 +719,5 @@ module.exports = {
   syncOrderMeals,
   invalidateCohort,
   // exported for tests
-  _internal: { wallClock, storedWall, utcStoredToInstant, slotForWall, summariseDays, addDays }
+  _internal: { wallClock, storedWall, utcStoredToInstant, slotForWall, summariseDays, addDays, stepMinutes, parseHealthNumber }
 };

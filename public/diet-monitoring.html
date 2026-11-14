@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
     <link rel="stylesheet" href="styles.css?v=meal-card-health-tip-3" />
     <link rel="stylesheet" href="theme.css?v=diet-ai-1" />
-    <link rel="stylesheet" href="client.css?v=diet-coach-1" />
+    <link rel="stylesheet" href="client.css?v=iphone-sync-1" />
   </head>
   <body class="client-body dm-page">
     <header class="client-topbar">
@@ -299,6 +299,59 @@
               </div>
             </section>
           </div>
+          <section class="dm-card dm2-iphone" id="dm-iphone" aria-labelledby="dm-iphone-title">
+            <div class="dm-card-head">
+              <div>
+                <p class="eyebrow">Apple Health</p>
+                <h3 id="dm-iphone-title">iPhone steps</h3>
+              </div>
+              <span class="dm2-pill" id="dm-iphone-status">Not connected</span>
+            </div>
+            <div class="dm2-iphone-grid">
+              <div class="dm2-steps" id="dm-steps" aria-live="polite"></div>
+              <div class="dm2-iphone-setup">
+                <div id="dm-iphone-actions" class="dm2-iphone-actions"></div>
+                <div class="dm2-key" id="dm-key-box" hidden>
+                  <p class="dm2-key-warning">Copy these into your shortcut now. For your safety the key is only shown once.</p>
+                  <label class="dm-field">
+                    <span>Sync address (URL)</span>
+                    <div class="dm2-copy-row">
+                      <input id="dm-sync-url" type="text" readonly />
+                      <button type="button" class="dm-btn dm-btn--ghost" data-copy="dm-sync-url">Copy</button>
+                    </div>
+                  </label>
+                  <label class="dm-field">
+                    <span>Your personal key</span>
+                    <div class="dm2-copy-row">
+                      <input id="dm-sync-key" type="text" readonly />
+                      <button type="button" class="dm-btn dm-btn--ghost" data-copy="dm-sync-key">Copy</button>
+                    </div>
+                  </label>
+                </div>
+                <details class="dm2-guide" id="dm-guide">
+                  <summary>How to set up the shortcut (about 3 minutes)</summary>
+                  <ol class="dm2-guide-steps">
+                    <li><b>Get your key:</b> tap <em>Set up iPhone sync</em> above and keep this page open.</li>
+                    <li>On your iPhone open the <b>Shortcuts</b> app → tap <b>+</b> → name it <b>Sync to THE KITCHEN</b>.</li>
+                    <li>Add <b>Find Health Samples</b>: Type <b>Steps</b>, add the filter <b>Start Date is Today</b>.</li>
+                    <li>Add <b>Calculate Statistics</b>: <b>Sum</b> of Health Samples.</li>
+                    <li>Add another <b>Find Health Samples</b>: Type <b>Active Energy</b>, <b>Start Date is Today</b>, then another <b>Calculate Statistics → Sum</b>.</li>
+                    <li>Add <b>Get Contents of URL</b>: paste the <b>sync address</b>. Tap <b>Show More</b> → Method <b>POST</b> → Request Body <b>JSON</b> and add three fields:
+                      <ul>
+                        <li><code>key</code> (Text) = your personal key</li>
+                        <li><code>steps</code> (Number) = the first <em>Statistics</em> result</li>
+                        <li><code>kcal</code> (Number) = the second <em>Statistics</em> result</li>
+                      </ul>
+                    </li>
+                    <li>Optional: add <b>Show Notification</b> with the text <em>Synced to THE KITCHEN ✅</em>.</li>
+                    <li>Tap ▶ to run it once and <b>allow</b> Health access and the connection to the site. Your steps appear here.</li>
+                    <li><b>Make it automatic:</b> Shortcuts → <b>Automation</b> → <b>+</b> → <b>Time of Day</b> → 21:00, <b>Daily</b> → <b>Run Immediately</b> → choose <b>Sync to THE KITCHEN</b>.</li>
+                  </ol>
+                  <p class="dm-muted dm-small">Steps above an everyday 3,000 count as active minutes (about 100 steps a minute of brisk walking), so a long walk fills your Move ring. If you also log the same walk, only the bigger number counts. Android phones: connect Fitbit or log activity above.</p>
+                </details>
+              </div>
+            </div>
+          </section>
         </section>
 
         <!-- ============ MEAL PLAN ============ -->
@@ -476,6 +529,6 @@
     </dialog>
 
     <script src="client-shell.js?v=client-redesign-1"></script>
-    <script src="diet-monitoring.js?v=diet-coach-1"></script>
+    <script src="diet-monitoring.js?v=iphone-sync-1"></script>
   </body>
 </html>
