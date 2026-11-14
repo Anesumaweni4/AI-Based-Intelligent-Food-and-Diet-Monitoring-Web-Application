@@ -947,6 +947,7 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
   // Diet monitoring v2: sex for energy targets, richer meal logs, activity logs.
   if (postgresPool) {
     await postgresPool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS sex VARCHAR(8)');
+    await postgresPool.query("ALTER TABLE diet_profiles ADD COLUMN IF NOT EXISTS body_goal VARCHAR(16) NOT NULL DEFAULT 'maintain'");
     await postgresPool.query('ALTER TABLE diet_meal_logs ADD COLUMN IF NOT EXISTS sugar DECIMAL(8,1) NOT NULL DEFAULT 0');
     await postgresPool.query('ALTER TABLE diet_meal_logs ADD COLUMN IF NOT EXISTS meal_slot VARCHAR(16)');
     await postgresPool.query("ALTER TABLE diet_meal_logs ADD COLUMN IF NOT EXISTS source VARCHAR(16) NOT NULL DEFAULT 'manual'");
@@ -967,6 +968,8 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
   } else if (sqliteDb) {
     const userColumns = new Set((await sqliteAll('PRAGMA table_info(users)')).map((column) => column.name));
     if (!userColumns.has('sex')) await sqliteRun('ALTER TABLE users ADD COLUMN sex TEXT');
+    const profileColumns = new Set((await sqliteAll('PRAGMA table_info(diet_profiles)')).map((column) => column.name));
+    if (!profileColumns.has('body_goal')) await sqliteRun("ALTER TABLE diet_profiles ADD COLUMN body_goal TEXT NOT NULL DEFAULT 'maintain'");
     const mealColumns = new Set((await sqliteAll('PRAGMA table_info(diet_meal_logs)')).map((column) => column.name));
     const mealColumnDefinitions = [
       ['sugar', 'ALTER TABLE diet_meal_logs ADD COLUMN sugar DECIMAL(8,1) NOT NULL DEFAULT 0'],
@@ -997,6 +1000,13 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     );
     if (!userRows.some((row) => row.COLUMN_NAME === 'sex')) {
       await pool.query('ALTER TABLE users ADD COLUMN sex VARCHAR(8) NULL');
+    }
+    const [profileRows] = await pool.query(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'diet_profiles'`,
+      [dbConfig.database]
+    );
+    if (!profileRows.some((row) => row.COLUMN_NAME === 'body_goal')) {
+      await pool.query("ALTER TABLE diet_profiles ADD COLUMN body_goal VARCHAR(16) NOT NULL DEFAULT 'maintain'");
     }
     const [mealRows] = await pool.query(
       `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'diet_meal_logs'`,

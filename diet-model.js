@@ -51,23 +51,45 @@ function activityFactor(averageActiveMinutes) {
   return 1.85;
 }
 
-function computeTargets({ age, weight, height, sex, averageActiveMinutes = 0 }) {
+// Body goals adjust the energy and protein targets. Weight loss uses a gentle
+// 15% deficit, never below 1.1 x resting energy, and is not applied to
+// underweight students or under-18s.
+const BODY_GOALS = {
+  maintain: { label: 'Stay healthy', energy: 1, proteinPerKg: 0.8 },
+  lose: { label: 'Lose weight gently', energy: 0.85, proteinPerKg: 1.2 },
+  gain: { label: 'Gain weight', energy: 1.1, proteinPerKg: 1.0 },
+  muscle: { label: 'Build muscle', energy: 1.05, proteinPerKg: 1.6 }
+};
+
+function computeTargets({ age, weight, height, sex, averageActiveMinutes = 0, bodyGoal = 'maintain' }) {
   const parsedAge = Number(age);
   const parsedWeight = Number(weight);
   const parsedHeight = Number(height);
   const complete = parsedAge > 0 && parsedWeight > 0 && parsedHeight > 0 && (sex === 'female' || sex === 'male');
   const pal = activityFactor(averageActiveMinutes);
+  const bmi = parsedWeight > 0 && parsedHeight > 0 ? parsedWeight / ((parsedHeight / 100) ** 2) : null;
+
+  let goalKey = BODY_GOALS[bodyGoal] ? bodyGoal : 'maintain';
+  let goalNote = null;
+  if (goalKey === 'lose' && ((bmi !== null && bmi < 18.5) || (parsedAge > 0 && parsedAge < 18))) {
+    goalKey = 'maintain';
+    goalNote = bmi !== null && bmi < 18.5
+      ? 'Your BMI is already below the healthy range, so your target is set to stay healthy instead of losing weight.'
+      : 'Under 18s get a stay-healthy target. Focus on activity and food quality rather than eating less.';
+  }
+  const goal = BODY_GOALS[goalKey];
 
   let bmr = null;
   let calories;
   if (complete) {
     bmr = 10 * parsedWeight + 6.25 * parsedHeight - 5 * parsedAge + (sex === 'male' ? 5 : -161);
-    calories = bmr * pal;
+    calories = bmr * pal * goal.energy;
+    if (goalKey === 'lose') calories = Math.max(calories, bmr * 1.1);
   } else {
-    calories = sex === 'female' ? 2000 : sex === 'male' ? 2500 : 2200;
+    calories = (sex === 'female' ? 2000 : sex === 'male' ? 2500 : 2200) * goal.energy;
   }
   calories = Math.round(Math.min(3600, Math.max(1400, calories)));
-  const protein = Math.round(Math.max(45, (parsedWeight > 0 ? parsedWeight : 60) * 0.8));
+  const protein = Math.round(Math.max(45, (parsedWeight > 0 ? parsedWeight : 60) * goal.proteinPerKg));
   const sugarLimit = Math.round((calories * 0.10) / 4);
 
   return {
@@ -79,6 +101,9 @@ function computeTargets({ age, weight, height, sex, averageActiveMinutes = 0 }) 
     activityMinutes: ACTIVITY_TARGET_MIN,
     bmr: bmr === null ? null : Math.round(bmr),
     activityFactor: pal,
+    bodyGoal: goalKey,
+    bodyGoalLabel: goal.label,
+    goalNote,
     complete
   };
 }
@@ -439,6 +464,7 @@ function recommendFoods({ foods, feedback = [], goal = 'balanced', today, target
 
 module.exports = {
   GOALS,
+  BODY_GOALS,
   MEAL_SLOTS,
   FEATURE_NAMES,
   MIN_LOGGED_DAYS,

@@ -96,21 +96,38 @@ function checkedValue(name) {
 // ---------------------------------------------------------------------------
 // Hero: score ring + chips
 // ---------------------------------------------------------------------------
-function renderHero(data) {
-  const ring = $('dm-ring');
-  const score = data.today.score ? data.today.score.score : null;
-  ring.style.setProperty('--value', score === null ? 0 : score);
-  ring.dataset.tone = scoreTone(score);
-  ring.setAttribute('aria-label', score === null ? "Today's diet score: not started" : `Today's diet score: ${Math.round(score)} out of 100`);
-  $('dm-ring-value').textContent = score === null ? '—' : Math.round(score);
-  const loggedItems = data.today.meals.length;
-  $('dm-ring-note').textContent = score === null
-    ? 'Log a meal to start today\'s score.'
-    : loggedItems
-      ? `So far today, from ${loggedItems} item${loggedItems === 1 ? '' : 's'}. It updates as you log.`
-      : 'From your activity so far. Log meals to complete it.';
+function setRing(id, ratio) {
+  const ring = $(id);
+  const percent = Math.max(0, Math.min(100, ratio * 100));
+  ring.style.strokeDasharray = `${percent} 100`;
+  ring.classList.toggle('is-full', ratio >= 1);
+}
 
-  const chips = [];
+function renderHero(data) {
+  const totals = data.today.totals;
+  const targets = data.targets;
+  setRing('dm-ring-energy', totals.calories / targets.calories);
+  setRing('dm-ring-protein', totals.protein / targets.protein);
+  setRing('dm-ring-move', totals.activeMinutes / targets.activityMinutes);
+  $('dm-legend-energy').textContent = `${formatNumber(totals.calories)}/${formatNumber(targets.calories)} kcal`;
+  $('dm-legend-protein').textContent = `${formatNumber(totals.protein)}/${formatNumber(targets.protein)} g`;
+  $('dm-legend-move').textContent = `${formatNumber(totals.activeMinutes)}/${targets.activityMinutes} min`;
+  $('dm-rings').setAttribute('aria-label',
+    `Energy ${Math.round(totals.calories)} of ${targets.calories} kcal, protein ${Math.round(totals.protein)} of ${targets.protein} g, move ${Math.round(totals.activeMinutes)} of ${targets.activityMinutes} minutes`);
+
+  const score = data.today.score ? data.today.score.score : null;
+  const value = $('dm-ring-value');
+  value.textContent = score === null ? '—' : Math.round(score);
+  value.dataset.tone = scoreTone(score);
+  $('dm-ring-note').textContent = score === null ? 'Log a meal to start' : 'So far today';
+
+  const ringsClosed = [totals.calories / targets.calories >= 0.9, totals.protein >= targets.protein, totals.activeMinutes >= targets.activityMinutes]
+    .filter(Boolean).length;
+  $('dm-hero-line').textContent = data.today.meals.length
+    ? `${ringsClosed} of 3 rings closed today. ${ringsClosed === 3 ? 'Brilliant work!' : 'Your coach tips below show what to do next.'}`
+    : 'Start by logging breakfast or a meal. Orders you collect are added for you.';
+
+  const chips = [`<span class="dm-chip">🎯 ${escapeHtml(targets.bodyGoalLabel)}</span>`];
   if (data.insight.ready && data.insight.cluster) {
     chips.push(`<span class="dm-chip dm-chip--pattern">${escapeHtml(data.insight.cluster.name)}</span>`);
   }
@@ -119,8 +136,7 @@ function renderHero(data) {
     const label = level === 'high' ? 'High risk next week' : level === 'medium' ? 'Some risk next week' : 'Low risk next week';
     chips.push(`<span class="dm-chip dm-chip--risk-${escapeHtml(level)}">${label}</span>`);
   }
-  const loggedDays = data.week.filter((day) => day.logged).length;
-  chips.push(`<span class="dm-chip">${loggedDays} of 7 days logged</span>`);
+  chips.push(`<span class="dm-chip">💧 ${data.water.glasses}/${data.water.targetGlasses} glasses</span>`);
   $('dm-hero-chips').innerHTML = chips.join('');
 }
 
@@ -433,6 +449,181 @@ function renderHow(data) {
 }
 
 // ---------------------------------------------------------------------------
+// Coach tips, water, goals, plan, swaps, report, body
+// ---------------------------------------------------------------------------
+const TIP_ICONS = {
+  sugar: '<path d="M7 7h10v10H7z"/><path d="M7 12h10M12 7v10"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2"/>',
+  protein: '<path d="M6 13c0-4 3-8 7-8 3 0 5 2 5 5 0 4-4 7-8 7"/><path d="M6 13l-3 3 2 2 3-3"/>',
+  leaf: '<path d="M5 19c0-8 6-14 14-14 0 8-6 14-14 14z"/><path d="M5 19l8-8"/>',
+  water: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
+  walk: '<circle cx="13" cy="4" r="2"/><path d="M9 21l3-7 3 3v4M7 12l3-4 4 2 3 3"/>',
+  energy: '<path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/>',
+  star: '<path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7L12 3z"/>'
+};
+
+function renderTips(data) {
+  $('dm-tips').innerHTML = data.tips.map((tip) => `
+    <article class="dm2-tip" data-tone="${escapeHtml(tip.tone)}">
+      <span class="dm2-tip-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${TIP_ICONS[tip.icon] || TIP_ICONS.star}</svg></span>
+      <div>
+        <strong>${escapeHtml(tip.title)}</strong>
+        <p>${escapeHtml(tip.text)}</p>
+      </div>
+    </article>`).join('');
+}
+
+function renderWater(data) {
+  const water = data.water;
+  const total = Math.max(water.targetGlasses, water.glasses);
+  $('dm-glasses').innerHTML = Array.from({ length: total }, (_, index) => `
+    <span class="dm2-glass${index < water.glasses ? ' is-full' : ''}" aria-hidden="true">
+      <svg viewBox="0 0 24 32"><path class="dm2-glass-outline" d="M3 2h18l-2.5 27a2 2 0 0 1-2 1.8h-9a2 2 0 0 1-2-1.8L3 2z"/><path class="dm2-glass-fill" d="M4.6 12h14.8l-1.6 16.8a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9L4.6 12z"/></svg>
+    </span>`).join('');
+  $('dm-glasses').setAttribute('aria-label', `${water.glasses} of ${water.targetGlasses} glasses`);
+  $('dm-water-amount').textContent = `${(water.ml / 1000).toFixed(water.ml % 1000 ? 2 : 1)} / ${(water.target / 1000).toFixed(1)} L`;
+  const glassLogs = data.today.meals.filter((meal) => meal.foodName.toLowerCase().startsWith('glass of water'));
+  $('dm-water-remove').disabled = !glassLogs.length;
+}
+
+function renderGoals(data) {
+  const descriptions = {
+    maintain: 'Eat what your body uses',
+    lose: 'Gentle 15% less energy, more protein',
+    gain: '10% more energy',
+    muscle: 'A little more energy, double protein'
+  };
+  const current = data.profile.bodyGoal || 'maintain';
+  $('dm-goals').innerHTML = data.bodyGoals.map((goal) => `
+    <button type="button" role="radio" class="dm2-goal" data-body-goal="${goal.key}" aria-checked="${goal.key === current}">
+      <strong>${escapeHtml(goal.label)}</strong>
+      <span>${descriptions[goal.key] || ''}</span>
+    </button>`).join('');
+  const targets = data.targets;
+  $('dm-goal-summary').innerHTML = `
+    Daily targets: <b>${formatNumber(targets.calories)} kcal</b> · <b>${targets.protein} g protein</b> · <b>${targets.fiber} g fibre</b> · sugar under <b>${targets.sugarLimit} g</b> · <b>${(data.water.target / 1000).toFixed(1)} L water</b> · <b>${targets.activityMinutes} active min</b>
+    ${targets.goalNote ? `<span class="dm2-goal-note">${escapeHtml(targets.goalNote)}</span>` : ''}`;
+}
+
+function renderPlan(plan, targets) {
+  $('dm-plan').innerHTML = plan.slots.map((slot) => `
+    <article class="dm2-slot" data-slot="${slot.slot}">
+      <header>
+        <strong>${escapeHtml(slot.label)}</strong>
+        <span>${escapeHtml(slot.where)}</span>
+      </header>
+      <ul>
+        ${slot.foods.map((food) => `
+          <li>
+            <span>${escapeHtml(food.name.replace(/ - \$[\d.]+$/, ''))}</span>
+            <small>${food.calories} kcal${food.price ? ` · $${food.price.toFixed(2)}` : ''}</small>
+          </li>`).join('')}
+      </ul>
+      <footer>${slot.totals.calories} kcal · ${formatNumber(slot.totals.protein)} g protein · ${formatNumber(slot.totals.fiber)} g fibre</footer>
+    </article>`).join('');
+  const pct = (value, target) => Math.min(100, Math.round((value / target) * 100));
+  $('dm-plan-foot').innerHTML = `
+    <div class="dm2-plan-bars">
+      <div><span>Energy</span><div class="dm-bar"><span style="width:${pct(plan.totals.calories, targets.calories)}%"></span></div><b>${formatNumber(plan.totals.calories)} / ${formatNumber(targets.calories)}</b></div>
+      <div><span>Protein</span><div class="dm-bar"><span style="width:${pct(plan.totals.protein, targets.protein)}%"></span></div><b>${formatNumber(plan.totals.protein)} / ${targets.protein} g</b></div>
+      <div><span>Fibre</span><div class="dm-bar"><span style="width:${pct(plan.totals.fiber, targets.fiber)}%"></span></div><b>${formatNumber(plan.totals.fiber)} / ${targets.fiber} g</b></div>
+      <div><span>Sugar</span><div class="dm-bar ${plan.totals.sugar > targets.sugarLimit ? 'is-over' : 'is-ok'}"><span style="width:${pct(plan.totals.sugar, targets.sugarLimit)}%"></span></div><b>${formatNumber(plan.totals.sugar)} / ${targets.sugarLimit} g</b></div>
+    </div>
+    <div class="dm2-plan-score">
+      <span>Projected score</span>
+      <strong data-tone="${scoreTone(plan.projectedScore)}">${Math.round(plan.projectedScore)}</strong>
+      <small>${plan.kitchenCost ? `THE KITCHEN cost about $${plan.kitchenCost.toFixed(2)}` : ''}</small>
+    </div>
+    <p class="dm-muted dm-small dm2-plan-note">${escapeHtml(plan.note)}</p>`;
+}
+
+function renderSwaps(data) {
+  if (!data.swaps.length) {
+    $('dm-swaps').innerHTML = `
+      <div class="dm-empty">
+        <strong>No swaps needed this week 🎉</strong>
+        <span>When you eat sugary drinks, fried food or sweet snacks, healthier swaps will appear here.</span>
+      </div>`;
+    return;
+  }
+  $('dm-swaps').innerHTML = data.swaps.map((swap) => {
+    const saves = [];
+    if (swap.savings.sugar > 0) saves.push(`${formatNumber(swap.savings.sugar)} g sugar`);
+    if (swap.savings.calories > 0) saves.push(`${formatNumber(swap.savings.calories)} kcal`);
+    if (swap.savings.fat > 0) saves.push(`${formatNumber(swap.savings.fat)} g fat`);
+    const gains = swap.savings.fiber > 0 ? ` and gain ${formatNumber(swap.savings.fiber)} g fibre` : '';
+    return `
+      <article class="dm2-swap">
+        <div class="dm2-swap-row">
+          <div class="dm2-swap-from">
+            <small>You had ${formatNumber(swap.from.count)}×</small>
+            <strong>${escapeHtml(swap.from.name)}</strong>
+          </div>
+          <span class="dm2-swap-arrow" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          <div class="dm2-swap-to">
+            <small>Try instead</small>
+            <strong>${escapeHtml(swap.to.name.replace(/ - \$[\d.]+$/, ''))}</strong>
+          </div>
+        </div>
+        <p>${escapeHtml(swap.reason)}.${saves.length ? ` This week that would save <b>${saves.join(', ')}</b>${gains}.` : gains ? ` You would${gains}.` : ''}</p>
+      </article>`;
+  }).join('');
+}
+
+function renderReport(data) {
+  const report = data.weeklyReport;
+  const grade = $('dm-report-grade');
+  if (!report.loggedDays) {
+    grade.hidden = true;
+    $('dm-report').innerHTML = `
+      <div class="dm-empty">
+        <strong>No full days logged yet</strong>
+        <span>Your report card fills in as you log food on past days (today is added tomorrow).</span>
+      </div>`;
+    return;
+  }
+  grade.hidden = false;
+  grade.textContent = report.grade;
+  grade.dataset.grade = report.grade;
+  const icon = { good: '✓', ok: '!', low: '✕' };
+  $('dm-report').innerHTML = `
+    <p class="dm-muted dm-small">From ${report.loggedDays} logged day${report.loggedDays === 1 ? '' : 's'} · average score ${Math.round(report.averageScore)}${report.bestDay ? ` · best day ${new Date(`${report.bestDay.date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'long' })} (${Math.round(report.bestDay.score)})` : ''}</p>
+    <div class="dm2-report">
+      ${report.rows.map((row) => `
+        <div class="dm2-report-row" data-status="${row.status}">
+          <span class="dm2-report-icon" aria-label="${row.status}">${icon[row.status]}</span>
+          <span class="dm2-report-label">${escapeHtml(row.label)}</span>
+          <span class="dm2-report-value">${row.count ? `${row.average} of ${row.target} days` : `${formatNumber(row.average)}${row.unit === '%' ? '%' : ` ${row.unit}`} ${row.limit ? 'avg (limit' : 'avg (target'} ${formatNumber(row.target)}${row.unit === '%' ? '%' : ''})`}</span>
+          <span class="dm2-report-days">${row.count ? '' : `${row.daysOnTarget}/${row.key === 'activity' ? 7 : report.loggedDays} days`}</span>
+        </div>`).join('')}
+    </div>`;
+}
+
+function renderBody(data) {
+  const body = data.body;
+  if (!body) {
+    $('dm-body').innerHTML = '<div class="dm-empty"><strong>Add your weight and height</strong><span>Use "Edit body profile" to see your BMI and healthy weight range.</span></div>';
+    return;
+  }
+  const position = Math.max(0, Math.min(100, ((body.bmi - 15) / (35 - 15)) * 100));
+  $('dm-body').innerHTML = `
+    <div class="dm2-bmi">
+      <div class="dm2-bmi-top">
+        <strong>${body.bmi}</strong>
+        <span class="dm2-bmi-label" data-category="${body.category}">${escapeHtml(body.label)}</span>
+      </div>
+      <div class="dm2-bmi-scale" role="img" aria-label="BMI ${body.bmi}, ${escapeHtml(body.label)}">
+        <span class="dm2-bmi-marker" style="left:${position}%"></span>
+      </div>
+      <div class="dm2-bmi-ticks"><span>15</span><span>18.5</span><span>25</span><span>30</span><span>35</span></div>
+      <p>Healthy weight for your height: <b>${body.healthyMinKg}–${body.healthyMaxKg} kg</b>. You weigh <b>${formatNumber(data.profile.weight, 1)} kg</b>.</p>
+      <p class="dm-muted dm-small">${escapeHtml(body.note)}</p>
+    </div>`;
+}
+
+let planSeed = 0;
+
+// ---------------------------------------------------------------------------
 // Load + render
 // ---------------------------------------------------------------------------
 function renderAll(data) {
@@ -440,14 +631,22 @@ function renderAll(data) {
   goalSelect.value = data.goal;
   renderHero(data);
   renderProfile(data);
+  renderTips(data);
+  renderWater(data);
   renderTargets(data);
   renderInsight(data);
   renderFoodList();
   updateFoodPreview();
   renderDiary(data);
   renderRecommendations(data);
+  renderGoals(data);
+  if (planSeed === 0) renderPlan(data.plan, data.targets);
+  renderSwaps(data);
+  renderReport(data);
   renderWeek(data);
+  renderBody(data);
   renderHow(data);
+  $('dm-diary-total').textContent = `${formatNumber(data.today.totals.calories)} kcal`;
   if (!checkedValue('dm-slot')) {
     const slotInput = document.querySelector(`input[name="dm-slot"][value="${data.currentSlot}"]`);
     if (slotInput) slotInput.checked = true;
@@ -736,6 +935,98 @@ $('diet-logout').addEventListener('click', async () => {
     window.location.href = 'login.html';
   } catch (error) {
     showDietStatus(error.message, true);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Tabs
+// ---------------------------------------------------------------------------
+const TAB_NAMES = ['today', 'plan', 'insights', 'progress'];
+
+function showTab(name, { focus = false } = {}) {
+  const tab = TAB_NAMES.includes(name) ? name : 'today';
+  document.querySelectorAll('.dm2-tabs [role="tab"]').forEach((button) => {
+    const active = button.dataset.tab === tab;
+    button.setAttribute('aria-selected', String(active));
+    button.tabIndex = active ? 0 : -1;
+    if (active && focus) button.focus();
+  });
+  TAB_NAMES.forEach((key) => { $(`panel-${key}`).hidden = key !== tab; });
+  if (window.location.hash !== `#${tab}`) history.replaceState(null, '', `#${tab}`);
+}
+
+document.querySelector('.dm2-tabs').addEventListener('click', (event) => {
+  const button = event.target.closest('[data-tab]');
+  if (!button) return;
+  showTab(button.dataset.tab);
+  window.scrollTo({ top: document.querySelector('.dm2-tabbar').offsetTop - 70, behavior: 'smooth' });
+});
+document.querySelector('.dm2-tabs').addEventListener('keydown', (event) => {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+  const current = TAB_NAMES.indexOf(document.querySelector('.dm2-tabs [aria-selected="true"]').dataset.tab);
+  let next = current;
+  if (event.key === 'ArrowRight') next = (current + 1) % TAB_NAMES.length;
+  if (event.key === 'ArrowLeft') next = (current - 1 + TAB_NAMES.length) % TAB_NAMES.length;
+  if (event.key === 'Home') next = 0;
+  if (event.key === 'End') next = TAB_NAMES.length - 1;
+  event.preventDefault();
+  showTab(TAB_NAMES[next], { focus: true });
+});
+showTab(window.location.hash.slice(1));
+
+// ---------------------------------------------------------------------------
+// Water, goals, plan
+// ---------------------------------------------------------------------------
+$('dm-water-add').addEventListener('click', async () => {
+  const button = $('dm-water-add');
+  button.disabled = true;
+  try {
+    await requestDietApi('/api/diet/meals', { method: 'POST', body: JSON.stringify({ foodKey: 'water-glass', servings: 1, slot: 'snack', day: 'today' }) });
+    await loadDietData();
+    showDietStatus('Glass of water added 💧');
+  } catch (error) {
+    showDietStatus(error.message, true);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+$('dm-water-remove').addEventListener('click', async () => {
+  const glass = dietData && dietData.today.meals.find((meal) => meal.foodName.toLowerCase().startsWith('glass of water'));
+  if (!glass) return;
+  try {
+    await requestDietApi(`/api/diet/meals/${glass.id}`, { method: 'DELETE' });
+    await loadDietData();
+    showDietStatus('Removed a glass of water.');
+  } catch (error) {
+    showDietStatus(error.message, true);
+  }
+});
+
+$('dm-goals').addEventListener('click', async (event) => {
+  const button = event.target.closest('[data-body-goal]');
+  if (!button || button.getAttribute('aria-checked') === 'true') return;
+  try {
+    const result = await requestDietApi('/api/diet/body-goal', { method: 'PUT', body: JSON.stringify({ bodyGoal: button.dataset.bodyGoal }) });
+    planSeed = 0;
+    await loadDietData();
+    showDietStatus(result.message);
+  } catch (error) {
+    showDietStatus(error.message, true);
+  }
+});
+
+$('dm-plan-shuffle').addEventListener('click', async () => {
+  const button = $('dm-plan-shuffle');
+  button.disabled = true;
+  try {
+    planSeed += 1;
+    const plan = await requestDietApi(`/api/diet/plan?seed=${planSeed}`);
+    renderPlan(plan, dietData.targets);
+  } catch (error) {
+    showDietStatus(error.message, true);
+  } finally {
+    button.disabled = false;
   }
 });
 

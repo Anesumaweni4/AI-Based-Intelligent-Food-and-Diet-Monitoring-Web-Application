@@ -289,6 +289,7 @@ Sign in as a student and open **Diet** in the top menu. Registration asks for ag
 | Model B | Random Forest predicts an average score below 55 over the next 7 days (compared with Logistic Regression, a Decision Tree and a rule baseline) | `ml/train.py` |
 | Model C | Recommendations: nutrition-gap fit + personal logistic preference model + popularity among students with the same pattern | `diet-model.js` |
 | Admin view | Anonymous totals under **Admin Panel → Diet insights** | `public/admin-diet.js` |
+| Healthy-eating coach | Body goals (stay healthy, lose gently, gain, build muscle) with safe limits, BMI and healthy weight range, water tracker, a full-day meal plan with projected score and cost, healthy swaps for foods eaten this week, "right now" tips and a weekly report card | `diet-coach.js` |
 
 Models are trained offline in Python and saved to `ml/models/diet_models.json`, which the Node server loads, so Render needs no Python. To retrain (Windows):
 

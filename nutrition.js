@@ -93,7 +93,8 @@ const OUTSIDE_FOODS = [
   { key: 'biscuits', name: 'Biscuits, 4', values: [200, 2.5, 28, 9, 1, 11] },
   { key: 'crisps', name: 'Crisps, small packet', values: [160, 2, 15, 10, 1, 0.5] },
   { key: 'fat-cakes', name: 'Fat cakes (magwinya), 2', values: [360, 6, 44, 18, 2, 6] },
-  { key: 'soft-drink-outside', name: 'Soft drink, 500 ml', values: [210, 0, 53, 0, 0, 53], isDrink: true }
+  { key: 'soft-drink-outside', name: 'Soft drink, 500 ml', values: [210, 0, 53, 0, 0, 53], isDrink: true },
+  { key: 'water-glass', name: 'Glass of water (250 ml)', values: [0, 0, 0, 0, 0, 0], isDrink: true }
 ];
 
 function toNutrition(values, extra = {}) {

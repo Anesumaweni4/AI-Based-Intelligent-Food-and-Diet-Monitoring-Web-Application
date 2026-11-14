@@ -6,12 +6,12 @@
     <title>Diet Monitoring | THE KITCHEN</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
     <link rel="stylesheet" href="styles.css?v=meal-card-health-tip-3" />
     <link rel="stylesheet" href="theme.css?v=diet-ai-1" />
-    <link rel="stylesheet" href="client.css?v=feedback-chat-2" />
+    <link rel="stylesheet" href="client.css?v=diet-coach-1" />
   </head>
-  <body class="client-body">
+  <body class="client-body dm-page">
     <header class="client-topbar">
       <div class="client-container client-topbar-inner">
         <a class="client-brand" href="home.html#top" aria-label="THE KITCHEN home">
@@ -51,29 +51,68 @@
       </div>
     </header>
 
-    <section class="diet-hero dm-hero">
-      <div class="client-container dm-hero-inner">
-        <div class="dm-hero-copy">
-          <p class="eyebrow">AI diet monitoring</p>
+    <!-- Hero: activity-style rings -->
+    <section class="dm2-hero">
+      <div class="client-container dm2-hero-inner">
+        <div class="dm2-hero-copy">
+          <p class="dm2-kicker">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8L12 3z"/></svg>
+            AI diet coach
+          </p>
           <h2><span id="client-greeting">Hello</span>, <em id="client-first-name">there</em>.</h2>
-          <p class="diet-intro" id="dm-hero-line">Log what you eat and how you move. THE KITCHEN's models turn it into a daily score, your eating pattern and an early warning.</p>
-          <div class="dm-hero-chips" id="dm-hero-chips" aria-live="polite"></div>
+          <p class="dm2-hero-line" id="dm-hero-line">Here is how today is going.</p>
+          <div class="dm2-chips" id="dm-hero-chips" aria-live="polite"></div>
         </div>
-        <div class="dm-ring-card" aria-labelledby="dm-ring-label">
-          <div class="dm-ring" id="dm-ring" style="--value: 0" role="img" aria-label="Today's diet score">
-            <div class="dm-ring-inner">
+
+        <div class="dm2-rings-card">
+          <svg class="dm2-rings" id="dm-rings" viewBox="0 0 180 180" role="img" aria-label="Today's rings">
+            <circle class="dm2-ring-bg dm2-ring--energy" cx="90" cy="90" r="76" />
+            <circle class="dm2-ring dm2-ring--energy" id="dm-ring-energy" cx="90" cy="90" r="76" pathLength="100" />
+            <circle class="dm2-ring-bg dm2-ring--protein" cx="90" cy="90" r="58" />
+            <circle class="dm2-ring dm2-ring--protein" id="dm-ring-protein" cx="90" cy="90" r="58" pathLength="100" />
+            <circle class="dm2-ring-bg dm2-ring--move" cx="90" cy="90" r="40" />
+            <circle class="dm2-ring dm2-ring--move" id="dm-ring-move" cx="90" cy="90" r="40" pathLength="100" />
+          </svg>
+          <div class="dm2-legend">
+            <div class="dm2-score">
+              <span>Diet score</span>
               <strong id="dm-ring-value">—</strong>
-              <span>/ 100</span>
+              <small id="dm-ring-note">Log a meal to start</small>
             </div>
+            <div class="dm2-legend-row dm2-legend--energy"><span>Energy</span><b id="dm-legend-energy">0/0 kcal</b></div>
+            <div class="dm2-legend-row dm2-legend--protein"><span>Protein</span><b id="dm-legend-protein">0/0 g</b></div>
+            <div class="dm2-legend-row dm2-legend--move"><span>Move</span><b id="dm-legend-move">0/30 min</b></div>
           </div>
-          <p id="dm-ring-label" class="dm-ring-label">Today's diet score</p>
-          <p class="dm-ring-note" id="dm-ring-note">Log a meal to start today's score.</p>
         </div>
       </div>
     </section>
 
-    <main class="dashboard-main dm-main">
+    <!-- Tabs -->
+    <div class="dm2-tabbar">
       <div class="client-container">
+        <div class="dm2-tabs" role="tablist" aria-label="Diet sections">
+          <button type="button" role="tab" id="tab-today" aria-controls="panel-today" aria-selected="true" data-tab="today">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+            Today
+          </button>
+          <button type="button" role="tab" id="tab-plan" aria-controls="panel-plan" aria-selected="false" data-tab="plan">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3v8a3 3 0 0 0 3 3v7M7 3v6M10 3v8a3 3 0 0 1-3 3"/><path d="M17 21V3c-2.2 1.2-3.5 3.6-3.5 7v4H17"/></svg>
+            Meal plan
+          </button>
+          <button type="button" role="tab" id="tab-insights" aria-controls="panel-insights" aria-selected="false" data-tab="insights">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8L12 3z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2z"/></svg>
+            Insights
+          </button>
+          <button type="button" role="tab" id="tab-progress" aria-controls="panel-progress" aria-selected="false" data-tab="progress">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+            Progress
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <main class="dm2-main">
+      <div class="client-container dm2-container">
         <p id="diet-status" class="dm-status" role="status" aria-live="polite"></p>
 
         <!-- Body profile (needed for personal targets) -->
@@ -82,7 +121,7 @@
             <div>
               <p class="eyebrow">Your body profile</p>
               <h3 id="dm-profile-title">Set up your personal targets</h3>
-              <p class="dm-muted" id="dm-profile-help">Your energy and protein targets are worked out from your age, weight, height and sex (Mifflin-St Jeor equation).</p>
+              <p class="dm-muted" id="dm-profile-help">Your targets are worked out from your age, weight, height and sex.</p>
             </div>
             <button type="button" class="dm-icon-button" id="dm-profile-close" aria-label="Close body profile" hidden>
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
@@ -103,108 +142,108 @@
           </form>
         </section>
 
-        <!-- Today: targets + AI insight -->
-        <div class="dm-grid dm-grid--top">
-          <section class="dm-card" aria-labelledby="dm-targets-title">
-            <div class="dm-card-head">
-              <div>
-                <p class="eyebrow">Today so far</p>
-                <h3 id="dm-targets-title">Your daily targets</h3>
-              </div>
-              <button type="button" class="dm-link-button" id="dm-profile-edit">Edit body profile</button>
-            </div>
-            <div class="dm-targets" id="dm-targets" aria-live="polite"></div>
-            <details class="dm-breakdown">
-              <summary>How today's score is made</summary>
-              <div id="dm-score-parts" class="dm-score-parts"></div>
-              <p class="dm-muted dm-small">Based on WHO healthy-diet guidance: energy close to your needs, enough protein and fibre, sugar under 10% of energy, fat under 35% of energy, regular meals with breakfast, and 30 active minutes.</p>
-            </details>
-          </section>
+        <!-- ============ TODAY ============ -->
+        <section class="dm2-panel" id="panel-today" role="tabpanel" aria-labelledby="tab-today">
+          <div class="dm2-tips" id="dm-tips" aria-live="polite"></div>
 
-          <section class="dm-card dm-insight" aria-labelledby="dm-insight-title">
-            <div class="dm-card-head">
-              <div>
-                <p class="eyebrow">Machine learning insight</p>
-                <h3 id="dm-insight-title">Your eating pattern</h3>
-              </div>
-              <span class="dm-ai-badge">
-                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8L12 3z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2z"/></svg>
-                AI
-              </span>
-            </div>
-            <div id="dm-insight-body" aria-live="polite"></div>
-          </section>
-        </div>
-
-        <!-- Logging -->
-        <div class="dm-grid">
-          <section class="dm-card" aria-labelledby="dm-log-title">
-            <div class="dm-card-head">
-              <div>
-                <p class="eyebrow">Food diary</p>
-                <h3 id="dm-log-title">Log what you ate</h3>
-              </div>
-            </div>
-            <p class="dm-auto-note">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>
-              Orders you collect from THE KITCHEN are added automatically. Log anything else here.
-            </p>
-            <div class="dm-tabs" role="tablist" aria-label="Where the food came from">
-              <button type="button" role="tab" class="dm-tab" id="dm-tab-menu" aria-selected="true" aria-controls="dm-meal-form" data-source="menu">THE KITCHEN menu</button>
-              <button type="button" role="tab" class="dm-tab" id="dm-tab-outside" aria-selected="false" aria-controls="dm-meal-form" data-source="outside">Other food</button>
-            </div>
-            <form id="dm-meal-form" class="dm-form" autocomplete="off">
-              <label class="dm-field">
-                <span id="dm-food-label">Search the menu</span>
-                <div class="dm-search">
-                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-                  <input id="dm-food-search" type="text" list="dm-food-list" placeholder="Type a food, e.g. rice" required />
-                  <datalist id="dm-food-list"></datalist>
+          <div class="dm-grid">
+            <section class="dm-card" aria-labelledby="dm-log-title">
+              <div class="dm-card-head">
+                <div>
+                  <p class="eyebrow">Food diary</p>
+                  <h3 id="dm-log-title">Log what you ate</h3>
                 </div>
-              </label>
-              <div class="dm-food-preview" id="dm-food-preview">Choose a food to see its nutrition.</div>
-              <fieldset class="dm-field">
-                <legend>Meal</legend>
-                <div class="dm-segment dm-segment--wrap" id="dm-slot-group">
-                  <label><input type="radio" name="dm-slot" value="breakfast" /><span>Breakfast</span></label>
-                  <label><input type="radio" name="dm-slot" value="lunch" /><span>Lunch</span></label>
-                  <label><input type="radio" name="dm-slot" value="supper" /><span>Supper</span></label>
-                  <label><input type="radio" name="dm-slot" value="snack" /><span>Snack</span></label>
-                  <label><input type="radio" name="dm-slot" value="late" /><span>Late night</span></label>
-                </div>
-              </fieldset>
-              <div class="dm-form-row">
-                <div class="dm-field">
-                  <span id="dm-servings-label">Servings</span>
-                  <div class="dm-stepper" role="group" aria-labelledby="dm-servings-label">
-                    <button type="button" data-step="-0.5" aria-label="Fewer servings">−</button>
-                    <input id="dm-servings" type="number" min="0.5" max="5" step="0.5" value="1" aria-labelledby="dm-servings-label" />
-                    <button type="button" data-step="0.5" aria-label="More servings">+</button>
+              </div>
+              <p class="dm-auto-note">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>
+                Orders you collect from THE KITCHEN are added automatically.
+              </p>
+              <div class="dm-tabs" role="tablist" aria-label="Where the food came from">
+                <button type="button" role="tab" class="dm-tab" aria-selected="true" data-source="menu">THE KITCHEN menu</button>
+                <button type="button" role="tab" class="dm-tab" aria-selected="false" data-source="outside">Other food</button>
+              </div>
+              <form id="dm-meal-form" class="dm-form" autocomplete="off">
+                <label class="dm-field">
+                  <span id="dm-food-label">Search the menu</span>
+                  <div class="dm-search">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+                    <input id="dm-food-search" type="text" list="dm-food-list" placeholder="Type a food, e.g. rice" required />
+                    <datalist id="dm-food-list"></datalist>
                   </div>
-                </div>
+                </label>
+                <div class="dm-food-preview" id="dm-food-preview">Choose a food to see its nutrition.</div>
                 <fieldset class="dm-field">
-                  <legend>Day</legend>
-                  <div class="dm-segment">
-                    <label><input type="radio" name="dm-meal-day" value="today" checked /><span>Today</span></label>
-                    <label><input type="radio" name="dm-meal-day" value="yesterday" /><span>Yesterday</span></label>
+                  <legend>Meal</legend>
+                  <div class="dm-segment dm-segment--wrap">
+                    <label><input type="radio" name="dm-slot" value="breakfast" /><span>Breakfast</span></label>
+                    <label><input type="radio" name="dm-slot" value="lunch" /><span>Lunch</span></label>
+                    <label><input type="radio" name="dm-slot" value="supper" /><span>Supper</span></label>
+                    <label><input type="radio" name="dm-slot" value="snack" /><span>Snack</span></label>
+                    <label><input type="radio" name="dm-slot" value="late" /><span>Late night</span></label>
                   </div>
                 </fieldset>
-              </div>
-              <button type="submit" class="dm-btn dm-btn--primary dm-btn--block">Add to food diary</button>
-            </form>
-          </section>
+                <div class="dm-form-row">
+                  <div class="dm-field">
+                    <span id="dm-servings-label">Servings</span>
+                    <div class="dm-stepper" role="group" aria-labelledby="dm-servings-label">
+                      <button type="button" data-step="-0.5" aria-label="Fewer servings">−</button>
+                      <input id="dm-servings" type="number" min="0.5" max="5" step="0.5" value="1" aria-labelledby="dm-servings-label" />
+                      <button type="button" data-step="0.5" aria-label="More servings">+</button>
+                    </div>
+                  </div>
+                  <fieldset class="dm-field">
+                    <legend>Day</legend>
+                    <div class="dm-segment">
+                      <label><input type="radio" name="dm-meal-day" value="today" checked /><span>Today</span></label>
+                      <label><input type="radio" name="dm-meal-day" value="yesterday" /><span>Yesterday</span></label>
+                    </div>
+                  </fieldset>
+                </div>
+                <button type="submit" class="dm-btn dm-btn--primary dm-btn--block">Add to food diary</button>
+              </form>
+            </section>
 
-          <section class="dm-card" aria-labelledby="dm-activity-title">
-            <div class="dm-card-head">
-              <div>
-                <p class="eyebrow">Activity</p>
-                <h3 id="dm-activity-title">Log how you moved</h3>
+            <section class="dm-card" aria-labelledby="dm-diary-title">
+              <div class="dm-card-head">
+                <div>
+                  <p class="eyebrow">Today</p>
+                  <h3 id="dm-diary-title">Your diary</h3>
+                </div>
+                <span class="dm2-pill" id="dm-diary-total">0 kcal</span>
               </div>
-            </div>
-            <form id="dm-activity-form" class="dm-form">
-              <div class="dm-field">
-                <span id="dm-minutes-label">Minutes</span>
-                <div class="dm-chip-row" id="dm-minute-chips" role="group" aria-labelledby="dm-minutes-label">
+              <div id="dm-diary" aria-live="polite"></div>
+            </section>
+          </div>
+
+          <div class="dm-grid">
+            <section class="dm-card dm2-water" aria-labelledby="dm-water-title">
+              <div class="dm-card-head">
+                <div>
+                  <p class="eyebrow">Hydration</p>
+                  <h3 id="dm-water-title">Water today</h3>
+                </div>
+                <span class="dm2-pill dm2-pill--blue" id="dm-water-amount">0 / 2.0 L</span>
+              </div>
+              <div class="dm2-glasses" id="dm-glasses" aria-live="polite"></div>
+              <div class="dm2-water-actions">
+                <button type="button" class="dm-btn dm-btn--ghost" id="dm-water-remove" aria-label="Remove a glass of water">− Glass</button>
+                <button type="button" class="dm-btn dm2-btn--blue" id="dm-water-add">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>
+                  Add a glass (250 ml)
+                </button>
+              </div>
+              <p class="dm-muted dm-small">Bottled water from THE KITCHEN counts automatically (500 ml a bottle).</p>
+            </section>
+
+            <section class="dm-card" aria-labelledby="dm-activity-title">
+              <div class="dm-card-head">
+                <div>
+                  <p class="eyebrow">Activity</p>
+                  <h3 id="dm-activity-title">Log how you moved</h3>
+                </div>
+              </div>
+              <form id="dm-activity-form" class="dm-form">
+                <div class="dm-chip-row" id="dm-minute-chips" role="group" aria-label="Minutes">
                   <button type="button" data-minutes="10">10</button>
                   <button type="button" data-minutes="20">20</button>
                   <button type="button" data-minutes="30" class="is-selected">30</button>
@@ -212,118 +251,206 @@
                   <button type="button" data-minutes="60">60</button>
                   <input id="dm-minutes" type="number" min="5" max="300" step="5" value="30" aria-label="Minutes of activity" />
                 </div>
-              </div>
-              <fieldset class="dm-field">
-                <legend>How hard?</legend>
-                <div class="dm-segment">
-                  <label><input type="radio" name="dm-intensity" value="light" /><span>Light</span></label>
-                  <label><input type="radio" name="dm-intensity" value="moderate" checked /><span>Moderate</span></label>
-                  <label><input type="radio" name="dm-intensity" value="vigorous" /><span>Vigorous</span></label>
+                <div class="dm-form-row">
+                  <fieldset class="dm-field">
+                    <legend>How hard?</legend>
+                    <div class="dm-segment">
+                      <label><input type="radio" name="dm-intensity" value="light" /><span>Light</span></label>
+                      <label><input type="radio" name="dm-intensity" value="moderate" checked /><span>Moderate</span></label>
+                      <label><input type="radio" name="dm-intensity" value="vigorous" /><span>Vigorous</span></label>
+                    </div>
+                  </fieldset>
+                  <label class="dm-field">
+                    <span>Activity</span>
+                    <select id="dm-activity-type">
+                      <option value="walking">Walking</option>
+                      <option value="running">Running</option>
+                      <option value="sport">Sport</option>
+                      <option value="gym">Gym or workout</option>
+                      <option value="dancing">Dancing</option>
+                      <option value="cycling">Cycling</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </label>
                 </div>
-                <small class="dm-muted dm-small">Light: slow walk. Moderate: brisk walk, dancing. Vigorous: running, football, gym. Vigorous minutes count double.</small>
-              </fieldset>
-              <div class="dm-form-row">
-                <label class="dm-field">
-                  <span>Activity</span>
-                  <select id="dm-activity-type">
-                    <option value="walking">Walking</option>
-                    <option value="running">Running</option>
-                    <option value="sport">Sport (football, netball…)</option>
-                    <option value="gym">Gym or workout</option>
-                    <option value="dancing">Dancing</option>
-                    <option value="cycling">Cycling</option>
-                    <option value="other">Other</option>
-                  </select>
-                </label>
                 <fieldset class="dm-field">
-                  <legend>Day</legend>
+                  <legend class="visually-hidden">Day</legend>
                   <div class="dm-segment">
                     <label><input type="radio" name="dm-activity-day" value="today" checked /><span>Today</span></label>
                     <label><input type="radio" name="dm-activity-day" value="yesterday" /><span>Yesterday</span></label>
                   </div>
                 </fieldset>
-              </div>
-              <button type="submit" class="dm-btn dm-btn--green dm-btn--block">Save activity</button>
-            </form>
-
-            <div class="dm-fitbit" id="dm-fitbit">
-              <div class="dm-fitbit-head">
-                <strong>Fitbit</strong>
-                <div>
-                  <button type="button" class="dm-link-button" id="fitbit-connect">Connect</button>
-                  <button type="button" class="dm-link-button" id="fitbit-disconnect" hidden>Disconnect</button>
+                <button type="submit" class="dm-btn dm-btn--green dm-btn--block">Save activity</button>
+              </form>
+              <div class="dm-fitbit">
+                <div class="dm-fitbit-head">
+                  <strong>Fitbit</strong>
+                  <div>
+                    <button type="button" class="dm-link-button" id="fitbit-connect">Connect</button>
+                    <button type="button" class="dm-link-button" id="fitbit-disconnect" hidden>Disconnect</button>
+                  </div>
                 </div>
+                <p id="fitbit-status" class="dm-muted dm-small" role="status" aria-live="polite">Checking Fitbit…</p>
+                <div class="dm-fitbit-metrics">
+                  <span>Steps <strong id="fitbit-steps">—</strong></span>
+                  <span>Resting heart rate <strong id="fitbit-heart-rate">—</strong></span>
+                </div>
+                <p id="fitbit-date" class="dm-muted dm-small"></p>
               </div>
-              <p id="fitbit-status" class="dm-muted dm-small" role="status" aria-live="polite">Checking Fitbit…</p>
-              <div class="dm-fitbit-metrics">
-                <span>Steps today <strong id="fitbit-steps">—</strong></span>
-                <span>Resting heart rate <strong id="fitbit-heart-rate">—</strong></span>
-              </div>
-              <p id="fitbit-date" class="dm-muted dm-small"></p>
-            </div>
-          </section>
-        </div>
-
-        <!-- Diary + suggestions -->
-        <div class="dm-grid">
-          <section class="dm-card" aria-labelledby="dm-diary-title">
-            <div class="dm-card-head">
-              <div>
-                <p class="eyebrow">Today</p>
-                <h3 id="dm-diary-title">Your diary</h3>
-              </div>
-            </div>
-            <div id="dm-diary" aria-live="polite"></div>
-          </section>
-
-          <section class="dm-card" aria-labelledby="dm-recs-title">
-            <div class="dm-card-head">
-              <div>
-                <p class="eyebrow">What to eat next</p>
-                <h3 id="dm-recs-title">Suggested for you</h3>
-              </div>
-              <label class="dm-goal">
-                <span class="visually-hidden">Suggestion focus</span>
-                <select id="diet-goal" aria-label="Suggestion focus">
-                  <option value="balanced">Balanced</option>
-                  <option value="protein">More protein</option>
-                  <option value="fiber">More fibre</option>
-                  <option value="variety">More variety</option>
-                </select>
-              </label>
-            </div>
-            <p id="dm-recs-model" class="dm-muted dm-small"></p>
-            <div id="dm-recs" class="dm-recs" aria-live="polite"></div>
-          </section>
-        </div>
-
-        <!-- Week -->
-        <section class="dm-card" aria-labelledby="dm-week-title">
-          <div class="dm-card-head">
-            <div>
-              <p class="eyebrow">Last 7 days</p>
-              <h3 id="dm-week-title">Your diet score this week</h3>
-            </div>
-            <div class="dm-legend" aria-hidden="true">
-              <span><i class="is-good"></i>70+ good</span>
-              <span><i class="is-ok"></i>55–69 fair</span>
-              <span><i class="is-low"></i>under 55 needs attention</span>
-            </div>
+            </section>
           </div>
-          <div id="dm-week" class="dm-week" aria-live="polite"></div>
         </section>
 
-        <!-- How the AI works -->
-        <details class="dm-card dm-how" id="dm-how">
-          <summary>
-            <span>
-              <span class="eyebrow">Behind the scenes</span>
-              <strong>How the AI works</strong>
-            </span>
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-          </summary>
-          <div class="dm-how-body" id="dm-how-body"></div>
-        </details>
+        <!-- ============ MEAL PLAN ============ -->
+        <section class="dm2-panel" id="panel-plan" role="tabpanel" aria-labelledby="tab-plan" hidden>
+          <section class="dm-card" aria-labelledby="dm-goal-title">
+            <div class="dm-card-head">
+              <div>
+                <p class="eyebrow">Your goal</p>
+                <h3 id="dm-goal-title">What are you aiming for?</h3>
+              </div>
+            </div>
+            <div class="dm2-goals" id="dm-goals" role="radiogroup" aria-labelledby="dm-goal-title"></div>
+            <p class="dm2-goal-summary" id="dm-goal-summary"></p>
+          </section>
+
+          <section class="dm-card dm2-plan" aria-labelledby="dm-plan-title">
+            <div class="dm-card-head">
+              <div>
+                <p class="eyebrow">Healthy day plan</p>
+                <h3 id="dm-plan-title">Tomorrow's meals</h3>
+                <p class="dm-muted dm-small">Built from THE KITCHEN menu and simple home foods to hit your targets.</p>
+              </div>
+              <button type="button" class="dm-btn dm-btn--ghost" id="dm-plan-shuffle">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+                Shuffle
+              </button>
+            </div>
+            <div class="dm2-plan-grid" id="dm-plan" aria-live="polite"></div>
+            <div class="dm2-plan-foot" id="dm-plan-foot"></div>
+          </section>
+
+          <div class="dm-grid">
+            <section class="dm-card" aria-labelledby="dm-recs-title">
+              <div class="dm-card-head">
+                <div>
+                  <p class="eyebrow">Right now</p>
+                  <h3 id="dm-recs-title">Best next meal</h3>
+                </div>
+                <label class="dm-goal">
+                  <span class="visually-hidden">Suggestion focus</span>
+                  <select id="diet-goal" aria-label="Suggestion focus">
+                    <option value="balanced">Balanced</option>
+                    <option value="protein">More protein</option>
+                    <option value="fiber">More fibre</option>
+                    <option value="variety">More variety</option>
+                  </select>
+                </label>
+              </div>
+              <p id="dm-recs-model" class="dm-muted dm-small"></p>
+              <div id="dm-recs" class="dm-recs" aria-live="polite"></div>
+            </section>
+
+            <section class="dm-card" aria-labelledby="dm-swaps-title">
+              <div class="dm-card-head">
+                <div>
+                  <p class="eyebrow">Small changes, big results</p>
+                  <h3 id="dm-swaps-title">Healthy swaps</h3>
+                </div>
+              </div>
+              <div id="dm-swaps" class="dm2-swaps" aria-live="polite"></div>
+            </section>
+          </div>
+        </section>
+
+        <!-- ============ INSIGHTS ============ -->
+        <section class="dm2-panel" id="panel-insights" role="tabpanel" aria-labelledby="tab-insights" hidden>
+          <div class="dm-grid">
+            <section class="dm-card dm-insight" aria-labelledby="dm-insight-title">
+              <div class="dm-card-head">
+                <div>
+                  <p class="eyebrow">Machine learning</p>
+                  <h3 id="dm-insight-title">Your eating pattern</h3>
+                </div>
+                <span class="dm-ai-badge">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8L12 3z"/></svg>
+                  AI
+                </span>
+              </div>
+              <div id="dm-insight-body" aria-live="polite"></div>
+            </section>
+
+            <section class="dm-card" aria-labelledby="dm-report-title">
+              <div class="dm-card-head">
+                <div>
+                  <p class="eyebrow">Last 7 days</p>
+                  <h3 id="dm-report-title">Weekly report card</h3>
+                </div>
+                <span class="dm2-grade" id="dm-report-grade" hidden></span>
+              </div>
+              <div id="dm-report" aria-live="polite"></div>
+            </section>
+          </div>
+
+          <section class="dm-card" aria-labelledby="dm-targets-title">
+            <div class="dm-card-head">
+              <div>
+                <p class="eyebrow">Today in detail</p>
+                <h3 id="dm-targets-title">Targets and score</h3>
+              </div>
+            </div>
+            <div class="dm2-detail">
+              <div class="dm-targets" id="dm-targets"></div>
+              <div>
+                <h4 class="dm2-subhead">How today's score is made</h4>
+                <div id="dm-score-parts" class="dm-score-parts"></div>
+                <p class="dm-muted dm-small">Based on WHO healthy-diet guidance: energy close to your needs, enough protein and fibre, sugar under 10% of energy, fat under 35% of energy, regular meals with breakfast, and 30 active minutes.</p>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <!-- ============ PROGRESS ============ -->
+        <section class="dm2-panel" id="panel-progress" role="tabpanel" aria-labelledby="tab-progress" hidden>
+          <section class="dm-card" aria-labelledby="dm-week-title">
+            <div class="dm-card-head">
+              <div>
+                <p class="eyebrow">Last 7 days</p>
+                <h3 id="dm-week-title">Your diet score this week</h3>
+              </div>
+              <div class="dm-legend" aria-hidden="true">
+                <span><i class="is-good"></i>70+ good</span>
+                <span><i class="is-ok"></i>55–69 fair</span>
+                <span><i class="is-low"></i>under 55</span>
+              </div>
+            </div>
+            <div id="dm-week" class="dm-week" aria-live="polite"></div>
+          </section>
+
+          <div class="dm-grid">
+            <section class="dm-card" aria-labelledby="dm-body-title">
+              <div class="dm-card-head">
+                <div>
+                  <p class="eyebrow">Body</p>
+                  <h3 id="dm-body-title">BMI and healthy weight</h3>
+                </div>
+                <button type="button" class="dm-link-button" id="dm-profile-edit">Edit body profile</button>
+              </div>
+              <div id="dm-body" aria-live="polite"></div>
+            </section>
+
+            <details class="dm-card dm-how" id="dm-how" open>
+              <summary>
+                <span>
+                  <span class="eyebrow">Behind the scenes</span>
+                  <strong>How the AI works</strong>
+                </span>
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+              </summary>
+              <div class="dm-how-body" id="dm-how-body"></div>
+            </details>
+          </div>
+        </section>
 
         <p class="dm-disclaimer">Nutrition values are estimates from standard food composition tables. This page gives general guidance for students and is not medical advice. If you are worried about your eating, weight or health, please talk to a doctor, nurse or the campus clinic.</p>
       </div>
@@ -349,6 +476,6 @@
     </dialog>
 
     <script src="client-shell.js?v=client-redesign-1"></script>
-    <script src="diet-monitoring.js?v=diet-ai-1"></script>
+    <script src="diet-monitoring.js?v=diet-coach-1"></script>
   </body>
 </html>

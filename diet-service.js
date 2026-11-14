@@ -3,6 +3,7 @@
 const { get, all, run, withTransaction } = require('./db');
 const model = require('./diet-model');
 const { getNutrition, getOutsideFood, listOutsideFoods } = require('./nutrition');
+const coach = require('./diet-coach');
 
 const TIME_ZONE = process.env.APP_TIMEZONE || 'Africa/Harare';
 const ACTIVITY_TYPES = ['walking', 'running', 'sport', 'gym', 'dancing', 'cycling', 'other'];
@@ -184,7 +185,8 @@ function analyseStudent(user, logs, activities) {
   const [todayRecord] = summariseDays([today], logs, activities);
   const averageActiveMinutes = history.reduce((sum, day) => sum + day.activeMinutes, 0) / 7;
   const targets = model.computeTargets({
-    age: user.age, weight: user.weight, height: user.height, sex: user.sex, averageActiveMinutes
+    age: user.age, weight: user.weight, height: user.height, sex: user.sex, averageActiveMinutes,
+    bodyGoal: user.body_goal || 'maintain'
   });
   const analysis = model.analyseWindow(history, targets);
   const todayScore = isLoggedDay(todayRecord) || todayRecord.activeMinutes > 0
@@ -241,7 +243,11 @@ function invalidateCohort() {
 async function getCohort({ fresh = false } = {}) {
   if (!fresh && cohortCache && Date.now() - cohortCache.at < COHORT_TTL_MS) return cohortCache.students;
   await syncOrderMeals(null);
-  const users = await all("SELECT id, age, weight, height, sex FROM users WHERE role = 'staff'");
+  const users = await all(
+    `SELECT u.id, u.age, u.weight, u.height, u.sex, p.body_goal
+     FROM users u LEFT JOIN diet_profiles p ON p.user_id = u.id
+     WHERE u.role = 'staff'`
+  );
   const { logs, activities } = await loadRows(users.map((user) => user.id));
   const logsByUser = new Map();
   const activitiesByUser = new Map();
@@ -291,14 +297,13 @@ async function getPeerPopularity(clusterId, excludeUserId) {
 // ---------------------------------------------------------------------------
 async function getStudentDashboard(userId) {
   await syncOrderMeals(userId);
-  const user = await get('SELECT id, age, weight, height, sex FROM users WHERE id = ?', [userId]);
+  const user = await loadStudent(userId);
   const { logs, activities } = await loadRows([userId]);
   const result = analyseStudent(user, logs, activities);
   const today = todayKey();
 
-  const profile = await get('SELECT goal FROM diet_profiles WHERE user_id = ?', [userId]);
-  const goal = profile ? profile.goal : 'balanced';
-  const menuItems = await all('SELECT id, name, category, stock_quantity FROM menu_items ORDER BY name');
+  const goal = user.goal || 'balanced';
+  const menuItems = await all('SELECT id, name, category, price, stock_quantity FROM menu_items ORDER BY name');
   const feedback = await all(
     'SELECT rating, calories, protein, carbohydrates, fat, fiber FROM diet_feedback WHERE user_id = ?',
     [userId]
@@ -323,6 +328,13 @@ async function getStudentDashboard(userId) {
     peerPopularity
   });
 
+  const waterMl = todayLogs.reduce((sum, log) => sum + coach.waterFromLog(log), 0);
+  const waterTarget = coach.waterTargetMl(user.sex);
+  const currentSlot = slotForWall(wallClock());
+  const mealsBySlot = new Set(todayLogs
+    .filter((log) => !(Number(log.is_drink) || log.is_drink === true))
+    .map((log) => log.meal_slot || slotForWall(storedWall(log.eaten_at))));
+
   return {
     goal,
     profile: {
@@ -330,8 +342,18 @@ async function getStudentDashboard(userId) {
       weight: user.weight === null ? null : Number(user.weight),
       height: user.height === null ? null : Number(user.height),
       sex: user.sex || null,
+      bodyGoal: user.body_goal || 'maintain',
       complete: result.targets.complete
     },
+    body: coach.bodyMetrics(user),
+    bodyGoals: Object.entries(model.BODY_GOALS).map(([key, value]) => ({ key, label: value.label })),
+    water: { ml: waterMl, target: waterTarget, glasses: Math.round(waterMl / 250), targetGlasses: Math.round(waterTarget / 250) },
+    tips: coach.coachTips({
+      today: result.todayRecord, targets: result.targets, currentSlot, waterMl, waterTarget, mealsBySlot
+    }),
+    swaps: coach.healthySwaps(logs, available),
+    plan: coach.mealPlan({ targets: result.targets, menuItems: available, peerPopularity, seed: 0 }),
+    weeklyReport: coach.weeklyReport(result.history, result.targets),
     targets: result.targets,
     today: {
       date: today,
@@ -377,8 +399,48 @@ async function getStudentDashboard(userId) {
     outsideFoods: listOutsideFoods(),
     model: model.modelSummary(),
     timeZone: TIME_ZONE,
-    currentSlot: slotForWall(wallClock())
+    currentSlot
   };
+}
+
+async function loadStudent(userId) {
+  return get(
+    `SELECT u.id, u.age, u.weight, u.height, u.sex, p.goal, p.body_goal
+     FROM users u LEFT JOIN diet_profiles p ON p.user_id = u.id
+     WHERE u.id = ?`,
+    [userId]
+  );
+}
+
+async function getMealPlan(userId, seed = 0) {
+  const user = await loadStudent(userId);
+  const { logs, activities } = await loadRows([userId]);
+  const result = analyseStudent(user, logs, activities);
+  const menuItems = await all('SELECT id, name, category, price, stock_quantity FROM menu_items ORDER BY name');
+  const inStock = menuItems.filter((item) => item.stock_quantity === null || item.stock_quantity === undefined || Number(item.stock_quantity) > 0);
+  const available = inStock.length >= 5 ? inStock : menuItems;
+  const peerPopularity = result.analysis.ready && result.analysis.cluster
+    ? await getPeerPopularity(result.analysis.cluster.id, userId)
+    : new Map();
+  return coach.mealPlan({ targets: result.targets, menuItems: available, peerPopularity, seed });
+}
+
+// diet_profiles holds both the suggestion focus (goal) and the body goal.
+async function saveDietProfile(userId, fields) {
+  const existing = await get('SELECT user_id FROM diet_profiles WHERE user_id = ?', [userId]);
+  if (existing) {
+    const columns = Object.keys(fields);
+    await run(
+      `UPDATE diet_profiles SET ${columns.map((column) => `${column} = ?`).join(', ')} WHERE user_id = ?`,
+      [...columns.map((column) => fields[column]), userId]
+    );
+  } else {
+    await run(
+      'INSERT INTO diet_profiles (user_id, goal, body_goal) VALUES (?, ?, ?)',
+      [userId, fields.goal || 'balanced', fields.body_goal || 'maintain']
+    );
+  }
+  invalidateCohort();
 }
 
 // ---------------------------------------------------------------------------
@@ -514,6 +576,8 @@ module.exports = {
   INTENSITY_WEIGHT,
   TIME_ZONE,
   getStudentDashboard,
+  getMealPlan,
+  saveDietProfile,
   getAdminInsights,
   logMeal,
   deleteMeal,

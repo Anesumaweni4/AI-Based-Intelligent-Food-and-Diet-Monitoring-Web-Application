@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const { initializeDatabase, get, all, run, withTransaction, replaceMenuSchedule } = require('./db');
 const { hashPassword, verifyPassword, passwordNeedsRehash } = require('./passwords');
-const { getNutrition, GOALS, MEAL_SLOTS } = require('./diet-model');
+const { getNutrition, GOALS, MEAL_SLOTS, BODY_GOALS } = require('./diet-model');
 const dietService = require('./diet-service');
 
 const app = express();
@@ -1361,6 +1361,30 @@ app.put('/api/diet/profile', requireStudentApi, async (req, res) => {
   }
 });
 
+app.put('/api/diet/body-goal', requireStudentApi, async (req, res) => {
+  const bodyGoal = typeof req.body.bodyGoal === 'string' ? req.body.bodyGoal : '';
+  if (!Object.prototype.hasOwnProperty.call(BODY_GOALS, bodyGoal)) {
+    return res.status(400).json({ message: 'Choose one of the body goals.' });
+  }
+  try {
+    await dietService.saveDietProfile(req.accountUser.id, { body_goal: bodyGoal });
+    res.json({ message: `Goal set: ${BODY_GOALS[bodyGoal].label}. Your targets were updated.`, bodyGoal });
+  } catch (error) {
+    console.error('Error saving body goal:', error);
+    res.status(500).json({ message: 'Unable to save your goal.' });
+  }
+});
+
+app.get('/api/diet/plan', requireStudentApi, async (req, res) => {
+  const seed = Number(req.query.seed);
+  try {
+    res.json(await dietService.getMealPlan(req.accountUser.id, Number.isSafeInteger(seed) && seed >= 0 ? seed % 1000 : 0));
+  } catch (error) {
+    console.error('Error building meal plan:', error);
+    res.status(500).json({ message: 'Unable to build a meal plan right now.' });
+  }
+});
+
 app.put('/api/diet/goal', requireStudentApi, async (req, res) => {
   const goal = typeof req.body.goal === 'string' ? req.body.goal : '';
   if (!GOALS.has(goal)) {
@@ -1368,13 +1392,7 @@ app.put('/api/diet/goal', requireStudentApi, async (req, res) => {
   }
 
   try {
-    await withTransaction(async (transaction) => {
-      await transaction.run('DELETE FROM diet_profiles WHERE user_id = ?', [req.accountUser.id]);
-      await transaction.run(
-        'INSERT INTO diet_profiles (user_id, goal) VALUES (?, ?)',
-        [req.accountUser.id, goal]
-      );
-    });
+    await dietService.saveDietProfile(req.accountUser.id, { goal });
     res.json({ message: 'Your recommendation focus was saved.', goal });
   } catch (error) {
     console.error('Error saving diet recommendation focus:', error);
