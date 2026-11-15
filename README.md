@@ -303,6 +303,27 @@ npm.cmd run ml:test    # check Node gives the same answers as Python
 
 The training data is simulated because the app does not yet have months of real diaries; `ml/README.md` explains the simulator, the features, the evaluation and the limitations. Meal times use the `APP_TIMEZONE` environment variable (default `Africa/Harare`). The feature gives general guidance and is not medical advice.
 
+## Free phone reminders (meals, water and exercise)
+
+Students can get free notifications on their phone from the **Diet** page (Today tab → *Meal, water & exercise reminders*). It uses the Web Push standard, so there is no SMS cost, no paid service and no app store.
+
+- **Android:** open the site in Chrome, Edge, Firefox or Samsung Internet, tap **Turn on reminders** and allow notifications.
+- **iPhone (iOS 16.4+):** in Safari tap **Share → Add to Home Screen**, open *The Kitchen* from the Home Screen, log in, then tap **Turn on reminders**. Apple only allows web notifications for sites on the Home Screen.
+
+Students choose their breakfast, lunch, supper and exercise times. Water reminders go at 10:30 and 15:30. Reminders are personal and only sent when they help:
+
+| Reminder | Sent when | Skipped when |
+| --- | --- | --- |
+| Breakfast / lunch / supper | at the chosen time | that meal is already in the food diary (collected orders count) |
+| Exercise | at the chosen time | today's active minutes (logged activity or iPhone steps) already reach the target |
+| Water | 10:30 and 15:30 | the student is on track with water (30% / 65% of the daily target) |
+
+The message uses the student's own numbers, for example *"Tendai, you still need about 52 g protein and 25 g fibre today…"*.
+
+How it works: `public/sw.js` (service worker) shows the notification; `reminders.js` stores phone subscriptions (`push_subscriptions`), times (`reminder_settings`) and a once-a-day log (`reminder_log`), and checks every minute in `APP_TIMEZONE`. Push keys (VAPID) come from `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`, or are created once and kept in `app_settings`. Expired phones are removed automatically.
+
+**Render free plan:** the server sleeps after 15 minutes without visitors, and a sleeping server cannot send reminders. Create a free job on [cron-job.org](https://cron-job.org) that opens `https://<your-site>/api/reminders/tick` every 5 minutes. This keeps the server awake and sends anything that is due (each reminder still goes out only once, and a missed one is caught up within an hour). If `REMINDER_CRON_SECRET` is set, add `?key=<secret>` to that address.
+
 ## Client feedback chatbot
 
 Signed-in students can open **Give feedback** on the home page, choose a topic, and send a message of up to 2,000 characters. They may also take or attach an optional JPEG, PNG, or WebP photo (up to 15 MB before browser-side resizing; stored photos are limited to 5 MB). Feedback and photos are stored in the configured database, shown in recent submissions, and are not sent to an external AI service. Administrators can review submissions and attached photos in **Admin Panel → Client Feedback**, then mark feedback new, reviewing, or resolved. Feedback tables are created automatically at startup.

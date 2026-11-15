@@ -7,6 +7,7 @@ const { hashPassword, verifyPassword, passwordNeedsRehash } = require('./passwor
 const { getNutrition, GOALS, MEAL_SLOTS, BODY_GOALS } = require('./diet-model');
 const dietService = require('./diet-service');
 const { applyMenuImages } = require('./menu-images');
+const reminders = require('./reminders');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -1416,6 +1417,81 @@ app.delete('/api/diet/health-key', requireStudentApi, async (req, res) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// Free phone notifications (Web Push) for meal, water and exercise reminders
+// ---------------------------------------------------------------------------
+app.get('/api/reminders', requireStudentApi, async (req, res) => {
+  try {
+    res.json(await reminders.getStatus(req.accountUser.id));
+  } catch (error) {
+    console.error('Error loading reminders:', error);
+    res.status(500).json({ message: 'Unable to load reminders.' });
+  }
+});
+
+app.post('/api/reminders/subscribe', requireStudentApi, async (req, res) => {
+  try {
+    const result = await reminders.saveSubscription(req.accountUser.id, req.body && req.body.subscription, req.get('User-Agent'));
+    if (result.error) return res.status(400).json({ message: result.error });
+    res.status(201).json({ message: 'Reminders are on for this phone.', ...(await reminders.getStatus(req.accountUser.id)) });
+  } catch (error) {
+    console.error('Error saving push subscription:', error);
+    res.status(500).json({ message: 'Unable to turn on reminders.' });
+  }
+});
+
+app.post('/api/reminders/unsubscribe', requireStudentApi, async (req, res) => {
+  try {
+    await reminders.removeSubscription(req.accountUser.id, req.body && req.body.endpoint);
+    res.json({ message: 'Reminders are off for this phone.', ...(await reminders.getStatus(req.accountUser.id)) });
+  } catch (error) {
+    console.error('Error removing push subscription:', error);
+    res.status(500).json({ message: 'Unable to turn off reminders.' });
+  }
+});
+
+app.put('/api/reminders/settings', requireStudentApi, async (req, res) => {
+  try {
+    const result = await reminders.saveSettings(req.accountUser.id, req.body);
+    if (result.error) return res.status(400).json({ message: result.error });
+    res.json({ message: 'Reminder times saved.', settings: result.settings });
+  } catch (error) {
+    console.error('Error saving reminder settings:', error);
+    res.status(500).json({ message: 'Unable to save reminder times.' });
+  }
+});
+
+const testPushTimes = new Map();
+app.post('/api/reminders/test', requireStudentApi, async (req, res) => {
+  const userId = req.accountUser.id;
+  const last = testPushTimes.get(userId) || 0;
+  if (Date.now() - last < 10 * 1000) {
+    return res.status(429).json({ message: 'Please wait a few seconds before sending another test.' });
+  }
+  testPushTimes.set(userId, Date.now());
+  try {
+    const result = await reminders.sendTest(userId);
+    if (!result.devices) return res.status(400).json({ message: 'Turn on reminders on this phone first.' });
+    if (!result.sent) return res.status(502).json({ message: 'The test could not be delivered. Turn reminders off and on again on this phone.' });
+    res.json({ message: `Test sent to ${result.sent} device${result.sent === 1 ? '' : 's'}.`, ...result });
+  } catch (error) {
+    console.error('Error sending test push:', error);
+    res.status(500).json({ message: 'Unable to send a test notification.' });
+  }
+});
+
+// Lets a free cron service (e.g. cron-job.org) wake the server so reminders are
+// still sent when the free hosting plan has put it to sleep. Sending is
+// idempotent: each reminder goes out at most once a day.
+app.all('/api/reminders/tick', async (req, res) => {
+  const secret = process.env.REMINDER_CRON_SECRET;
+  if (secret && req.query.key !== secret && req.get('X-Cron-Key') !== secret) {
+    return res.status(401).json({ message: 'Invalid cron key.' });
+  }
+  const result = await reminders.safeTick();
+  res.json({ ok: true, ...(result || { busy: true }) });
+});
+
 app.put('/api/diet/body-goal', requireStudentApi, async (req, res) => {
   const bodyGoal = typeof req.body.bodyGoal === 'string' ? req.body.bodyGoal : '';
   if (!Object.prototype.hasOwnProperty.call(BODY_GOALS, bodyGoal)) {
@@ -2697,6 +2773,12 @@ async function startServer() {
     await applyMenuImages();
   } catch (error) {
     console.error('Unable to update menu photos:', error);
+  }
+  try {
+    await reminders.ensureVapidKeys();
+    reminders.startScheduler();
+  } catch (error) {
+    console.error('Unable to start phone reminders:', error);
   }
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);

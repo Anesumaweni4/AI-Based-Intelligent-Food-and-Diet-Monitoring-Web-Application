@@ -23,6 +23,7 @@ const tableOrder = [
   'diet_activity_logs',
   'diet_health_keys',
   'diet_step_logs',
+  'reminder_settings',
   'fitbit_connections',
   'client_feedback',
   'client_feedback_photos',

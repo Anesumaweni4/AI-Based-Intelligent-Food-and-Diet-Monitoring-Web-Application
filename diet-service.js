@@ -447,6 +447,42 @@ async function getStudentDashboard(userId) {
   };
 }
 
+// Today's progress for a group of students, used to write phone reminders
+// (what they have eaten, drunk and done so far against their own targets).
+async function reminderSnapshots(userIds) {
+  const ids = [...new Set(userIds.map(Number))].filter(Number.isFinite);
+  const result = new Map();
+  if (!ids.length) return result;
+  await syncOrderMeals();
+  const placeholders = ids.map(() => '?').join(', ');
+  const users = await all(
+    `SELECT u.id, u.full_name, u.age, u.weight, u.height, u.sex, p.goal, p.body_goal
+     FROM users u LEFT JOIN diet_profiles p ON p.user_id = u.id
+     WHERE u.id IN (${placeholders})`,
+    ids
+  );
+  const { logs, activities, steps } = await loadRows(ids);
+  const today = todayKey();
+  for (const user of users) {
+    const userId = Number(user.id);
+    const own = (rows) => rows.filter((row) => Number(row.user_id) === userId);
+    const userLogs = own(logs);
+    const analysed = analyseStudent(user, userLogs, own(activities), own(steps));
+    const todayLogs = userLogs.filter((log) => storedWall(log.eaten_at).slice(0, 10) === today);
+    result.set(userId, {
+      firstName: String(user.full_name || '').trim().split(/\s+/)[0] || '',
+      targets: analysed.targets,
+      today: analysed.todayRecord,
+      waterMl: todayLogs.reduce((sum, log) => sum + coach.waterFromLog(log), 0),
+      waterTarget: coach.waterTargetMl(user.sex),
+      mealsBySlot: new Set(todayLogs
+        .filter((log) => !(Number(log.is_drink) || log.is_drink === true))
+        .map((log) => log.meal_slot || slotForWall(storedWall(log.eaten_at))))
+    });
+  }
+  return result;
+}
+
 async function loadStudent(userId) {
   return get(
     `SELECT u.id, u.age, u.weight, u.height, u.sex, p.goal, p.body_goal
@@ -705,6 +741,9 @@ module.exports = {
   INTENSITY_WEIGHT,
   TIME_ZONE,
   getStudentDashboard,
+  reminderSnapshots,
+  todayKey,
+  wallClock,
   getMealPlan,
   createHealthKey,
   revokeHealthKey,

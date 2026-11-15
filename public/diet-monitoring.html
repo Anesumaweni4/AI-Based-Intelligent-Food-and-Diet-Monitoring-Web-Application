@@ -3,13 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#241813" />
+    <link rel="icon" href="/icons/icon-192.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="The Kitchen" />
     <title>Diet Monitoring | THE KITCHEN</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
     <link rel="stylesheet" href="styles.css?v=meal-card-health-tip-3" />
     <link rel="stylesheet" href="theme.css?v=diet-ai-1" />
-    <link rel="stylesheet" href="client.css?v=cart-drawer-1" />
+    <link rel="stylesheet" href="client.css?v=reminders-1" />
   </head>
   <body class="client-body dm-page">
     <header class="client-topbar">
@@ -302,6 +309,84 @@
               </div>
             </section>
           </div>
+          <section class="dm-card rm" id="dm-reminders" aria-labelledby="rm-title">
+            <div class="dm-card-head">
+              <div>
+                <p class="eyebrow">Free phone notifications</p>
+                <h3 id="rm-title">Meal, water &amp; exercise reminders</h3>
+              </div>
+              <span class="dm2-pill" id="rm-status">Checking…</span>
+            </div>
+            <div class="rm-grid">
+              <div class="rm-left">
+                <div class="rm-phone" aria-hidden="true">
+                  <div class="rm-phone-time" id="rm-phone-time">12:58</div>
+                  <div class="rm-note">
+                    <img src="/icons/icon-192.png" alt="" />
+                    <div>
+                      <p class="rm-note-app">THE KITCHEN <span>now</span></p>
+                      <p class="rm-note-title">Lunch time 🍽️</p>
+                      <p class="rm-note-body">You still need about 40 g protein today. Try chicken, beef or beans with vegetables.</p>
+                    </div>
+                  </div>
+                  <div class="rm-note rm-note--back">
+                    <img src="/icons/icon-192.png" alt="" />
+                    <div>
+                      <p class="rm-note-app">THE KITCHEN <span>2h ago</span></p>
+                      <p class="rm-note-title">Time for a glass of water 💧</p>
+                    </div>
+                  </div>
+                </div>
+                <p class="rm-message" id="rm-message" role="status" aria-live="polite">Checking whether this phone can get reminders…</p>
+                <div class="rm-actions" id="rm-actions"></div>
+                <ol class="rm-ios" id="rm-ios" hidden>
+                  <li>In <b>Safari</b>, tap the <b>Share</b> button <span class="rm-share" aria-hidden="true">⬆︎</span></li>
+                  <li>Choose <b>Add to Home Screen</b>, then <b>Add</b></li>
+                  <li>Open <b>The Kitchen</b> from your Home Screen and log in</li>
+                  <li>Come back to this card and tap <b>Turn on reminders</b></li>
+                </ol>
+                <p class="rm-devices dm-muted dm-small" id="rm-devices"></p>
+              </div>
+              <form class="rm-form" id="rm-form" novalidate>
+                <fieldset class="rm-row">
+                  <legend class="rm-visually-hidden">Meal reminders</legend>
+                  <label class="rm-switch">
+                    <input type="checkbox" name="mealsEnabled" checked />
+                    <span class="rm-switch-ui" aria-hidden="true"></span>
+                    <span class="rm-row-text"><strong>🍽️ Meals</strong><small>Skipped if you already logged that meal</small></span>
+                  </label>
+                  <div class="rm-times" data-for="mealsEnabled">
+                    <label><span>Breakfast</span><input type="time" name="breakfastTime" value="07:30" required /></label>
+                    <label><span>Lunch</span><input type="time" name="lunchTime" value="13:00" required /></label>
+                    <label><span>Supper</span><input type="time" name="supperTime" value="18:30" required /></label>
+                  </div>
+                </fieldset>
+                <fieldset class="rm-row">
+                  <legend class="rm-visually-hidden">Exercise reminder</legend>
+                  <label class="rm-switch">
+                    <input type="checkbox" name="exerciseEnabled" checked />
+                    <span class="rm-switch-ui" aria-hidden="true"></span>
+                    <span class="rm-row-text"><strong>🏃 Exercise</strong><small>Only if your active minutes are not reached yet</small></span>
+                  </label>
+                  <div class="rm-times" data-for="exerciseEnabled">
+                    <label><span>Remind me at</span><input type="time" name="exerciseTime" value="17:00" required /></label>
+                  </div>
+                </fieldset>
+                <fieldset class="rm-row">
+                  <legend class="rm-visually-hidden">Water reminders</legend>
+                  <label class="rm-switch">
+                    <input type="checkbox" name="waterEnabled" checked />
+                    <span class="rm-switch-ui" aria-hidden="true"></span>
+                    <span class="rm-row-text"><strong>💧 Water</strong><small>10:30 and 15:30, only if you are behind on water</small></span>
+                  </label>
+                </fieldset>
+                <div class="rm-form-foot">
+                  <button type="submit" class="dm-btn dm-btn--primary" id="rm-save">Save times</button>
+                  <p class="rm-form-msg dm-small" id="rm-form-msg" role="status" aria-live="polite"></p>
+                </div>
+              </form>
+            </div>
+          </section>
           <section class="dm-card dm2-iphone" id="dm-iphone" aria-labelledby="dm-iphone-title">
             <div class="dm-card-head">
               <div>
@@ -533,5 +618,6 @@
 
     <script src="client-shell.js?v=cart-drawer-1"></script>
     <script src="diet-monitoring.js?v=iphone-sync-1"></script>
+    <script src="reminders-client.js?v=reminders-1"></script>
   </body>
 </html>

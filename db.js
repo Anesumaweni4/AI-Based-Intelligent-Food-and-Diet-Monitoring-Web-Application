@@ -34,7 +34,7 @@ function postgresSql(sql) {
 }
 
 function postgresRun(client, sql, params = []) {
-  const isInsertWithId = /^\s*INSERT\s+INTO\s+(?!"?(?:menu_schedule|monthly_invoice_orders|client_feedback_photos|diet_profiles|fitbit_connections|diet_health_keys)\b)/i.test(sql);
+  const isInsertWithId = /^\s*INSERT\s+INTO\s+(?!"?(?:menu_schedule|monthly_invoice_orders|client_feedback_photos|diet_profiles|fitbit_connections|diet_health_keys|reminder_settings|app_settings)\b)/i.test(sql);
   const statement = isInsertWithId && !/\bRETURNING\b/i.test(sql)
     ? `${sql.trim().replace(/;$/, '')} RETURNING id`
     : sql;
@@ -1105,6 +1105,127 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     `);
   }
 
+  // Free phone notifications (Web Push): a student's phones, their reminder
+  // times, a log so each reminder is sent once a day, and the server's push keys.
+  const reminderDefaults = `
+        meals_enabled SMALLINT NOT NULL DEFAULT 1,
+        breakfast_time VARCHAR(5) NOT NULL DEFAULT '07:30',
+        lunch_time VARCHAR(5) NOT NULL DEFAULT '13:00',
+        supper_time VARCHAR(5) NOT NULL DEFAULT '18:30',
+        exercise_enabled SMALLINT NOT NULL DEFAULT 1,
+        exercise_time VARCHAR(5) NOT NULL DEFAULT '17:00',
+        water_enabled SMALLINT NOT NULL DEFAULT 1,`;
+  if (postgresPool) {
+    await postgresPool.query(`
+      CREATE TABLE IF NOT EXISTS push_subscriptions (
+        id BIGSERIAL PRIMARY KEY,
+        user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        endpoint VARCHAR(600) NOT NULL UNIQUE,
+        p256dh VARCHAR(200) NOT NULL,
+        auth VARCHAR(100) NOT NULL,
+        device VARCHAR(80),
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        last_sent_at TIMESTAMP
+      )
+    `);
+    await postgresPool.query(`
+      CREATE TABLE IF NOT EXISTS reminder_settings (
+        user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,${reminderDefaults}
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await postgresPool.query(`
+      CREATE TABLE IF NOT EXISTS reminder_log (
+        id BIGSERIAL PRIMARY KEY,
+        user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        kind VARCHAR(20) NOT NULL,
+        day VARCHAR(10) NOT NULL,
+        sent_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (user_id, kind, day)
+      )
+    `);
+    await postgresPool.query(`
+      CREATE TABLE IF NOT EXISTS app_settings (
+        setting_key VARCHAR(60) PRIMARY KEY,
+        setting_value TEXT NOT NULL
+      )
+    `);
+  } else if (sqliteDb) {
+    await sqliteRun(`
+      CREATE TABLE IF NOT EXISTS push_subscriptions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        endpoint TEXT NOT NULL UNIQUE,
+        p256dh TEXT NOT NULL,
+        auth TEXT NOT NULL,
+        device TEXT,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        last_sent_at DATETIME
+      )
+    `);
+    await sqliteRun(`
+      CREATE TABLE IF NOT EXISTS reminder_settings (
+        user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,${reminderDefaults}
+        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await sqliteRun(`
+      CREATE TABLE IF NOT EXISTS reminder_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        kind TEXT NOT NULL,
+        day TEXT NOT NULL,
+        sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (user_id, kind, day)
+      )
+    `);
+    await sqliteRun(`
+      CREATE TABLE IF NOT EXISTS app_settings (
+        setting_key TEXT PRIMARY KEY,
+        setting_value TEXT NOT NULL
+      )
+    `);
+  } else {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS push_subscriptions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        endpoint VARCHAR(600) NOT NULL,
+        p256dh VARCHAR(200) NOT NULL,
+        auth VARCHAR(100) NOT NULL,
+        device VARCHAR(80),
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        last_sent_at TIMESTAMP NULL,
+        UNIQUE KEY uniq_push_endpoint (endpoint(255)),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS reminder_settings (
+        user_id INT PRIMARY KEY,${reminderDefaults}
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS reminder_log (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        kind VARCHAR(20) NOT NULL,
+        day VARCHAR(10) NOT NULL,
+        sent_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_reminder_once (user_id, kind, day),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS app_settings (
+        setting_key VARCHAR(60) PRIMARY KEY,
+        setting_value TEXT NOT NULL
+      )
+    `);
+  }
+
   if (postgresPool) {
     await postgresPool.query(`
       CREATE TABLE IF NOT EXISTS fitbit_connections (
@@ -1230,6 +1351,9 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
       'diet_activity_logs',
       'diet_health_keys',
       'diet_step_logs',
+      'push_subscriptions',
+      'reminder_settings',
+      'reminder_log',
       'fitbit_connections',
       'client_feedback',
       'client_feedback_photos'
