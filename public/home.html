@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="styles.css?v=home-menu-price-layout-1" />
     <link rel="stylesheet" href="theme.css?v=diet-ai-1" />
-    <link rel="stylesheet" href="client.css?v=cart-drawer-1" />
+    <link rel="stylesheet" href="client.css?v=drink-picker-3" />
     <script>
       // Send staff to their own dashboards before the page paints.
       (() => {
@@ -237,15 +237,28 @@
       </div>
     </dialog>
     <dialog id="drink-picker-dialog" class="notice-dialog drink-picker-dialog" aria-labelledby="drink-picker-title">
-      <div class="drink-picker-content">
-        <img class="drink-picker-image" src="drinks-assortment.jpg" alt="Bottled Minute Maid drinks" />
-        <div class="drink-picker-body">
-          <p class="eyebrow">Cold drinks</p>
-          <h2 id="drink-picker-title">Choose a drink</h2>
-          <p class="drink-picker-help">Choose your drink below. You can add more than one.</p>
-          <div id="drink-picker-options" class="drink-picker-options"></div>
-          <button type="button" class="admin-gate-cancel drink-picker-close" id="close-drink-picker">Done</button>
+      <div class="dpk">
+        <header class="dpk-head">
+          <div>
+            <p class="eyebrow">Cold drinks</p>
+            <h2 id="drink-picker-title">Choose a drink</h2>
+            <p class="dpk-help">Tap + to add. You can pick more than one.</p>
+          </div>
+          <button type="button" class="dpk-x" id="drink-picker-x" aria-label="Close drinks">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </header>
+        <div class="dpk-filters" id="drink-picker-filters" role="group" aria-label="Filter drinks">
+          <button type="button" class="dpk-chip is-active" data-filter="all">All</button>
+          <button type="button" class="dpk-chip" data-filter="soda">Soft drinks</button>
+          <button type="button" class="dpk-chip" data-filter="juice">Juices</button>
+          <button type="button" class="dpk-chip" data-filter="water">Water &amp; more</button>
         </div>
+        <div id="drink-picker-options" class="dpk-list"></div>
+        <footer class="dpk-foot">
+          <p class="dpk-summary" id="drink-picker-summary" aria-live="polite">No drinks added yet</p>
+          <button type="button" class="dpk-done" id="close-drink-picker">Done</button>
+        </footer>
       </div>
     </dialog>
     <dialog id="payment-choice-dialog" class="notice-dialog" aria-labelledby="payment-choice-title">
@@ -339,7 +352,7 @@
       </section>
     </aside>
     <script src="client-shell.js?v=cart-drawer-1"></script>
-    <script src="app.js?v=cart-drawer-1"></script>
+    <script src="app.js?v=drink-picker-3"></script>
     <script src="staff-dashboard-links.js?v=20261113-1"></script>
     <script src="feedback-chatbot.js?v=feedback-chat-2"></script>
   </body>

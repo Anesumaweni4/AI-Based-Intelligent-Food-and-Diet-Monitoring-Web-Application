@@ -472,23 +472,89 @@ async function loadMenu() {
   });
 }
 
-function openDrinkPicker() {
+let drinkFilter = 'all';
+
+function drinkKind(item) {
+  const name = String(item.name || '').toLowerCase();
+  if (/water|smoothie/.test(name)) return 'water';
+  if (/juice|minute maid|maid|cherry|berry|mango|pineapple|apple|cranberry/.test(name)) return 'juice';
+  return 'soda';
+}
+
+function renderDrinkPicker() {
   const drinkItems = menu.filter(item => String(item.category).toLowerCase() === 'drink');
-  drinkPickerOptions.innerHTML = drinkItems.map(item => `
-    <div class="drink-picker-option">
-      <div>
-        <strong>${escapeHtml(item.name)}</strong>
-        <span>${escapeHtml(item.description || '')}</span>
-      </div>
-      <strong class="drink-picker-price">${formatCurrency(item.price)}</strong>
-      <button type="button" class="add-btn" data-id="${Number(item.id)}">${Number(item.stock_quantity) > 0 ? 'Add' : 'Sold out'}</button>
-    </div>
-  `).join('');
-  drinkPickerOptions.querySelectorAll('.add-btn').forEach(button => {
-    button.addEventListener('click', () => addToCart(Number(button.dataset.id)));
-  });
+  const shown = drinkItems
+    .filter(item => drinkFilter === 'all' || drinkKind(item) === drinkFilter)
+    .sort((a, b) => (Number(b.stock_quantity) > 0) - (Number(a.stock_quantity) > 0));
+
+  drinkPickerOptions.innerHTML = shown.length ? shown.map(item => {
+    const id = Number(item.id);
+    const inCart = getCartItem(id)?.quantity || 0;
+    const soldOut = Number(item.stock_quantity) <= 0;
+    const action = soldOut
+      ? '<span class="dpk-soldout">Sold out</span>'
+      : inCart
+        ? `<div class="dpk-stepper">
+             <button type="button" data-step="-1" data-id="${id}" aria-label="Remove one ${escapeHtml(item.name)}">&minus;</button>
+             <span aria-label="${inCart} in cart">${inCart}</span>
+             <button type="button" data-step="1" data-id="${id}" aria-label="Add one more ${escapeHtml(item.name)}">+</button>
+           </div>`
+        : `<button type="button" class="dpk-add" data-step="1" data-id="${id}" aria-label="Add ${escapeHtml(item.name)}">
+             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add</span>
+           </button>`;
+    return `
+      <article class="dpk-item${soldOut ? ' is-soldout' : ''}${inCart ? ' is-picked' : ''}">
+        <img src="${escapeHtml(item.image || '/drinks-assortment.jpg')}" alt="" loading="lazy" />
+        <div class="dpk-info">
+          <h3>${escapeHtml(item.name)}</h3>
+          <p>${escapeHtml(item.description || '')}</p>
+          <strong class="dpk-price">${formatCurrency(item.price)}</strong>
+        </div>
+        <div class="dpk-action">${action}</div>
+      </article>`;
+  }).join('') : '<p class="dpk-empty">No drinks in this group right now.</p>';
+
+  const picked = cart.filter(entry => String(entry.category).toLowerCase() === 'drink');
+  const count = picked.reduce((sum, entry) => sum + entry.quantity, 0);
+  const total = picked.reduce((sum, entry) => sum + entry.price * entry.quantity, 0);
+  document.getElementById('drink-picker-summary').innerHTML = count
+    ? `<strong>${count} drink${count === 1 ? '' : 's'}</strong> in your cart &middot; ${formatCurrency(total)}`
+    : 'No drinks added yet';
+}
+
+function openDrinkPicker() {
+  renderDrinkPicker();
   drinkPickerDialog.showModal();
 }
+
+drinkPickerOptions.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-step]');
+  if (!button) return;
+  const id = Number(button.dataset.id);
+  const step = Number(button.dataset.step);
+  if (step > 0 && !getCartItem(id)) addToCart(id);
+  else changeQuantity(id, step);
+  renderDrinkPicker();
+  const again = drinkPickerOptions.querySelector(`[data-id="${id}"][data-step="${step}"]`)
+    || drinkPickerOptions.querySelector(`[data-id="${id}"]`);
+  again?.focus({ preventScroll: true });
+});
+
+document.getElementById('drink-picker-filters').addEventListener('click', (event) => {
+  const chip = event.target.closest('[data-filter]');
+  if (!chip) return;
+  drinkFilter = chip.dataset.filter;
+  document.querySelectorAll('#drink-picker-filters .dpk-chip').forEach(other => {
+    other.classList.toggle('is-active', other === chip);
+    other.setAttribute('aria-pressed', String(other === chip));
+  });
+  renderDrinkPicker();
+});
+
+document.getElementById('drink-picker-x').addEventListener('click', () => drinkPickerDialog.close());
+drinkPickerDialog.addEventListener('click', (event) => {
+  if (event.target === drinkPickerDialog) drinkPickerDialog.close();
+});
 
 async function placeOrder(paymentMethod) {
   const orderType = deliveryOptionEl ? deliveryOptionEl.value : 'pickup';
