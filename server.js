@@ -2947,6 +2947,35 @@ app.get('/api/restaurant/orders', requireCashierOrAdminApi, async (req, res) => 
   }
 });
 
+// Admin delivery board: live delivery orders, riders and today's totals.
+app.get('/api/admin/deliveries', async (req, res) => {
+  try {
+    const view = ['active', 'today', 'all'].includes(req.query.view) ? req.query.view : 'active';
+    res.set('Cache-Control', 'private, no-store');
+    res.json(await delivery.adminBoard(view));
+  } catch (error) {
+    console.error('Error loading the delivery board:', error);
+    res.status(500).json({ message: 'Unable to load deliveries.' });
+  }
+});
+
+app.post('/api/admin/deliveries/:id/rider', async (req, res) => {
+  const orderId = Number(req.params.id);
+  const raw = req.body ? req.body.riderId : undefined;
+  const riderId = raw === null || raw === '' ? null : Number(raw);
+  if (!Number.isInteger(orderId) || orderId < 1 || (riderId !== null && (!Number.isInteger(riderId) || riderId < 1))) {
+    return res.status(400).json({ message: 'Invalid order or rider.' });
+  }
+  try {
+    const order = await delivery.assignRider(orderId, riderId);
+    res.json({ message: riderId ? `Order #${order.id} was given to the rider.` : `Order #${order.id} is open for any rider again.` });
+  } catch (error) {
+    if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+    console.error('Error assigning a rider:', error);
+    res.status(500).json({ message: 'Unable to assign the rider.' });
+  }
+});
+
 app.get('/api/delivery/orders', requireCashierOrAdminApi, async (req, res) => {
   try {
     const orders = await all("SELECT * FROM orders WHERE order_type = 'delivery' AND status IN ('Preparing', 'Ready for Pickup', 'Out for Delivery', 'Delivered') ORDER BY created_at DESC");

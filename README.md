@@ -349,7 +349,7 @@ Students choose **Pickup** (free) or **Delivery** (fixed fee, `DELIVERY_FEE`, de
 | On the way | Student | **Track** opens a live map (OpenStreetMap) with the rider, the student and the kitchen, plus an ETA |
 | Delivered | Rider | Rider enters the student's code; a wrong code is refused. Meal goes into the diet diary |
 
-The student gets a phone notification (Web Push) at every step. Riders see the address, the items, cash to collect, and one-tap Call / WhatsApp / Directions. Admins create rider accounts under **Team & security** (account type *Delivery rider*); cashiers and admins can also open the rider app when no rider is on shift. Optional: set `KITCHEN_LAT` and `KITCHEN_LNG` to show the kitchen on the map. Code: `delivery.js`, `public/rider.html`, `public/rider.js`, `public/track.js`.
+The student gets a phone notification (Web Push) at every step. Riders see the address, the items, cash to collect, and one-tap Call / WhatsApp / Directions. Admins create rider accounts under **Team & security** (account type *Delivery rider*), or set `RIDER_USERNAME`, `RIDER_PASSWORD` (14+ characters) and `RIDER_NAME` on Render to create the first rider automatically. The admin panel has a **Deliveries** section with live totals, every rider (online or offline, jobs and fees today) and every delivery order, where the admin can give an order to a rider, move it to another rider, or open it for any rider; cashiers and admins can also open the rider app when no rider is on shift. Optional: set `KITCHEN_LAT` and `KITCHEN_LNG` to show the kitchen on the map. Code: `delivery.js`, `public/rider.html`, `public/rider.js`, `public/track.js`.
 
 ## Client feedback chatbot
 

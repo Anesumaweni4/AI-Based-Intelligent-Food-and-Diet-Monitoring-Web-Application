@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="styles.css?v=20261115-1" />
-    <link rel="stylesheet" href="theme.css?v=20261115-1" />
+    <link rel="stylesheet" href="theme.css?v=20261115-2" />
   </head>
   <body class="dashboard-body admin-body">
     <div class="admin-shell">
@@ -30,6 +30,10 @@
           <a href="#orders">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
             Orders
+          </a>
+          <a href="#deliveries">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M9 17h6l-2-7H9M15 10h3l3 7M5 10h4"/></svg>
+            Deliveries
           </a>
 
           <span class="nav-label">Kitchen</span>
@@ -144,6 +148,11 @@
                   <span class="quick-text"><strong>Orders</strong><small>Today's orders, filters and CSV history</small></span>
                   <span class="quick-badge" data-quick-badge="orders" hidden></span>
                 </a>
+                <a class="quick-tile" href="#deliveries" data-tone="blue">
+                  <span class="quick-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M9 17h6l-2-7H9M15 10h3l3 7M5 10h4"/></svg></span>
+                  <span class="quick-text"><strong>Deliveries</strong><small>Delivery orders, riders and live locations</small></span>
+                  <span class="quick-badge" data-quick-badge="deliveries" hidden></span>
+                </a>
                 <a class="quick-tile" href="#stock" data-tone="green">
                   <span class="quick-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span>
                   <span class="quick-text"><strong>Stock control</strong><small>Stock on hand and the ingredient ledger</small></span>
@@ -221,6 +230,40 @@
               </div>
               <p id="admin-order-results" class="order-results" role="status" aria-live="polite"></p>
               <div id="admin-orders" class="order-list"></div>
+            </section>
+
+            <section class="weekly-menu-section di-section dl-section" id="deliveries" aria-labelledby="deliveries-title">
+              <div class="di-head">
+                <div>
+                  <p class="eyebrow">Delivery</p>
+                  <h3 id="deliveries-title">Deliveries</h3>
+                  <p class="di-sub">Every order placed for delivery, which rider has it and where it is. Updates by itself every few seconds.</p>
+                </div>
+                <div class="dl-head-actions">
+                  <a class="topbar-button" href="/rider.html" target="_blank" rel="noopener">Open Rider App</a>
+                  <a class="topbar-button" href="#settings" data-dl-add-rider>+ Add a rider</a>
+                </div>
+              </div>
+              <p class="di-status" id="dl-status" role="status" aria-live="polite">Loading deliveries…</p>
+              <div class="di-stats" id="dl-stats"></div>
+
+              <div class="dl-riders-card">
+                <div class="dl-card-head">
+                  <h4>Riders</h4>
+                  <small>Online means the rider app sent a location in the last 3 minutes.</small>
+                </div>
+                <div class="dl-riders" id="dl-riders"></div>
+              </div>
+
+              <div class="dl-toolbar">
+                <div class="dl-tabs" role="tablist" aria-label="Which deliveries to show">
+                  <button type="button" role="tab" class="is-active" aria-selected="true" data-dl-view="active">Active</button>
+                  <button type="button" role="tab" aria-selected="false" data-dl-view="today">Today</button>
+                  <button type="button" role="tab" aria-selected="false" data-dl-view="all">History</button>
+                </div>
+                <input type="search" id="dl-search" placeholder="Search name, phone, residence or #order" autocomplete="off" aria-label="Search deliveries" />
+              </div>
+              <div class="dl-orders" id="dl-orders"></div>
             </section>
 
             <section class="weekly-menu-section" id="stock" aria-labelledby="stock-title">
@@ -684,7 +727,8 @@
     </dialog>
 
     <script src="admin-shell.js?v=20261115-1"></script>
-    <script src="admin.js?v=20261115-1"></script>
+    <script src="admin.js?v=20261115-2"></script>
+    <script src="admin-deliveries.js?v=20261115-1"></script>
     <script src="admin-diet.js?v=20261115-1"></script>
     <script src="staff-dashboard-links.js?v=20261115-1"></script>
   </body>

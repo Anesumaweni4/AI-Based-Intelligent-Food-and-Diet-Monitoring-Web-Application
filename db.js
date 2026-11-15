@@ -1486,6 +1486,22 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     }
   }
 
+  // Optional first delivery rider, created from environment variables on Render
+  // (RIDER_USERNAME, RIDER_PASSWORD, RIDER_NAME) so no password is kept in the code.
+  const riderUsername = String(process.env.RIDER_USERNAME || '').trim();
+  const riderPassword = process.env.RIDER_PASSWORD || '';
+  if (riderUsername && riderPassword) {
+    if (riderPassword.length < 14) {
+      console.warn('RIDER_PASSWORD must be at least 14 characters long; the rider account was not created.');
+    } else if (!(await get('SELECT id FROM users WHERE username = ?', [riderUsername]))) {
+      await run(
+        'INSERT INTO users (full_name, username, password, role) VALUES (?, ?, ?, ?)',
+        [String(process.env.RIDER_NAME || 'Delivery Rider').trim().slice(0, 255) || 'Delivery Rider', riderUsername.slice(0, 100), await hashPassword(riderPassword), 'rider']
+      );
+      console.log(`Delivery rider account "${riderUsername}" created.`);
+    }
+  }
+
   const countRows = await all('SELECT COUNT(*) AS count FROM menu_items');
   if (!countRows[0] || Number(countRows[0].count) === 0) {
     await run(`

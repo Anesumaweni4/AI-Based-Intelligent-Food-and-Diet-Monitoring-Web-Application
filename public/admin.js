@@ -1373,7 +1373,7 @@ function renderOrders() {
 
 function showOrderDetails(order, statusMessage = '') {
   activeOrderDetails = order;
-  const canMarkCollected = ['Pending', 'Preparing', 'Ready for Pickup'].includes(order.status);
+  const canMarkCollected = order.order_type !== 'delivery' && ['Pending', 'Preparing', 'Ready for Pickup'].includes(order.status);
   orderDialogTitle.textContent = `Order #${Number(order.id)}`;
   orderDialogStatus.textContent = statusMessage;
   orderDialogStatus.classList.remove('error');

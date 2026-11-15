@@ -37,5 +37,12 @@ services:
         sync: false
       - key: KITCHEN_LNG
         sync: false
+      # Optional first delivery rider account (created on start if missing)
+      - key: RIDER_USERNAME
+        sync: false
+      - key: RIDER_PASSWORD
+        sync: false
+      - key: RIDER_NAME
+        sync: false
       - key: DELIVERY_FEE
         value: "3.50"

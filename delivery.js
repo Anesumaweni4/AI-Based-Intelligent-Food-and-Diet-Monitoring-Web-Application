@@ -250,7 +250,134 @@ async function trackOrder(orderId, userId) {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Admin: every delivery order, the riders and today's totals
+// ---------------------------------------------------------------------------
+const ACTIVE_STATUSES = ['Pending', 'Preparing', 'Ready for Pickup', 'Out for Delivery'];
+
+// Orders store UTC wall time; "today" means since midnight in Harare (UTC+2).
+function startOfHarareDayUtc() {
+  const harare = new Date(Date.now() + 2 * 3600 * 1000);
+  const midnightUtc = Date.UTC(harare.getUTCFullYear(), harare.getUTCMonth(), harare.getUTCDate()) - 2 * 3600 * 1000;
+  return new Date(midnightUtc).toISOString().slice(0, 19).replace('T', ' ');
+}
+
+async function adminBoard(view = 'active') {
+  const since = startOfHarareDayUtc();
+  const placeholders = ACTIVE_STATUSES.map(() => '?').join(', ');
+  let orders;
+  if (view === 'today') {
+    orders = await all("SELECT * FROM orders WHERE order_type = 'delivery' AND created_at >= ? ORDER BY id DESC", [since]);
+  } else if (view === 'all') {
+    orders = await all("SELECT * FROM orders WHERE order_type = 'delivery' ORDER BY id DESC LIMIT 200");
+  } else {
+    orders = await all(`SELECT * FROM orders WHERE order_type = 'delivery' AND status IN (${placeholders}) ORDER BY id`, ACTIVE_STATUSES);
+  }
+
+  const riderRows = await all("SELECT id, full_name, username FROM users WHERE role = 'rider' ORDER BY full_name");
+  const activeRows = await all(
+    `SELECT rider_id, status, rider_location_at FROM orders
+     WHERE order_type = 'delivery' AND rider_id IS NOT NULL AND status IN (${placeholders})`,
+    ACTIVE_STATUSES
+  );
+  const doneRows = await all(
+    "SELECT rider_id, COUNT(*) AS count, COALESCE(SUM(delivery_fee), 0) AS fees FROM orders WHERE order_type = 'delivery' AND status = 'Delivered' AND delivered_at >= ? GROUP BY rider_id",
+    [since]
+  );
+  const todayTotals = await get(
+    `SELECT COUNT(*) AS placed,
+            SUM(CASE WHEN status = 'Delivered' THEN 1 ELSE 0 END) AS delivered,
+            COALESCE(SUM(CASE WHEN status = 'Delivered' THEN delivery_fee ELSE 0 END), 0) AS fees
+     FROM orders WHERE order_type = 'delivery' AND created_at >= ?`,
+    [since]
+  );
+  const allActive = await all(`SELECT status, rider_id, payment_method, total FROM orders WHERE order_type = 'delivery' AND status IN (${placeholders})`, ACTIVE_STATUSES);
+
+  const names = new Map(riderRows.map((rider) => [Number(rider.id), rider.full_name]));
+  // Cashiers or admins may also have taken a job from the rider app.
+  const otherIds = [...new Set(orders.map((order) => Number(order.rider_id)).filter((id) => id && !names.has(id)))];
+  if (otherIds.length) {
+    const others = await all(`SELECT id, full_name FROM users WHERE id IN (${otherIds.map(() => '?').join(', ')})`, otherIds);
+    others.forEach((user) => names.set(Number(user.id), user.full_name));
+  }
+
+  const riders = riderRows.map((rider) => {
+    const id = Number(rider.id);
+    const jobs = activeRows.filter((row) => Number(row.rider_id) === id);
+    const lastSeen = Math.max(0, ...jobs.map((row) => storedUtcToMs(row.rider_location_at) || 0));
+    const done = doneRows.find((row) => Number(row.rider_id) === id);
+    return {
+      id,
+      name: rider.full_name,
+      username: rider.username,
+      activeJobs: jobs.length,
+      onTheWay: jobs.filter((row) => row.status === 'Out for Delivery').length,
+      online: Boolean(lastSeen && Date.now() - lastSeen < LOCATION_FRESH_MS),
+      deliveredToday: done ? Number(done.count) : 0,
+      feesToday: done ? Number(done.fees) : 0
+    };
+  });
+
+  const items = await orderItems(orders.map((order) => Number(order.id)));
+  return {
+    view,
+    kitchen: KITCHEN,
+    stats: {
+      needRider: allActive.filter((order) => !order.rider_id).length,
+      withRider: allActive.filter((order) => order.rider_id && order.status !== 'Out for Delivery').length,
+      onTheWay: allActive.filter((order) => order.status === 'Out for Delivery').length,
+      placedToday: Number(todayTotals.placed) || 0,
+      deliveredToday: Number(todayTotals.delivered) || 0,
+      feesToday: Number(todayTotals.fees) || 0,
+      cashOnTheRoad: allActive.filter((order) => order.payment_method === 'cash').reduce((sum, order) => sum + Number(order.total), 0)
+    },
+    riders,
+    orders: orders.map((order) => {
+      const locationAt = storedUtcToMs(order.rider_location_at);
+      return {
+        ...jobView(order, items, null),
+        deliveryFee: Number(order.delivery_fee) || 0,
+        riderName: order.rider_id ? names.get(Number(order.rider_id)) || 'Staff member' : null,
+        riderLocation: order.status === 'Out for Delivery' && locationAt && Date.now() - locationAt < LOCATION_FRESH_MS
+          ? point(order.rider_lat, order.rider_lng)
+          : null,
+        dispatchedAt: order.dispatched_at,
+        deliveredAt: order.delivered_at
+      };
+    })
+  };
+}
+
+// Admin gives an order to a rider, moves it to another rider, or frees it.
+async function assignRider(orderId, riderId) {
+  const order = await withTransaction(async (tx) => {
+    const current = await tx.get('SELECT * FROM orders WHERE id = ?', [orderId]);
+    if (!current || current.order_type !== 'delivery') throw fail(404, 'Delivery order not found.');
+    if (!ACTIVE_STATUSES.includes(current.status)) throw fail(409, `This order is already ${String(current.status).toLowerCase()}.`);
+    if (riderId === null) {
+      if (current.status === 'Out for Delivery') throw fail(409, 'The rider already has the food. Move it to another rider instead.');
+      await tx.run('UPDATE orders SET rider_id = NULL WHERE id = ?', [orderId]);
+    } else {
+      const rider = await tx.get("SELECT id FROM users WHERE id = ? AND role = 'rider'", [riderId]);
+      if (!rider) throw fail(400, 'Choose a delivery rider account.');
+      await tx.run('UPDATE orders SET rider_id = ? WHERE id = ?', [riderId, orderId]);
+    }
+    return tx.get('SELECT * FROM orders WHERE id = ?', [orderId]);
+  });
+  if (riderId) {
+    reminders.sendToUser(Number(riderId), {
+      title: `New delivery #${order.id} 🛵`,
+      body: `The kitchen gave you a delivery to ${order.address}. Open the rider app.`,
+      url: '/rider.html',
+      tag: `rider-job-${order.id}`
+    }).catch(() => {});
+  }
+  return order;
+}
+
 module.exports = {
+  adminBoard,
+  assignRider,
   DELIVERY_FEE_CENTS,
   KITCHEN,
   newDeliveryCode,
