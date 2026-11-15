@@ -667,6 +667,20 @@ app.use((req, res, next) => {
 app.get('/cashier-login.html', (req, res) => {
   res.redirect('/login.html');
 });
+// Browser caching: pages, scripts, styles and the service worker are always
+// re-checked with the server (a quick 304 when nothing changed), so phones never
+// keep an old version after a deploy. Photos and icons may be kept for a day.
+app.use((req, res, next) => {
+  if (req.method === 'GET' || req.method === 'HEAD') {
+    const pathname = req.path;
+    if (pathname === '/' || pathname === '/login' || /\.(html|js|css|webmanifest|json)$/i.test(pathname)) {
+      res.setHeader('Cache-Control', 'no-cache');
+    } else if (/\.(png|jpe?g|webp|gif|svg|ico|woff2?)$/i.test(pathname)) {
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+    }
+  }
+  next();
+});
 app.get('/admin-login.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin-login.html'));
 });
