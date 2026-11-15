@@ -258,7 +258,7 @@ cashierCreateForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const submitButton = cashierCreateForm.querySelector('button[type="submit"]');
   submitButton.disabled = true;
-  cashierCreateStatus.textContent = 'Creating cashier account…';
+  cashierCreateStatus.textContent = 'Creating account…';
   cashierCreateStatus.classList.remove('error');
 
   try {
@@ -266,13 +266,14 @@ cashierCreateForm.addEventListener('submit', async (event) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        role: document.getElementById('cashier-role')?.value || 'cashier',
         fullName: document.getElementById('cashier-full-name').value.trim(),
         username: document.getElementById('cashier-username').value.trim(),
         password: document.getElementById('cashier-password').value
       })
     });
     const result = await response.json();
-    if (!response.ok) throw new Error(result.message || 'Unable to create cashier account.');
+    if (!response.ok) throw new Error(result.message || 'Unable to create the account.');
     cashierCreateForm.reset();
     cashierCreateStatus.textContent = result.message;
     await loadSummary();

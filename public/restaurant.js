@@ -141,6 +141,7 @@ function getActions(order) {
   }
 
   const buttons = [];
+  const isDelivery = order.order_type === 'delivery';
   if (order.status === 'Pending') {
     buttons.push(`<button type="button" class="order-btn order-btn--primary" data-order-id="${id}" data-status="Preparing"${busy}>
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c2 3 5 4.5 5 9a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5.5C10 8 11 9 12 9c0-2 0-4 0-6z"/></svg>
@@ -149,9 +150,15 @@ function getActions(order) {
   if (['Pending', 'Preparing'].includes(order.status)) {
     buttons.push(`<button type="button" class="order-btn ${order.status === 'Preparing' ? 'order-btn--primary' : 'order-btn--soft'}" data-order-id="${id}" data-status="Ready for Pickup"${busy}>
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18h18"/><path d="M5 18a7 7 0 0 1 14 0"/><path d="M12 8V6"/></svg>
-      Ready for pickup</button>`);
+      ${isDelivery ? 'Ready for rider' : 'Ready for pickup'}</button>`);
   }
-  if (order.status === 'Ready for Pickup') {
+  if (order.status === 'Ready for Pickup' && isDelivery) {
+    buttons.push(`<span class="kitchen-rider-wait">${order.rider_id ? '🛵 Rider assigned, waiting for pickup' : '🛵 Waiting for a rider to accept'}</span>`);
+  }
+  if (order.status === 'Out for Delivery') {
+    buttons.push('<span class="kitchen-rider-wait">🛵 On the way. The rider confirms delivery with the student\'s code.</span>');
+  }
+  if (order.status === 'Ready for Pickup' && !isDelivery) {
     buttons.push(`<button type="button" class="order-btn order-btn--success" data-order-id="${id}" data-status="Collected"${busy}>
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>
       Mark collected</button>`);
@@ -163,7 +170,7 @@ function getActions(order) {
 function renderOrderCard(order) {
   const id = Number(order.id);
   const tone = STATUS_TONES[order.status] || 'pending';
-  const isPickup = String(order.address || '').trim().toLowerCase() === 'pickup';
+  const isPickup = order.order_type ? order.order_type !== 'delivery' : String(order.address || '').trim().toLowerCase() === 'pickup';
   const items = Array.isArray(order.items) ? order.items : [];
   const itemCount = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
   const message = cardMessages.get(id);

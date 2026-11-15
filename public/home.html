@@ -15,8 +15,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="styles.css?v=home-menu-price-layout-1" />
-    <link rel="stylesheet" href="theme.css?v=diet-ai-1" />
-    <link rel="stylesheet" href="client.css?v=reminders-1" />
+    <link rel="stylesheet" href="theme.css?v=delivery-1" />
+    <link rel="stylesheet" href="client.css?v=delivery-2" />
     <script>
       // Send staff to their own dashboards before the page paints.
       (() => {
@@ -179,7 +179,7 @@
             </div>
 
             <div class="order-form-wrap">
-              <h4>Payment and pickup</h4>
+              <h4>Payment and delivery</h4>
               <section class="wallet-card" aria-live="polite">
                 <p class="eyebrow">Student credit</p>
                 <strong id="wallet-balance">Loading balance…</strong>
@@ -191,9 +191,19 @@
               <form id="order-form">
                 <div class="field-group">
                   <label for="deliveryOption">Order type</label>
-                  <select id="deliveryOption">
+                  <div class="order-type-toggle" role="radiogroup" aria-label="Order type">
+                    <label class="order-type-option">
+                      <input type="radio" name="orderTypeChoice" value="pickup" checked />
+                      <span><strong>🏃 Pickup</strong><small>Collect at the kitchen · free</small></span>
+                    </label>
+                    <label class="order-type-option">
+                      <input type="radio" name="orderTypeChoice" value="delivery" />
+                      <span><strong>🛵 Delivery</strong><small>To your residence · <b data-delivery-fee>$3.50</b></small></span>
+                    </label>
+                  </div>
+                  <select id="deliveryOption" hidden aria-hidden="true" tabindex="-1">
                     <option value="pickup">Pickup</option>
-                    <option value="delivery">Delivery (temporarily unavailable)</option>
+                    <option value="delivery">Delivery</option>
                   </select>
                 </div>
                 <div class="field-row">
@@ -206,9 +216,17 @@
                     <input type="tel" id="phone" placeholder="0771234567" required />
                   </div>
                 </div>
-                <div class="field-group" id="addressField" style="display: none;">
-                  <label for="address">Delivery address</label>
-                  <textarea id="address" rows="3" placeholder="Street, suburb, city"></textarea>
+                <div class="field-group delivery-fields" id="addressField" hidden>
+                  <label for="address">Residence</label>
+                  <input type="text" id="address" maxlength="120" placeholder="e.g. Mt Pleasant Hall" autocomplete="off" />
+                  <div class="delivery-location">
+                    <button type="button" class="delivery-location-btn" id="share-location">
+                      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+                      <span>Share my live location</span>
+                    </button>
+                    <p class="delivery-location-status" id="share-location-status">Required for delivery. The rider uses it to find you, and you can follow the rider on the live map.</p>
+                  </div>
+                  <p class="delivery-code-note">🔒 You will get a 4-digit delivery code. Give it to the rider only when your food arrives.</p>
                 </div>
                 <div class="field-group">
                   <label for="note">Order note</label>
@@ -223,26 +241,33 @@
           </div>
       </div>
     </aside>
-    <div id="toast" class="toast"></div>
-    <dialog id="delivery-unavailable-dialog" class="notice-dialog delivery-notice" aria-labelledby="delivery-notice-title" aria-describedby="delivery-notice-text">
-      <div class="delivery-notice-art" aria-hidden="true">
-        <span class="delivery-notice-icon">
-          <svg class="icon" viewBox="0 0 24 24"><circle cx="5.5" cy="17" r="3"/><circle cx="18.5" cy="17" r="3"/><path d="M8.5 17h6l3-7h-4"/><path d="M5.5 17l3-6h5"/><path d="M15 6h3l1.5 4"/></svg>
-        </span>
-        <span class="delivery-notice-tag">Delivery paused</span>
-      </div>
-      <div class="delivery-notice-body">
-        <p class="eyebrow">A quick update</p>
-        <h2 id="delivery-notice-title">Pickup only, for now</h2>
-        <p id="delivery-notice-text">Delivery is temporarily unavailable while we arrange our motorbike. Your meal will be freshly prepared and ready for you to collect from the kitchen.</p>
-        <div class="delivery-notice-confirm">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>
-          <span>Your order is set to <strong>Pickup</strong></span>
+    <dialog id="track-dialog" class="notice-dialog track-dialog" aria-labelledby="track-title">
+      <div class="track">
+        <header class="track-head">
+          <div>
+            <p class="eyebrow" id="track-eyebrow">Live tracking</p>
+            <h2 id="track-title">Order</h2>
+          </div>
+          <button type="button" class="track-x" id="track-close" aria-label="Close tracking">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </header>
+        <div class="track-map-wrap">
+          <div id="track-map" class="track-map" role="img" aria-label="Map showing the rider and your location"></div>
+          <div class="track-map-empty" id="track-map-empty"></div>
         </div>
-        <button type="button" class="submit-btn" id="close-delivery-unavailable">Continue with pickup</button>
-        <p class="delivery-notice-thanks">Thank you for your patience. Delivery will be back soon.</p>
+        <div class="track-body">
+          <div class="track-eta" id="track-eta"></div>
+          <ol class="track-steps" id="track-steps"></ol>
+          <div class="track-code" id="track-code" hidden>
+            <span>Your delivery code</span>
+            <strong id="track-code-value">0000</strong>
+            <small>Give this to the rider when your food arrives. Never share it before.</small>
+          </div>
+        </div>
       </div>
     </dialog>
+    <div id="toast" class="toast"></div>
     <dialog id="drink-picker-dialog" class="notice-dialog drink-picker-dialog" aria-labelledby="drink-picker-title">
       <div class="dpk">
         <header class="dpk-head">
@@ -359,7 +384,8 @@
       </section>
     </aside>
     <script src="client-shell.js?v=cart-drawer-1"></script>
-    <script src="app.js?v=drink-picker-3"></script>
+    <script src="app.js?v=delivery-2"></script>
+    <script src="track.js?v=delivery-1"></script>
     <script src="staff-dashboard-links.js?v=20261113-1"></script>
     <script src="feedback-chatbot.js?v=feedback-chat-2"></script>
   </body>

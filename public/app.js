@@ -9,8 +9,10 @@ const deliveryOptionEl = document.getElementById('deliveryOption');
 const addressFieldEl = document.getElementById('addressField');
 const addressInputEl = document.getElementById('address');
 const menuDateEl = document.getElementById('menu-date');
-const deliveryUnavailableDialog = document.getElementById('delivery-unavailable-dialog');
-const closeDeliveryUnavailableDialog = document.getElementById('close-delivery-unavailable');
+const shareLocationButton = document.getElementById('share-location');
+const shareLocationStatus = document.getElementById('share-location-status');
+let deliveryFeeCents = 350;
+let deliveryLocation = null;
 const walletBalanceEl = document.getElementById('wallet-balance');
 const walletTransactionsEl = document.getElementById('wallet-transactions');
 const monthlyAccountBalanceEl = document.getElementById('monthly-account-balance');
@@ -47,27 +49,71 @@ let menu = [];
 let accountBalanceCents = 0;
 let previousOrderStatuses = null;
 
+function isDeliverySelected() {
+  return Boolean(deliveryOptionEl && deliveryOptionEl.value === 'delivery');
+}
+
 function updateDeliveryFields() {
-  if (deliveryOptionEl && deliveryOptionEl.value === 'delivery') {
-    deliveryOptionEl.value = 'pickup';
-    if (deliveryUnavailableDialog && !deliveryUnavailableDialog.open) {
-      deliveryUnavailableDialog.showModal();
-    } else {
-      showToast('Delivery is temporarily unavailable. Please choose pickup.');
-    }
-  }
-
-  if (addressFieldEl) {
-    addressFieldEl.style.display = 'none';
-  }
-
-  if (addressInputEl) {
-    addressInputEl.required = false;
-    addressInputEl.value = '';
-  }
-
+  const delivery = isDeliverySelected();
+  document.querySelectorAll('input[name="orderTypeChoice"]').forEach((radio) => {
+    radio.checked = radio.value === (delivery ? 'delivery' : 'pickup');
+  });
+  if (addressFieldEl) addressFieldEl.hidden = !delivery;
+  if (addressInputEl) addressInputEl.required = delivery;
+  const formTitle = document.querySelector('.order-form-wrap h4');
+  if (formTitle) formTitle.textContent = delivery ? 'Payment and delivery' : 'Payment and pickup';
   updateTotals();
 }
+
+function formatFee(cents) {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+fetch('/api/delivery/config')
+  .then((response) => (response.ok ? response.json() : null))
+  .then((config) => {
+    if (!config) return;
+    deliveryFeeCents = Math.round(Number(config.fee) * 100) || 0;
+    document.querySelectorAll('[data-delivery-fee]').forEach((element) => {
+      element.textContent = deliveryFeeCents ? formatFee(deliveryFeeCents) : 'free';
+    });
+    updateTotals();
+  })
+  .catch(() => {});
+
+document.querySelectorAll('input[name="orderTypeChoice"]').forEach((radio) => {
+  radio.addEventListener('change', () => {
+    if (!radio.checked || !deliveryOptionEl) return;
+    deliveryOptionEl.value = radio.value;
+    updateDeliveryFields();
+    if (radio.value === 'delivery') addressInputEl?.focus();
+  });
+});
+
+shareLocationButton?.addEventListener('click', () => {
+  if (!('geolocation' in navigator)) {
+    shareLocationStatus.textContent = 'Location is not available in this browser. Please use pickup, or open the site in Chrome or Safari.';
+    return;
+  }
+  shareLocationButton.disabled = true;
+  shareLocationStatus.textContent = 'Finding your location…';
+  navigator.geolocation.getCurrentPosition((position) => {
+    deliveryLocation = {
+      lat: Math.round(position.coords.latitude * 1e6) / 1e6,
+      lng: Math.round(position.coords.longitude * 1e6) / 1e6
+    };
+    shareLocationButton.disabled = false;
+    shareLocationButton.classList.add('is-shared');
+    shareLocationStatus.classList.remove('is-error');
+    shareLocationButton.querySelector('span').textContent = 'Location shared ✓';
+    shareLocationStatus.textContent = `Accurate to about ${Math.round(position.coords.accuracy)} m. Only your rider sees it.`;
+  }, (error) => {
+    shareLocationButton.disabled = false;
+    shareLocationStatus.textContent = error.code === error.PERMISSION_DENIED
+      ? 'Location permission was declined. Allow location for this site in your phone settings, then tap the button again.'
+      : 'Could not find your location. Move near a window or turn on GPS, then tap the button again.';
+  }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+});
 
 function formatCurrency(amount) {
   return `$${Number(amount).toFixed(2)}`;
@@ -132,7 +178,7 @@ function getOrderUpdateMessage(status) {
   const messages = {
     Pending: 'Your order has been received and is waiting for the kitchen.',
     Preparing: 'The kitchen is preparing your order.',
-    'Ready for Pickup': 'Your food is ready for pickup.',
+    'Ready for Pickup': 'Your food is ready. Pickup orders can be collected now; delivery orders are waiting for the rider.',
     'Out for Delivery': 'Your order is on its way.',
     Delivered: 'Your order has been delivered.',
     Collected: 'Your order has been collected. Thank you!',
@@ -219,12 +265,23 @@ function renderStudentOrders(orders) {
     <details class="order-card student-order-card" data-order-id="${escapeHtml(order.id)}" ${openOrderIds.has(String(order.id)) ? 'open' : ''}>
       <summary class="student-order-summary">
         <strong>Order #${escapeHtml(order.id)}</strong>
-        <span class="badge">${escapeHtml(order.status)}</span>
+        <span class="badge">${order.order_type === 'delivery' ? '🛵 ' : ''}${escapeHtml(order.status)}</span>
         <span class="student-order-date">${new Date(order.created_at).toLocaleString()}</span>
         <strong>${formatCurrency(order.total)}</strong>
       </summary>
       <div class="student-order-details">
         <p class="order-status-message">${escapeHtml(getOrderUpdateMessage(order.status))}</p>
+        ${order.order_type === 'delivery' ? `
+          <div class="order-delivery-row">
+            <span class="order-delivery-to">🛵 Delivery to <strong>${escapeHtml(order.address)}</strong></span>
+            ${order.delivery_code && !['Delivered', 'Cancelled'].includes(order.status)
+              ? `<span class="order-delivery-code">Code <strong>${escapeHtml(order.delivery_code)}</strong></span>` : ''}
+          </div>` : ''}
+        ${!['Delivered', 'Collected', 'Cancelled'].includes(order.status)
+          ? `<button type="button" class="track-btn" data-track="${escapeHtml(order.id)}">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+              ${order.order_type === 'delivery' && order.status === 'Out for Delivery' ? 'Track the rider live' : 'Track this order'}
+            </button>` : ''}
         <ul class="student-order-items">
           ${(order.items || []).map(item => `
             <li>
@@ -281,8 +338,9 @@ function getCartItem(menuId) {
 function updateTotals() {
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   subtotalEl.textContent = formatCurrency(subtotal);
-  deliveryEl.textContent = formatCurrency(0);
-  totalEl.textContent = formatCurrency(subtotal);
+  const fee = isDeliverySelected() ? deliveryFeeCents / 100 : 0;
+  deliveryEl.textContent = isDeliverySelected() ? formatCurrency(fee) : 'Free pickup';
+  totalEl.textContent = formatCurrency(subtotal + fee);
 }
 
 function renderCart() {
@@ -566,6 +624,8 @@ async function placeOrder(paymentMethod) {
     note: document.getElementById('note').value.trim(),
     orderType,
     paymentMethod,
+    deliveryLat: orderType === 'delivery' && deliveryLocation ? deliveryLocation.lat : null,
+    deliveryLng: orderType === 'delivery' && deliveryLocation ? deliveryLocation.lng : null,
     items: cart.map(item => ({ id: item.id, quantity: item.quantity }))
   };
 
@@ -592,15 +652,30 @@ async function placeOrder(paymentMethod) {
     const studentName = document.getElementById('customerName').value;
     accountBalanceCents = Number(result.balanceCents);
     walletBalanceEl.textContent = `Available: ${formatCredit(accountBalanceCents)}`;
+    const placedPhone = document.getElementById('phone').value;
     orderForm.reset();
     document.getElementById('customerName').value = studentName;
+    document.getElementById('phone').value = placedPhone;
+    deliveryLocation = null;
+    if (shareLocationButton) {
+      shareLocationButton.classList.remove('is-shared');
+      shareLocationButton.querySelector('span').textContent = 'Share my live location';
+    }
+    if (deliveryOptionEl) deliveryOptionEl.value = 'pickup';
+    updateDeliveryFields();
+    if (typeof window.closeCart === 'function') window.closeCart();
     cart = [];
     renderCart();
     showToast(paymentMethod === 'credit'
       ? `Order placed. Remaining credit: ${formatCredit(accountBalanceCents)}`
       : paymentMethod === 'monthly'
         ? 'Order placed on your monthly account. Your statement is due at month-end.'
-        : 'Order placed. Please pay cash when collecting your food.');
+        : orderType === 'delivery'
+          ? 'Order placed. Please pay the rider in cash when your food arrives.'
+          : 'Order placed. Please pay cash when collecting your food.');
+    if (orderType === 'delivery' && result.order && result.order.delivery_code) {
+      showToast(`Order #${result.order.id} placed. Your delivery code is ${result.order.delivery_code}.`);
+    }
     if (result.order) notifyOrderStatus(result.order, 'Pending');
     await loadMenu();
     await loadWallet();
@@ -620,6 +695,13 @@ orderForm.addEventListener('submit', (event) => {
     return;
   }
   if (!orderForm.reportValidity()) return;
+  if (isDeliverySelected() && !deliveryLocation) {
+    shareLocationStatus.textContent = 'Please share your live location so the rider can find you.';
+    shareLocationStatus.classList.add('is-error');
+    shareLocationButton?.focus();
+    showToast('Share your live location to order delivery.');
+    return;
+  }
   paymentCreditBalanceEl.textContent = formatCredit(accountBalanceCents);
   paymentChoiceDialog.showModal();
 });
@@ -640,9 +722,6 @@ if (deliveryOptionEl) {
   deliveryOptionEl.addEventListener('change', updateDeliveryFields);
 }
 
-if (closeDeliveryUnavailableDialog) {
-  closeDeliveryUnavailableDialog.addEventListener('click', () => deliveryUnavailableDialog.close());
-}
 
 updateDeliveryFields();
 bindCartEvents();

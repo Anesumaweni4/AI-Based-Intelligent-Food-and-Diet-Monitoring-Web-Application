@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="styles.css?v=ingredient-stock-ledger-1" />
-    <link rel="stylesheet" href="theme.css?v=diet-ai-1" />
+    <link rel="stylesheet" href="theme.css?v=delivery-1" />
   </head>
   <body class="dashboard-body admin-body">
     <div class="admin-shell">
@@ -181,7 +181,7 @@
                 </a>
                 <a class="quick-tile" href="#settings" data-tone="ink">
                   <span class="quick-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg></span>
-                  <span class="quick-text"><strong>Team &amp; security</strong><small>Create cashiers, change your password</small></span>
+                  <span class="quick-text"><strong>Team &amp; security</strong><small>Create cashiers and riders, change your password</small></span>
                 </a>
               </nav>
             </section>
@@ -531,15 +531,22 @@
                 <summary class="admin-collapse-summary">
                   <span>
                     <span class="eyebrow">Staff permissions</span>
-                    <strong>Create Cashier Account</strong>
+                    <strong>Create Cashier or Rider Account</strong>
                   </span>
                   <span class="admin-collapse-chevron" aria-hidden="true"></span>
                 </summary>
                 <div class="admin-collapse-content">
-                  <p class="schedule-help">Cashier accounts can record student deposits and manage order status, but cannot access the admin dashboard.</p>
+                  <p class="schedule-help">Cashier accounts can record student deposits and manage order status. Rider accounts open the rider app to accept and deliver orders, with live location for the student. Neither can access the admin dashboard.</p>
                   <form id="cashier-create-form" class="admin-password-form">
                     <div class="field-group">
-                      <label for="cashier-full-name">Cashier name</label>
+                      <label for="cashier-role">Account type</label>
+                      <select id="cashier-role">
+                        <option value="cashier">Cashier</option>
+                        <option value="rider">Delivery rider</option>
+                      </select>
+                    </div>
+                    <div class="field-group">
+                      <label for="cashier-full-name">Full name</label>
                       <input id="cashier-full-name" type="text" maxlength="255" required />
                     </div>
                     <div class="field-group">
@@ -550,10 +557,11 @@
                       <label for="cashier-password">Temporary password (at least 14 characters)</label>
                       <input id="cashier-password" type="password" minlength="14" required />
                     </div>
-                    <button type="submit" class="submit-btn">Create Cashier</button>
+                    <button type="submit" class="submit-btn">Create Account</button>
                     <p id="cashier-create-status" class="schedule-status" role="status"></p>
                   </form>
                   <a class="submit-btn cashier-desk-link" href="cashier.html">Open Cashier Desk</a>
+                  <a class="submit-btn cashier-desk-link" href="rider.html">Open Rider App</a>
                 </div>
               </details>
 
@@ -676,7 +684,7 @@
     </dialog>
 
     <script src="admin-shell.js?v=diet-ai-1"></script>
-    <script src="admin.js?v=billing-1"></script>
+    <script src="admin.js?v=delivery-1"></script>
     <script src="admin-diet.js?v=diet-ai-1"></script>
     <script src="staff-dashboard-links.js?v=20261113-1"></script>
   </body>

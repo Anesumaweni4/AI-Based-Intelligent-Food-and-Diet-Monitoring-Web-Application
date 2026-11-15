@@ -368,6 +368,7 @@ module.exports = {
   saveSubscription,
   removeSubscription,
   sendTest,
+  sendToUser,
   safeTick,
   startScheduler,
   _internal: { buildMessage, dueKinds, parseSettings, parseSubscription, describeDevice, DEFAULT_SETTINGS }

@@ -4877,3 +4877,14 @@
     grid-row: 2;
   }
 }
+
+.kitchen-rider-wait {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: #e2f2fb;
+  color: #1f6f9f;
+  font-size: 0.85rem;
+  font-weight: 700;
+}

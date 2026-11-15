@@ -324,6 +324,33 @@ How it works: `public/sw.js` (service worker) shows the notification; `reminders
 
 **Render free plan:** the server sleeps after 15 minutes without visitors, and a sleeping server cannot send reminders. Create a free job on [cron-job.org](https://cron-job.org) that opens `https://<your-site>/api/reminders/tick` every 5 minutes. This keeps the server awake and sends anything that is due (each reminder still goes out only once, and a missed one is caught up within an hour). If `REMINDER_CRON_SECRET` is set, add `?key=<secret>` to that address.
 
+## AI meal photo scanner
+
+On the **Diet** page (Today tab) students tap **Take a photo** of any meal: from THE KITCHEN, home or the market. The photo is shrunk in the browser and sent to Claude (`claude-opus-5-5`, vision) with the student's progress for today. The AI returns, as structured JSON:
+
+- every food on the plate with its portion, grams, calories, protein, carbohydrates, fat, fibre, sugar and how sure it is (Sure / Likely / Unsure);
+- whether the plate is balanced (or needs vegetables or protein, or is high in fat or sugar);
+- one personal tip based on what the student still needs today.
+
+The student unticks anything wrong, chooses how much they ate and the meal, and taps **Add to my diary**. The nutrition is taken from the stored scan on the server (not from the browser) and logged with the source `ai-photo`, so it feeds the same scores, ML models and coach as every other meal. The photo itself is not stored.
+
+Setup: add `ANTHROPIC_API_KEY` on Render. Without it the card shows that the scanner is being set up and the rest of the site works normally. Each student can scan 15 photos a day (`AI_SCANS_PER_DAY`); failed scans are not counted. Code: `ai-scanner.js` (server), `public/ai-scanner-client.js` (card). Requests use refusal fallbacks (`fallbacks: "default"`) so a declined request is retried automatically on another model.
+
+## Delivery with a rider app and live tracking
+
+Students choose **Pickup** (free) or **Delivery** (fixed fee, `DELIVERY_FEE`, default $3.50) in the cart, type the name of their residence and share their live location (required, so the rider can find them). Each delivery order gets a random **4-digit delivery code**.
+
+| Step | Who | What happens |
+| --- | --- | --- |
+| Order placed | Student | Fee added to the total; order appears for riders as a new job |
+| Accept | Rider | Rider app (`/rider.html`) shows new jobs with a chime; first rider to accept gets it |
+| Preparing / Ready for rider | Kitchen | Orders board; delivery orders cannot be marked "collected" |
+| Picked up | Rider | Status becomes *Out for Delivery*; rider goes online and shares GPS every few seconds |
+| On the way | Student | **Track** opens a live map (OpenStreetMap) with the rider, the student and the kitchen, plus an ETA |
+| Delivered | Rider | Rider enters the student's code; a wrong code is refused. Meal goes into the diet diary |
+
+The student gets a phone notification (Web Push) at every step. Riders see the address, the items, cash to collect, and one-tap Call / WhatsApp / Directions. Admins create rider accounts under **Team & security** (account type *Delivery rider*); cashiers and admins can also open the rider app when no rider is on shift. Optional: set `KITCHEN_LAT` and `KITCHEN_LNG` to show the kitchen on the map. Code: `delivery.js`, `public/rider.html`, `public/rider.js`, `public/track.js`.
+
 ## Client feedback chatbot
 
 Signed-in students can open **Give feedback** on the home page, choose a topic, and send a message of up to 2,000 characters. They may also take or attach an optional JPEG, PNG, or WebP photo (up to 15 MB before browser-side resizing; stored photos are limited to 5 MB). Feedback and photos are stored in the configured database, shown in recent submissions, and are not sent to an external AI service. Administrators can review submissions and attached photos in **Admin Panel → Client Feedback**, then mark feedback new, reviewing, or resolved. Feedback tables are created automatically at startup.

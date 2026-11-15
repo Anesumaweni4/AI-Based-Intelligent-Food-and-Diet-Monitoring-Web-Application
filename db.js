@@ -1105,6 +1105,44 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     `);
   }
 
+  // Delivery: order type, fee, a 4-digit hand-over code, the rider and their
+  // live position (for the student's tracking map).
+  const deliveryColumns = [
+    ['order_type', "VARCHAR(10) NOT NULL DEFAULT 'pickup'", "TEXT NOT NULL DEFAULT 'pickup'"],
+    ['delivery_fee', 'DECIMAL(10,2) NOT NULL DEFAULT 0', 'DECIMAL(10,2) NOT NULL DEFAULT 0'],
+    ['delivery_code', 'VARCHAR(6)', 'TEXT'],
+    ['delivery_lat', 'DECIMAL(10,6)', 'REAL'],
+    ['delivery_lng', 'DECIMAL(10,6)', 'REAL'],
+    ['rider_id', postgresPool ? 'BIGINT' : 'INT', 'INTEGER'],
+    ['rider_lat', 'DECIMAL(10,6)', 'REAL'],
+    ['rider_lng', 'DECIMAL(10,6)', 'REAL'],
+    ['rider_location_at', 'TIMESTAMP', 'DATETIME'],
+    ['dispatched_at', 'TIMESTAMP', 'DATETIME'],
+    ['delivered_at', 'TIMESTAMP', 'DATETIME']
+  ];
+  if (postgresPool) {
+    for (const [name, type] of deliveryColumns) {
+      await postgresPool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS ${name} ${type}`);
+    }
+    await postgresPool.query("UPDATE orders SET order_type = 'delivery' WHERE order_type = 'pickup' AND LOWER(address) <> 'pickup'");
+  } else if (sqliteDb) {
+    const orderColumns = new Set((await sqliteAll('PRAGMA table_info(orders)')).map((column) => column.name));
+    for (const [name, , sqliteType] of deliveryColumns) {
+      if (!orderColumns.has(name)) await sqliteRun(`ALTER TABLE orders ADD COLUMN ${name} ${sqliteType}`);
+    }
+    await sqliteRun("UPDATE orders SET order_type = 'delivery' WHERE order_type = 'pickup' AND LOWER(address) <> 'pickup'");
+  } else {
+    const [orderRows] = await pool.query(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'orders'`,
+      [dbConfig.database]
+    );
+    const orderColumns = new Set(orderRows.map((row) => row.COLUMN_NAME));
+    for (const [name, type] of deliveryColumns) {
+      if (!orderColumns.has(name)) await pool.query(`ALTER TABLE orders ADD COLUMN ${name} ${type.replace('TIMESTAMP', 'TIMESTAMP NULL')}`);
+    }
+    await pool.query("UPDATE orders SET order_type = 'delivery' WHERE order_type = 'pickup' AND LOWER(address) <> 'pickup'");
+  }
+
   // Free phone notifications (Web Push): a student's phones, their reminder
   // times, a log so each reminder is sent once a day, and the server's push keys.
   const reminderDefaults = `

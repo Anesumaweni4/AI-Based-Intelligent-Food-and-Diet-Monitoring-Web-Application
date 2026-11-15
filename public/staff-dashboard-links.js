@@ -227,7 +227,7 @@ function showAccessDialog({ title, message, tag, icon, links }) {
 }
 
 document.addEventListener('click', async (event) => {
-  const link = event.target.closest('a[href="home.html"], a[href="restaurant.html"], a[href="delivery.html"]');
+  const link = event.target.closest('a[href="home.html"], a[href="restaurant.html"], a[href="rider.html"]');
   if (!link) return;
 
   event.preventDefault();

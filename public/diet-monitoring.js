@@ -350,7 +350,7 @@ function renderDiary(data) {
         <div class="dm-diary-item">
           <div>
             <strong>${escapeHtml(meal.foodName)}${meal.servings !== 1 ? ` <em>× ${formatNumber(meal.servings, 1)}</em>` : ''}</strong>
-            <span>${meal.time}${meal.source === 'order' ? ' · <span class="dm-order-tag">From your order</span>' : ''} · ${formatNumber(meal.protein, 1)} g protein · ${formatNumber(meal.sugar, 1)} g sugar</span>
+            <span>${meal.time}${meal.source === 'order' ? ' · <span class="dm-order-tag">From your order</span>' : meal.source === 'ai-photo' ? ' · <span class="dm-order-tag dm-ai-tag">✨ AI photo</span>' : ''} · ${formatNumber(meal.protein, 1)} g protein · ${formatNumber(meal.sugar, 1)} g sugar</span>
           </div>
           <b>${formatNumber(meal.calories)} kcal</b>
           <button type="button" class="dm-remove" data-remove-meal="${meal.id}" aria-label="Remove ${escapeHtml(meal.foodName)}">

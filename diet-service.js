@@ -649,6 +649,25 @@ async function logMeal(userId, { menuItemId, foodKey, servings, slot, day }) {
   return { status: 201, message: `${food.name} added to your food diary.`, id: result.id };
 }
 
+// A food whose nutrition was estimated elsewhere (the AI photo scanner).
+async function logCustomFood(userId, { name, nutrition, servings, slot, day, source = 'manual', isDrink = false }) {
+  const eatenAt = resolveDayWall(day, slot);
+  const mealSlot = slot || slotForWall(eatenAt);
+  const result = await run(
+    `INSERT INTO diet_meal_logs
+     (user_id, menu_item_id, food_name, servings, calories, protein, carbohydrates, fat, fiber, sugar,
+      eaten_at, meal_slot, source, is_drink)
+     VALUES (?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      userId, String(name).slice(0, 120), servings,
+      nutrition.calories, nutrition.protein, nutrition.carbohydrates, nutrition.fat, nutrition.fiber, nutrition.sugar,
+      eatenAt, mealSlot, String(source).slice(0, 16), isDrink ? 1 : 0
+    ]
+  );
+  invalidateCohort();
+  return { status: 201, id: result.id };
+}
+
 async function deleteMeal(userId, logId) {
   const result = await run('DELETE FROM diet_meal_logs WHERE id = ? AND user_id = ?', [logId, userId]);
   invalidateCohort();
@@ -751,6 +770,7 @@ module.exports = {
   saveDietProfile,
   getAdminInsights,
   logMeal,
+  logCustomFood,
   deleteMeal,
   logActivity,
   deleteActivity,

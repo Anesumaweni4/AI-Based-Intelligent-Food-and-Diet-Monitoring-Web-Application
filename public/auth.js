@@ -35,6 +35,8 @@ function completeLogin(result) {
     window.location.href = 'admin.html';
   } else if (result.user.role === 'cashier') {
     window.location.href = 'cashier.html';
+  } else if (result.user.role === 'rider') {
+    window.location.href = 'rider.html';
   } else {
     window.location.href = 'home.html';
   }

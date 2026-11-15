@@ -15,8 +15,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
     <link rel="stylesheet" href="styles.css?v=meal-card-health-tip-3" />
-    <link rel="stylesheet" href="theme.css?v=diet-ai-1" />
-    <link rel="stylesheet" href="client.css?v=reminders-1" />
+    <link rel="stylesheet" href="theme.css?v=delivery-1" />
+    <link rel="stylesheet" href="client.css?v=delivery-2" />
   </head>
   <body class="client-body dm-page">
     <header class="client-topbar">
@@ -155,6 +155,49 @@
         <!-- ============ TODAY ============ -->
         <section class="dm2-panel" id="panel-today" role="tabpanel" aria-labelledby="tab-today">
           <div class="dm2-tips" id="dm-tips" aria-live="polite"></div>
+
+          <section class="aisc" id="ai-scanner" aria-labelledby="aisc-title">
+            <div class="aisc-intro">
+              <p class="aisc-badge"><span aria-hidden="true">✨</span> AI powered</p>
+              <h3 id="aisc-title">Snap your plate. AI logs it for you.</h3>
+              <p class="aisc-lead">Take a photo of any meal, from the kitchen, home or the market. The AI recognises each food, estimates the portion, calories, protein, fibre and sugar, and gives you a tip for the rest of today.</p>
+              <div class="aisc-actions">
+                <label class="aisc-btn aisc-btn--primary" id="aisc-camera-label">
+                  <input type="file" id="aisc-camera" accept="image/*" capture="environment" />
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+                  <span>Take a photo</span>
+                </label>
+                <label class="aisc-btn aisc-btn--ghost" id="aisc-gallery-label">
+                  <input type="file" id="aisc-gallery" accept="image/*" />
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M4 16l5-5 4 4 3-3 4 4"/></svg>
+                  <span>Choose from gallery</span>
+                </label>
+              </div>
+              <label class="aisc-note">
+                <span>Anything the photo can't show? <small>(optional)</small></span>
+                <input type="text" id="aisc-note" maxlength="200" placeholder="e.g. goat stew, cooked with little oil" />
+              </label>
+              <p class="aisc-status" id="aisc-status" role="status" aria-live="polite"></p>
+            </div>
+
+            <div class="aisc-stage" id="aisc-stage">
+              <div class="aisc-empty" id="aisc-empty">
+                <div class="aisc-empty-plate" aria-hidden="true">
+                  <span class="aisc-chip aisc-chip--a">Sadza · 420 kcal</span>
+                  <span class="aisc-chip aisc-chip--b">Beef stew · 28 g protein</span>
+                  <span class="aisc-chip aisc-chip--c">Covo · 4 g fibre</span>
+                  <span class="aisc-plate-emoji">🍛</span>
+                </div>
+                <p>Your photo and the AI's results appear here.</p>
+              </div>
+              <figure class="aisc-photo" id="aisc-photo" hidden>
+                <img id="aisc-preview" alt="Your meal photo" />
+                <div class="aisc-scanline" aria-hidden="true"></div>
+                <figcaption id="aisc-caption">AI is looking at your meal…</figcaption>
+              </figure>
+              <div class="aisc-result" id="aisc-result" hidden></div>
+            </div>
+          </section>
 
           <div class="dm-grid">
             <section class="dm-card" aria-labelledby="dm-log-title">
@@ -617,7 +660,8 @@
     </dialog>
 
     <script src="client-shell.js?v=cart-drawer-1"></script>
-    <script src="diet-monitoring.js?v=iphone-sync-1"></script>
+    <script src="diet-monitoring.js?v=ai-scan-1"></script>
     <script src="reminders-client.js?v=reminders-1"></script>
+    <script src="ai-scanner-client.js?v=ai-scan-1"></script>
   </body>
 </html>

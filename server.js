@@ -8,6 +8,8 @@ const { getNutrition, GOALS, MEAL_SLOTS, BODY_GOALS } = require('./diet-model');
 const dietService = require('./diet-service');
 const { applyMenuImages } = require('./menu-images');
 const reminders = require('./reminders');
+const aiScanner = require('./ai-scanner');
+const delivery = require('./delivery');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -538,7 +540,7 @@ async function getAuthenticatedAccount(req) {
     [session.userId]
   );
   if (!user || Number(user.session_version) !== session.sessionVersion ||
-      !['staff', 'cashier'].includes(user.role)) {
+      !['staff', 'cashier', 'rider'].includes(user.role)) {
     return null;
   }
   return user;
@@ -591,6 +593,36 @@ async function requireCashierOrAdminPage(req, res, next) {
   }
 }
 
+// Riders, plus cashiers and admins so the kitchen can deliver when no rider is on shift.
+async function getRiderAccount(req) {
+  const admin = await getAuthenticatedAdmin(req);
+  if (admin) return admin;
+  const account = await getAuthenticatedAccount(req);
+  return account && ['rider', 'cashier'].includes(account.role) ? account : null;
+}
+
+async function requireRiderApi(req, res, next) {
+  try {
+    const account = await getRiderAccount(req);
+    if (!account) return res.status(401).json({ message: 'Rider login is required.' });
+    req.accountUser = account;
+    next();
+  } catch (error) {
+    console.error('Error verifying rider access:', error);
+    res.status(500).json({ message: 'Unable to verify rider access.' });
+  }
+}
+
+async function requireRiderPage(req, res, next) {
+  try {
+    if (!await getRiderAccount(req)) return res.redirect('/login.html');
+    next();
+  } catch (error) {
+    console.error('Error verifying rider page access:', error);
+    res.status(500).send('Unable to verify rider access.');
+  }
+}
+
 async function requireStudentPage(req, res, next) {
   try {
     const account = await getAuthenticatedAccount(req);
@@ -621,13 +653,13 @@ async function requireStudentApi(req, res, next) {
 const jsonBodyParser = express.json();
 const feedbackJsonBodyParser = express.json({ limit: '7mb' });
 app.use((req, res, next) => {
-  const isFeedbackSubmission = req.method === 'POST' && req.path === '/api/feedback';
+  const isFeedbackSubmission = req.method === 'POST' && (req.path === '/api/feedback' || req.path === '/api/diet/scan');
   const parser = isFeedbackSubmission
     ? feedbackJsonBodyParser
     : jsonBodyParser;
   parser(req, res, (error) => {
     if (error && isFeedbackSubmission && error.status === 413) {
-      return res.status(413).json({ message: 'Feedback photo request is too large. Please choose a smaller photo.' });
+      return res.status(413).json({ message: 'That photo is too large. Please choose a smaller photo.' });
     }
     next(error);
   });
@@ -673,8 +705,9 @@ app.get('/api/student/session', requireStudentApi, (req, res) => {
 app.get('/restaurant.html', requireCashierOrAdminPage, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'restaurant.html'));
 });
-app.get('/delivery.html', requireCashierOrAdminPage, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'delivery.html'));
+app.get('/delivery.html', (req, res) => res.redirect('/rider.html'));
+app.get('/rider.html', requireRiderPage, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'rider.html'));
 });
 app.get('/home.html', requireStudentPage, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'home.html'));
@@ -897,7 +930,7 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(403).json({ message: 'Use the appropriate login page for this account.' });
     }
 
-    if (requestedRole === 'auto' && !['admin', 'cashier', 'staff'].includes(user.role)) {
+    if (requestedRole === 'auto' && !['admin', 'cashier', 'staff', 'rider'].includes(user.role)) {
       return res.status(403).json({ message: 'This account type cannot sign in here.' });
     }
 
@@ -963,7 +996,7 @@ app.get('/api/account', requireStudentApi, async (req, res) => {
 app.get('/api/account/orders', requireStudentApi, async (req, res) => {
   try {
     const orders = await all(
-      `SELECT id, status, total, created_at
+      `SELECT id, status, total, created_at, order_type, address, delivery_fee, delivery_code, rider_id
        FROM orders
        WHERE user_id = ?
        ORDER BY id DESC
@@ -1284,6 +1317,42 @@ app.post('/api/diet/meals', requireStudentApi, async (req, res) => {
   } catch (error) {
     console.error('Error recording diet meal:', error);
     res.status(500).json({ message: 'Unable to record that meal.' });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// AI meal photo scanner (Claude vision)
+// ---------------------------------------------------------------------------
+app.get('/api/diet/scan', requireStudentApi, (req, res) => {
+  res.json(aiScanner.status(req.accountUser.id));
+});
+
+app.post('/api/diet/scan', requireStudentApi, async (req, res) => {
+  try {
+    const { status, ...payload } = await aiScanner.scanMeal(req.accountUser.id, {
+      image: req.body && req.body.image,
+      note: req.body && req.body.note
+    });
+    res.status(status).json(payload);
+  } catch (error) {
+    console.error('Error scanning meal photo:', error);
+    res.status(500).json({ message: 'Unable to scan that photo right now.' });
+  }
+});
+
+app.post('/api/diet/scan/log', requireStudentApi, async (req, res) => {
+  const slot = typeof req.body.slot === 'string' && req.body.slot ? req.body.slot : null;
+  if (slot && !MEAL_SLOTS.includes(slot)) {
+    return res.status(400).json({ message: 'Choose breakfast, lunch, supper, snack or late night.' });
+  }
+  try {
+    const { status, ...payload } = await aiScanner.logScan(req.accountUser.id, {
+      scanId: req.body.scanId, items: req.body.items, servings: req.body.servings, slot, day: parseDietDay(req.body.day)
+    });
+    res.status(status).json(payload);
+  } catch (error) {
+    console.error('Error logging scanned meal:', error);
+    res.status(500).json({ message: 'Unable to add that meal to your diary.' });
   }
 });
 
@@ -1926,14 +1995,16 @@ app.post('/api/admin/cashiers', async (req, res) => {
     const fullName = typeof req.body.fullName === 'string' ? req.body.fullName.trim() : '';
     const username = typeof req.body.username === 'string' ? req.body.username.trim() : '';
     const password = req.body.password;
+    const role = req.body.role === 'rider' ? 'rider' : 'cashier';
+    const roleLabel = role === 'rider' ? 'Rider' : 'Cashier';
     if (!fullName || !username || typeof password !== 'string') {
-      return res.status(400).json({ message: 'Enter the cashier name, username, and password.' });
+      return res.status(400).json({ message: 'Enter the name, username, and password.' });
     }
     if (password.length < 14) {
-      return res.status(400).json({ message: 'Cashier passwords must be at least 14 characters long.' });
+      return res.status(400).json({ message: `${roleLabel} passwords must be at least 14 characters long.` });
     }
     if (username.length > 100 || fullName.length > 255) {
-      return res.status(400).json({ message: 'The cashier name or username is too long.' });
+      return res.status(400).json({ message: 'The name or username is too long.' });
     }
     if (await get('SELECT id FROM users WHERE username = ?', [username])) {
       return res.status(409).json({ message: 'That username is already in use.' });
@@ -1941,9 +2012,9 @@ app.post('/api/admin/cashiers', async (req, res) => {
 
     await run(
       'INSERT INTO users (full_name, username, password, role) VALUES (?, ?, ?, ?)',
-      [fullName, username, await hashPassword(password), 'cashier']
+      [fullName, username, await hashPassword(password), role]
     );
-    res.status(201).json({ message: `Cashier account created for ${fullName}.` });
+    res.status(201).json({ message: `${roleLabel} account created for ${fullName}.` });
   } catch (error) {
     console.error('Error creating cashier account:', error);
     res.status(500).json({ message: 'Unable to create cashier account.' });
@@ -2430,28 +2501,38 @@ app.get('/api/orders', requireAdminApi, async (req, res) => {
 
 app.post('/api/orders', requireStudentApi, async (req, res) => {
   try {
-    const { phone, address, note, items, orderType, paymentMethod } = req.body;
+    const { phone, address, note, items, orderType, paymentMethod, deliveryLat, deliveryLng } = req.body;
     if (!['cash', 'credit', 'monthly'].includes(paymentMethod)) {
       return res.status(400).json({ message: 'Choose cash, student credit, or monthly billing to place the order.' });
     }
     const selectedOrderType = String(orderType || 'pickup').toLowerCase();
     const isDelivery = selectedOrderType === 'delivery';
 
-    if (isDelivery) {
-      return res.status(400).json({
-        message: 'We’re sorry, but delivery is temporarily unavailable while we arrange our motorbike. Please choose pickup. Thank you for your understanding!'
-      });
+    if (!['pickup', 'delivery'].includes(selectedOrderType)) {
+      return res.status(400).json({ message: 'Choose pickup or delivery.' });
+    }
+    const latitude = isDelivery ? delivery.parseCoordinate(deliveryLat, 90) : null;
+    const longitude = isDelivery ? delivery.parseCoordinate(deliveryLng, 180) : null;
+    if (latitude === undefined || longitude === undefined || (latitude === null) !== (longitude === null)) {
+      return res.status(400).json({ message: 'Your live location is invalid. Please share it again.' });
+    }
+    if (isDelivery && latitude === null) {
+      return res.status(400).json({ message: 'Share your live location so the rider can find you.' });
     }
 
     if (typeof phone !== 'string' || !phone.trim() || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: 'Please complete the form and select at least one item.' });
     }
 
-    if (isDelivery && (!address || !String(address).trim())) {
-      return res.status(400).json({ message: 'Delivery address is required when delivery is selected.' });
+    if (isDelivery && (typeof address !== 'string' || address.trim().length < 3)) {
+      return res.status(400).json({ message: 'Enter the name of your residence for delivery.' });
+    }
+    if (isDelivery && address.trim().length > 200) {
+      return res.status(400).json({ message: 'The residence name is too long.' });
     }
 
     const finalAddress = isDelivery ? String(address).trim() : 'Pickup';
+    const deliveryFeeCents = isDelivery ? delivery.DELIVERY_FEE_CENTS : 0;
 
     const today = getCurrentMenuDay();
     const menuItems = await all(
@@ -2463,7 +2544,7 @@ app.post('/api/orders', requireStudentApi, async (req, res) => {
     );
     const menuMap = new Map(menuItems.map(item => [Number(item.id), item]));
 
-    let totalCents = isDelivery ? 350 : 0;
+    let totalCents = deliveryFeeCents;
     const orderItemsById = new Map();
 
     for (const item of items) {
@@ -2514,16 +2595,22 @@ app.post('/api/orders', requireStudentApi, async (req, res) => {
         }
       }
       const orderResult = await transaction.run(
-        `INSERT INTO orders (user_id, customer_name, phone, address, note, total, payment_method, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending')`,
+        `INSERT INTO orders (user_id, customer_name, phone, address, note, total, payment_method, status,
+                             order_type, delivery_fee, delivery_code, delivery_lat, delivery_lng)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', ?, ?, ?, ?, ?)`,
         [
           req.accountUser.id,
           req.accountUser.full_name,
           String(phone).trim(),
           finalAddress,
-          typeof note === 'string' ? note : '',
+          typeof note === 'string' ? note.slice(0, 500) : '',
           (totalCents / 100).toFixed(2),
-          paymentMethod
+          paymentMethod,
+          isDelivery ? 'delivery' : 'pickup',
+          (deliveryFeeCents / 100).toFixed(2),
+          isDelivery ? delivery.newDeliveryCode() : null,
+          latitude,
+          longitude
         ]
       );
       for (const orderItem of orderItems) {
@@ -2649,15 +2736,58 @@ app.patch('/api/orders/:id/status', requireCashierOrAdminApi, async (req, res) =
         error.statusCode = 409;
         throw error;
       }
-      const update = status === 'Collected'
-        ? await transaction.run(
+      const isDeliveryOrder = order.order_type === 'delivery';
+      if (isDeliveryOrder && status === 'Collected') {
+        const error = new Error("This is a delivery order. The rider marks it delivered with the student's code.");
+        error.statusCode = 409;
+        throw error;
+      }
+      if (!isDeliveryOrder && ['Out for Delivery', 'Delivered'].includes(status)) {
+        const error = new Error('This is a pickup order. Mark it collected instead.');
+        error.statusCode = 409;
+        throw error;
+      }
+      if (status === 'Out for Delivery' && order.status !== 'Ready for Pickup') {
+        const error = new Error('Mark the order ready before it goes out for delivery.');
+        error.statusCode = 409;
+        throw error;
+      }
+      if (status === 'Delivered') {
+        if (order.status !== 'Out for Delivery') {
+          const error = new Error('Only an order that is out for delivery can be marked delivered.');
+          error.statusCode = 409;
+          throw error;
+        }
+        const code = String(req.body.code || '').replace(/\D/g, '');
+        if (order.delivery_code && code !== String(order.delivery_code)) {
+          const error = new Error("Enter the student's 4-digit delivery code to confirm delivery.");
+          error.statusCode = 400;
+          throw error;
+        }
+      }
+      const nowUtc = new Date().toISOString().slice(0, 19).replace('T', ' ');
+      let update;
+      if (status === 'Collected') {
+        update = await transaction.run(
           'UPDATE orders SET status = ?, collected_at = ? WHERE id = ? AND status = ?',
-          [status, new Date().toISOString().slice(0, 19).replace('T', ' '), req.params.id, order.status]
-        )
-        : await transaction.run(
+          [status, nowUtc, req.params.id, order.status]
+        );
+      } else if (status === 'Delivered') {
+        update = await transaction.run(
+          'UPDATE orders SET status = ?, collected_at = ?, delivered_at = ? WHERE id = ? AND status = ?',
+          [status, nowUtc, nowUtc, req.params.id, order.status]
+        );
+      } else if (status === 'Out for Delivery') {
+        update = await transaction.run(
+          'UPDATE orders SET status = ?, dispatched_at = ? WHERE id = ? AND status = ?',
+          [status, nowUtc, req.params.id, order.status]
+        );
+      } else {
+        update = await transaction.run(
           'UPDATE orders SET status = ? WHERE id = ? AND status = ?',
           [status, req.params.id, order.status]
         );
+      }
       if (update.changes !== 1) {
         const error = new Error('The order changed before this update. Refresh and try again.');
         error.statusCode = 409;
@@ -2700,6 +2830,7 @@ app.patch('/api/orders/:id/status', requireCashierOrAdminApi, async (req, res) =
       }
       return transaction.get('SELECT * FROM orders WHERE id = ?', [req.params.id]);
     });
+    delivery.notifyOrder(updatedOrder);
     if (updatedOrder && updatedOrder.user_id && ['Collected', 'Delivered'].includes(updatedOrder.status)) {
       dietService.syncOrderMeals(Number(updatedOrder.user_id))
         .then(() => dietService.invalidateCohort())
@@ -2713,6 +2844,70 @@ app.patch('/api/orders/:id/status', requireCashierOrAdminApi, async (req, res) =
     console.error('Error updating status:', error);
     res.status(500).json({ message: 'Failed to update order status.' });
   }
+});
+
+// ---------------------------------------------------------------------------
+// Delivery: rider app and live tracking
+// ---------------------------------------------------------------------------
+app.get('/api/rider/jobs', requireRiderApi, async (req, res) => {
+  try {
+    res.json({ rider: { id: Number(req.accountUser.id), name: req.accountUser.full_name, role: req.accountUser.role || 'admin' }, ...(await delivery.riderJobs(req.accountUser.id)) });
+  } catch (error) {
+    console.error('Error loading rider jobs:', error);
+    res.status(500).json({ message: 'Unable to load delivery jobs.' });
+  }
+});
+
+app.post('/api/rider/jobs/:id/:action', requireRiderApi, async (req, res) => {
+  const orderId = Number(req.params.id);
+  if (!Number.isSafeInteger(orderId) || !['accept', 'release', 'pickup', 'deliver'].includes(req.params.action)) {
+    return res.status(404).json({ message: 'Not found.' });
+  }
+  try {
+    const order = await delivery.changeJob(orderId, req.accountUser.id, req.params.action, req.body || {});
+    if (req.params.action === 'deliver' && order.user_id) {
+      dietService.syncOrderMeals(Number(order.user_id))
+        .then(() => dietService.invalidateCohort())
+        .catch((error) => console.error('Error adding delivered order to food diary:', error));
+    }
+    const messages = { accept: 'Order accepted.', release: 'Order released for another rider.', pickup: 'Picked up. Drive safely!', deliver: 'Delivered. Great job!' };
+    res.json({ message: messages[req.params.action], status: order.status });
+  } catch (error) {
+    if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+    console.error('Error updating delivery job:', error);
+    res.status(500).json({ message: 'Unable to update the delivery.' });
+  }
+});
+
+const riderLocationTimes = new Map();
+app.post('/api/rider/location', requireRiderApi, async (req, res) => {
+  const last = riderLocationTimes.get(req.accountUser.id) || 0;
+  if (Date.now() - last < 3000) return res.json({ updated: 0, throttled: true });
+  riderLocationTimes.set(req.accountUser.id, Date.now());
+  try {
+    res.json(await delivery.updateRiderLocation(req.accountUser.id, req.body || {}));
+  } catch (error) {
+    if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+    console.error('Error saving rider location:', error);
+    res.status(500).json({ message: 'Unable to save location.' });
+  }
+});
+
+app.get('/api/account/orders/:id/track', requireStudentApi, async (req, res) => {
+  const orderId = Number(req.params.id);
+  if (!Number.isSafeInteger(orderId)) return res.status(404).json({ message: 'Order not found.' });
+  try {
+    const tracking = await delivery.trackOrder(orderId, req.accountUser.id);
+    if (!tracking) return res.status(404).json({ message: 'Order not found.' });
+    res.json(tracking);
+  } catch (error) {
+    console.error('Error tracking order:', error);
+    res.status(500).json({ message: 'Unable to load tracking.' });
+  }
+});
+
+app.get('/api/delivery/config', (req, res) => {
+  res.json({ fee: delivery.DELIVERY_FEE_CENTS / 100, kitchen: delivery.KITCHEN });
 });
 
 app.get('/api/restaurant/orders', requireCashierOrAdminApi, async (req, res) => {
@@ -2740,7 +2935,7 @@ app.get('/api/restaurant/orders', requireCashierOrAdminApi, async (req, res) => 
 
 app.get('/api/delivery/orders', requireCashierOrAdminApi, async (req, res) => {
   try {
-    const orders = await all('SELECT * FROM orders WHERE status IN ("Preparing", "Ready for Pickup", "Out for Delivery", "Delivered") ORDER BY created_at DESC');
+    const orders = await all("SELECT * FROM orders WHERE order_type = 'delivery' AND status IN ('Preparing', 'Ready for Pickup', 'Out for Delivery', 'Delivered') ORDER BY created_at DESC");
     const result = [];
 
     for (const order of orders) {

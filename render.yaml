@@ -29,3 +29,13 @@ services:
         sync: false
       - key: SMTP_FROM
         sync: false
+      # AI meal photo scanner (Claude). Add your key on Render; never commit it.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # Delivery: kitchen location for the tracking map (optional) and fee in dollars
+      - key: KITCHEN_LAT
+        sync: false
+      - key: KITCHEN_LNG
+        sync: false
+      - key: DELIVERY_FEE
+        value: "3.50"
