@@ -25,7 +25,24 @@ const orderNotificationStatusEl = document.getElementById('order-notification-st
 const drinkPickerDialog = document.getElementById('drink-picker-dialog');
 const drinkPickerOptions = document.getElementById('drink-picker-options');
 
+const CART_STORAGE_KEY = 'kitchenCart';
 let cart = [];
+try {
+  const saved = JSON.parse(sessionStorage.getItem(CART_STORAGE_KEY) || '[]');
+  if (Array.isArray(saved)) {
+    cart = saved.filter((item) => item && Number.isFinite(Number(item.id)) && Number(item.quantity) > 0);
+  }
+} catch {
+  cart = [];
+}
+
+function saveCart() {
+  try {
+    sessionStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+  } catch {
+    // Private browsing: the cart still works on this page.
+  }
+}
 let menu = [];
 let accountBalanceCents = 0;
 let previousOrderStatuses = null;
@@ -269,6 +286,7 @@ function updateTotals() {
 }
 
 function renderCart() {
+  saveCart();
   if (!cart.length) {
     cartItems.innerHTML = '<div class="empty-state">Your cart is empty. Add a few items to begin.</div>';
     updateTotals();

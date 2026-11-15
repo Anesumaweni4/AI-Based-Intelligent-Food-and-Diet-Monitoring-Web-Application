@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="styles.css?v=home-menu-price-layout-1" />
     <link rel="stylesheet" href="theme.css?v=diet-ai-1" />
-    <link rel="stylesheet" href="client.css?v=diet-coach-1" />
+    <link rel="stylesheet" href="client.css?v=cart-drawer-1" />
     <script>
       // Send staff to their own dashboards before the page paints.
       (() => {
@@ -44,18 +44,16 @@
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>
             <span>Diet</span>
           </a>
-          <a href="#checkout" class="client-nav-cart" data-section-link>
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+          <a href="#checkout" class="client-nav-cart" aria-controls="checkout" aria-label="Cart, 0 items">
+            <span class="nav-cart-icon">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+              <span class="nav-cart-count" data-cart-count hidden>0</span>
+            </span>
             <span>Cart</span>
           </a>
         </nav>
 
         <div class="client-actions">
-          <a class="cart-button" href="#checkout" aria-label="View cart">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
-            <span class="cart-button-label">Cart</span>
-            <span class="cart-count" id="cart-count" hidden>0</span>
-          </a>
           <span class="client-avatar" id="client-avatar" title="Signed in">S</span>
           <button type="button" class="client-logout" id="client-logout" aria-label="Log out">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5M5 12h11"/></svg>
@@ -138,19 +136,31 @@
         </div>
       </section>
 
-      <section id="checkout" class="client-section">
-        <div class="client-container">
-          <div class="client-section-head">
-            <div>
-              <p class="eyebrow">Checkout</p>
-              <h3>Ready when you are.</h3>
-            </div>
-          </div>
+    </main>
 
-          <div class="checkout-grid">
+    <footer class="client-footer">
+      <div class="client-container">
+        <span>© THE KITCHEN</span>
+        <span>Made fresh. Served with care. · <a href="image-credits.html">Image credits</a></span>
+      </div>
+    </footer>
+
+    <div class="cart-overlay" id="cart-overlay" hidden></div>
+    <aside class="cart-drawer" id="checkout" role="dialog" aria-modal="true" aria-labelledby="cart-drawer-title" aria-hidden="true" tabindex="-1">
+      <header class="cart-drawer-head">
+        <div>
+          <p class="eyebrow">Checkout</p>
+          <h3 id="cart-drawer-title">Your cart</h3>
+        </div>
+        <button type="button" class="cart-drawer-close" id="cart-drawer-close" aria-label="Close cart">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+      <div class="cart-drawer-body">
+        <div class="checkout-grid">
             <div class="checkout-card">
               <div class="checkout-card-head">
-                <h4>Your cart</h4>
+                <h4>Items</h4>
                 <span class="checkout-card-hint">Adjust quantities before you order</span>
               </div>
               <div id="cart-items" class="cart-items"></div>
@@ -162,7 +172,7 @@
             </div>
 
             <div class="order-form-wrap">
-              <h4>Place your order</h4>
+              <h4>Payment and pickup</h4>
               <section class="wallet-card" aria-live="polite">
                 <p class="eyebrow">Student credit</p>
                 <strong id="wallet-balance">Loading balance…</strong>
@@ -204,17 +214,8 @@
               </form>
             </div>
           </div>
-        </div>
-      </section>
-    </main>
-
-    <footer class="client-footer">
-      <div class="client-container">
-        <span>© THE KITCHEN</span>
-        <span>Made fresh. Served with care. · <a href="image-credits.html">Image credits</a></span>
       </div>
-    </footer>
-
+    </aside>
     <div id="toast" class="toast"></div>
     <dialog id="delivery-unavailable-dialog" class="notice-dialog delivery-notice" aria-labelledby="delivery-notice-title" aria-describedby="delivery-notice-text">
       <div class="delivery-notice-art" aria-hidden="true">
@@ -337,8 +338,8 @@
         <p id="feedback-chat-status" class="fbx-status" role="status" aria-live="polite"></p>
       </section>
     </aside>
-    <script src="client-shell.js?v=client-redesign-1"></script>
-    <script src="app.js?v=separate-ingredient-inventory-1"></script>
+    <script src="client-shell.js?v=cart-drawer-1"></script>
+    <script src="app.js?v=cart-drawer-1"></script>
     <script src="staff-dashboard-links.js?v=20261113-1"></script>
     <script src="feedback-chatbot.js?v=feedback-chat-2"></script>
   </body>

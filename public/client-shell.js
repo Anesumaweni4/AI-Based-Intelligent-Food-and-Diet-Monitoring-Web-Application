@@ -76,15 +76,94 @@
     new MutationObserver(fn).observe(el, options);
   };
 
-  // ---------- Cart count ----------
-  const cartCount = $('cart-count');
-  watch($('cart-items'), () => {
-    if (!cartCount) return;
-    const total = Array.from(document.querySelectorAll('#cart-items .qty-controls span'))
-      .reduce((sum, span) => sum + (Number(span.textContent) || 0), 0);
-    cartCount.textContent = String(total);
-    cartCount.hidden = total === 0;
-  });
+  // ---------- Cart count (menu bar badge) ----------
+  let lastCartTotal = null;
+  const showCartTotal = (total) => {
+    document.querySelectorAll('[data-cart-count]').forEach((badge) => {
+      badge.textContent = total > 99 ? '99+' : String(total);
+      badge.hidden = total === 0;
+      if (lastCartTotal !== null && total > lastCartTotal) {
+        badge.classList.remove('is-bumping');
+        void badge.offsetWidth;
+        badge.classList.add('is-bumping');
+      }
+    });
+    document.querySelectorAll('.client-nav-cart').forEach((link) => {
+      link.setAttribute('aria-label', `Cart, ${total} item${total === 1 ? '' : 's'}`);
+    });
+    lastCartTotal = total;
+  };
+  if ($('cart-items')) {
+    watch($('cart-items'), () => {
+      const total = Array.from(document.querySelectorAll('#cart-items .qty-controls span'))
+        .reduce((sum, span) => sum + (Number(span.textContent) || 0), 0);
+      showCartTotal(total);
+    });
+  } else {
+    // Other pages: show the count of the cart saved on the menu page.
+    try {
+      const saved = JSON.parse(sessionStorage.getItem('kitchenCart') || '[]');
+      showCartTotal(Array.isArray(saved) ? saved.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0) : 0);
+    } catch {
+      showCartTotal(0);
+    }
+  }
+
+  // ---------- Cart drawer (cart + payment) ----------
+  const drawer = $('checkout');
+  const overlay = $('cart-overlay');
+  if (drawer && drawer.classList.contains('cart-drawer')) {
+    let returnFocus = null;
+    const openCart = () => {
+      if (drawer.classList.contains('is-open')) return;
+      returnFocus = document.activeElement;
+      overlay.hidden = false;
+      drawer.setAttribute('aria-hidden', 'false');
+      requestAnimationFrame(() => {
+        overlay.classList.add('is-open');
+        drawer.classList.add('is-open');
+      });
+      document.body.classList.add('cart-open');
+      $('cart-drawer-close')?.focus({ preventScroll: true });
+    };
+    const closeCart = () => {
+      if (!drawer.classList.contains('is-open')) return;
+      drawer.classList.remove('is-open');
+      overlay.classList.remove('is-open');
+      drawer.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('cart-open');
+      setTimeout(() => { overlay.hidden = true; }, 250);
+      if (window.location.hash === '#checkout') history.replaceState(null, '', window.location.pathname);
+      if (returnFocus && typeof returnFocus.focus === 'function') returnFocus.focus({ preventScroll: true });
+    };
+    window.openCart = openCart;
+    window.closeCart = closeCart;
+    document.addEventListener('click', (event) => {
+      const link = event.target.closest('a[href="#checkout"]');
+      if (!link) return;
+      event.preventDefault();
+      openCart();
+    });
+    $('cart-drawer-close')?.addEventListener('click', closeCart);
+    overlay.addEventListener('click', closeCart);
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' || !drawer.classList.contains('is-open')) return;
+      if (document.querySelector('dialog[open]')) return; // let the payment dialog close first
+      closeCart();
+    });
+    // Keep keyboard focus inside the open drawer
+    drawer.addEventListener('keydown', (event) => {
+      if (event.key !== 'Tab') return;
+      const focusable = Array.from(drawer.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]):not([readonly]), select:not([disabled]), textarea:not([disabled])'))
+        .filter((element) => element.offsetParent !== null);
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    });
+    if (window.location.hash === '#checkout') openCart();
+  }
 
   // ---------- Hero: credit mirror ----------
   watch($('wallet-balance'), () => {
