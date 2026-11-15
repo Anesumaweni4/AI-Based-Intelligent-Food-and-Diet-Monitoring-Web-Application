@@ -6,6 +6,7 @@ const { initializeDatabase, get, all, run, withTransaction, replaceMenuSchedule 
 const { hashPassword, verifyPassword, passwordNeedsRehash } = require('./passwords');
 const { getNutrition, GOALS, MEAL_SLOTS, BODY_GOALS } = require('./diet-model');
 const dietService = require('./diet-service');
+const { applyMenuImages } = require('./menu-images');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -2692,6 +2693,11 @@ app.get('*', (req, res) => {
 
 async function startServer() {
   await initializeDatabase();
+  try {
+    await applyMenuImages();
+  } catch (error) {
+    console.error('Unable to update menu photos:', error);
+  }
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);
     console.log(`Network access: http://YOUR_PC_IP:${PORT}`);
