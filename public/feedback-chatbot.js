@@ -200,10 +200,11 @@ feedbackChatPhoto.addEventListener('change', () => {
   feedbackPhotoWrap.hidden = false;
 });
 
-feedbackChatToggle.addEventListener('click', async () => {
-  feedbackChatPanel.hidden = !feedbackChatPanel.hidden;
-  feedbackChatToggle.setAttribute('aria-expanded', String(!feedbackChatPanel.hidden));
-  if (feedbackChatPanel.hidden) return;
+let feedbackOpener = feedbackChatToggle;
+
+async function openFeedbackPanel() {
+  feedbackChatPanel.hidden = false;
+  feedbackChatToggle.setAttribute('aria-expanded', 'true');
   if (!feedbackHistoryLoaded) {
     try {
       await loadFeedbackHistory();
@@ -214,13 +215,46 @@ feedbackChatToggle.addEventListener('click', async () => {
     appendFeedbackMessage('Hi! 👋 Tell us how we are doing. Pick a topic below and your message goes straight to the kitchen team.', 'assistant');
     showFeedbackCategories();
   }
-});
+}
 
-document.getElementById('feedback-chat-close').addEventListener('click', () => {
+function closeFeedbackPanel() {
   feedbackChatPanel.hidden = true;
   feedbackChatToggle.setAttribute('aria-expanded', 'false');
-  feedbackChatToggle.focus();
+  document.querySelectorAll('[data-open-feedback]').forEach((button) => button.setAttribute('aria-expanded', 'false'));
+  if (feedbackOpener && feedbackOpener.isConnected) feedbackOpener.focus();
+}
+
+feedbackChatToggle.addEventListener('click', () => {
+  feedbackOpener = feedbackChatToggle;
+  if (feedbackChatPanel.hidden) openFeedbackPanel();
+  else closeFeedbackPanel();
 });
+
+// Buttons elsewhere on the page (e.g. "Give feedback" in Your orders).
+document.querySelectorAll('[data-open-feedback]').forEach((button) => {
+  button.addEventListener('click', () => {
+    feedbackOpener = button;
+    if (!feedbackChatPanel.hidden) return closeFeedbackPanel();
+    button.setAttribute('aria-expanded', 'true');
+    openFeedbackPanel();
+  });
+});
+
+// Opens the chat straight on a topic, e.g. feedback about one order.
+window.openFeedback = async ({ category = '', orderId = '', opener = null } = {}) => {
+  if (opener) feedbackOpener = opener;
+  await openFeedbackPanel();
+  const button = category && feedbackChatCategories.querySelector(`button[data-feedback-category="${category}"]`);
+  if (!button) return;
+  button.click();
+  if (orderId && !feedbackChatInput.value) {
+    feedbackChatInput.value = `Order #${orderId}: `;
+    updateFeedbackComposer();
+    feedbackChatInput.setSelectionRange(feedbackChatInput.value.length, feedbackChatInput.value.length);
+  }
+};
+
+document.getElementById('feedback-chat-close').addEventListener('click', closeFeedbackPanel);
 
 feedbackChatCategories.addEventListener('click', (event) => {
   const button = event.target.closest('button[data-feedback-category]');

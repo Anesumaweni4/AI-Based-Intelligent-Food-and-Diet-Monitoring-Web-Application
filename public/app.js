@@ -261,13 +261,31 @@ function renderStudentOrders(orders) {
   const openOrderIds = new Set(
     Array.from(studentOrdersEl.querySelectorAll('details[open]'), element => element.dataset.orderId)
   );
-  studentOrdersEl.innerHTML = orders.map(order => `
+  studentOrdersEl.innerHTML = orders.map(order => {
+    const isDelivery = order.order_type === 'delivery';
+    const placed = new Date(order.created_at);
+    const itemCount = (order.items || []).reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+    const finished = ['Delivered', 'Collected'].includes(order.status);
+    const meta = [
+      placed.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+      placed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+      itemCount ? `${itemCount} item${itemCount === 1 ? '' : 's'}` : '',
+      isDelivery ? 'Delivery' : 'Pickup'
+    ].filter(Boolean).map(part => `<span>${escapeHtml(part)}</span>`).join(' · ');
+    return `
     <details class="order-card student-order-card" data-order-id="${escapeHtml(order.id)}" ${openOrderIds.has(String(order.id)) ? 'open' : ''}>
       <summary class="student-order-summary">
-        <strong>Order #${escapeHtml(order.id)}</strong>
-        <span class="badge">${order.order_type === 'delivery' ? '🛵 ' : ''}${escapeHtml(order.status)}</span>
-        <span class="student-order-date">${new Date(order.created_at).toLocaleString()}</span>
-        <strong>${formatCurrency(order.total)}</strong>
+        <span class="so-icon" data-type="${isDelivery ? 'delivery' : 'pickup'}" aria-hidden="true">
+          ${isDelivery
+            ? '<svg viewBox="0 0 24 24"><circle cx="6" cy="17" r="2.5"/><circle cx="18" cy="17" r="2.5"/><path d="M8.5 17h7M15 7h2l3 5v5M3 12h9V7H5"/></svg>'
+            : '<svg viewBox="0 0 24 24"><path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>'}
+        </span>
+        <span class="so-main">
+          <strong class="so-title">Order #${escapeHtml(order.id)}</strong>
+          <span class="so-meta">${meta}</span>
+        </span>
+        <span class="badge" data-tone="${orderStatusTone(order.status)}">${escapeHtml(order.status)}</span>
+        <strong class="so-total">${formatCurrency(order.total)}</strong>
       </summary>
       <div class="student-order-details">
         <p class="order-status-message">${escapeHtml(getOrderUpdateMessage(order.status))}</p>
@@ -290,10 +308,31 @@ function renderStudentOrders(orders) {
             </li>
           `).join('')}
         </ul>
+        <div class="so-actions">
+          <button type="button" class="so-feedback" data-order-feedback="${escapeHtml(order.id)}" data-feedback-topic="${finished ? 'food' : 'order'}">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 11h.01M12 11h.01M15.5 11h.01"/></svg>
+            ${finished ? 'Rate this order' : 'Report a problem'}
+          </button>
+        </div>
       </div>
-    </details>
-  `).join('');
+    </details>`;
+  }).join('');
 }
+
+function orderStatusTone(status) {
+  if (['Delivered', 'Collected'].includes(status)) return 'done';
+  if (status === 'Cancelled') return 'cancelled';
+  if (['Ready', 'Ready for Pickup', 'Out for Delivery'].includes(status)) return 'ready';
+  if (['Preparing', 'Accepted', 'Cooking'].includes(status)) return 'preparing';
+  return 'pending';
+}
+
+// "Rate this order" / "Report a problem" opens the feedback chat about that order.
+studentOrdersEl.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-order-feedback]');
+  if (!button || typeof window.openFeedback !== 'function') return;
+  window.openFeedback({ category: button.dataset.feedbackTopic, orderId: button.dataset.orderFeedback, opener: button });
+});
 
 async function loadStudentOrders() {
   try {

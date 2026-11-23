@@ -5710,3 +5710,164 @@ body.cart-open {
 }
 
 .delivery-location-status.is-error { color: #a33a22; font-weight: 700; }
+
+/* --------------------------------------------------------------------------
+   Your orders (redesign): icon tile, title with a meta line, coloured status,
+   and feedback inside each order instead of a floating button.
+   -------------------------------------------------------------------------- */
+.client-body .fbx-toggle[hidden] {
+  display: none;
+}
+
+.client-body .fbx--docked .fbx-panel {
+  bottom: 0;
+}
+
+.client-body .student-order-summary {
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 18px;
+  padding: 16px 56px 16px 18px;
+}
+
+.client-body .so-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: #fbf0d9;
+  color: #8a5e12;
+}
+
+.client-body .so-icon[data-type="delivery"] {
+  background: #f8e6dd;
+  color: var(--terracotta);
+}
+
+.client-body .so-icon svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.client-body .so-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.client-body .so-title {
+  font-family: var(--font-display);
+  font-size: 1.12rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.client-body .so-meta {
+  overflow: hidden;
+  color: var(--muted-ink);
+  font-size: 0.85rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.client-body .so-meta span {
+  white-space: nowrap;
+}
+
+.client-body .so-total {
+  min-width: 64px;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+.client-body .student-order-card[open] .so-icon {
+  box-shadow: inset 0 0 0 2px currentColor;
+}
+
+.client-body .so-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.client-body .so-feedback {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.client-body .so-feedback .icon {
+  width: 18px;
+  height: 18px;
+  color: var(--terracotta);
+}
+
+.client-body .so-feedback:hover,
+.client-body .so-feedback:focus-visible {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+  outline: none;
+}
+
+.client-body .so-feedback:hover .icon,
+.client-body .so-feedback:focus-visible .icon {
+  color: var(--saffron);
+}
+
+.client-body .so-feedback-head .icon {
+  color: var(--terracotta);
+}
+
+@media (max-width: 640px) {
+  .client-body .student-order-summary {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 6px 12px;
+    padding: 14px 44px 14px 14px;
+  }
+
+  .client-body .so-icon {
+    grid-row: span 2;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+  }
+
+  .client-body .student-order-summary .badge {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: start;
+  }
+
+  .client-body .so-total {
+    grid-column: 3;
+    grid-row: 1;
+    min-width: 0;
+    font-size: 1.05rem;
+  }
+
+  .client-body .so-meta {
+    white-space: normal;
+  }
+}
