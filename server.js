@@ -1563,6 +1563,26 @@ app.post('/api/reminders/test', requireStudentApi, async (req, res) => {
   }
 });
 
+// "Send my weekly summary now": the Monday Weekly Summary for the last 7 days.
+const weeklyPushTimes = new Map();
+app.post('/api/reminders/weekly', requireStudentApi, async (req, res) => {
+  const userId = req.accountUser.id;
+  const last = weeklyPushTimes.get(userId) || 0;
+  if (Date.now() - last < 10 * 1000) {
+    return res.status(429).json({ message: 'Please wait a few seconds before sending another summary.' });
+  }
+  weeklyPushTimes.set(userId, Date.now());
+  try {
+    const result = await reminders.sendWeeklyNow(userId);
+    if (!result.devices) return res.status(400).json({ message: 'Turn on reminders on this phone first.' });
+    if (!result.sent) return res.status(502).json({ message: 'The summary could not be delivered. Turn reminders off and on again on this phone.' });
+    res.json({ message: 'Weekly summary sent.', ...result });
+  } catch (error) {
+    console.error('Error sending weekly summary:', error);
+    res.status(500).json({ message: 'Unable to send the weekly summary.' });
+  }
+});
+
 // Lets a free cron service (e.g. cron-job.org) wake the server so reminders are
 // still sent when the free hosting plan has put it to sleep. Sending is
 // idempotent: each reminder goes out at most once a day.

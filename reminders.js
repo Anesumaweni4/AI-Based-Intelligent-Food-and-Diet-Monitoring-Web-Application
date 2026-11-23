@@ -9,6 +9,9 @@
 // time. Each reminder is sent at most once a day, and only when it is still
 // useful: no lunch reminder if lunch is already in the diary, no exercise
 // nudge if today's active minutes are already reached.
+//
+// Every Monday morning a "Weekly Summary" compares last week with the week
+// before ("You beat your 30-minute activity goal 4 times last week").
 const webpush = require('web-push');
 const { get, all, run } = require('./db');
 const dietService = require('./diet-service');
@@ -16,6 +19,8 @@ const dietService = require('./diet-service');
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 const CATCH_UP_MINUTES = 60; // a reminder missed while the server slept is still sent within an hour
 const WATER_TIMES = { 'water-am': '10:30', 'water-pm': '15:30' };
+const WEEKLY_DAY = 1; // Monday (0 = Sunday)
+const WEEKLY_TIME = '08:00';
 const DEFAULT_SETTINGS = {
   mealsEnabled: true,
   breakfastTime: '07:30',
@@ -23,7 +28,8 @@ const DEFAULT_SETTINGS = {
   supperTime: '18:30',
   exerciseEnabled: true,
   exerciseTime: '17:00',
-  waterEnabled: true
+  waterEnabled: true,
+  weeklyEnabled: true
 };
 
 // ---------------------------------------------------------------------------
@@ -75,7 +81,8 @@ function rowToSettings(row) {
     supperTime: row.supper_time,
     exerciseEnabled: flag(row.exercise_enabled),
     exerciseTime: row.exercise_time,
-    waterEnabled: flag(row.water_enabled)
+    waterEnabled: flag(row.water_enabled),
+    weeklyEnabled: row.weekly_enabled === null || row.weekly_enabled === undefined ? true : flag(row.weekly_enabled)
   };
 }
 
@@ -87,7 +94,7 @@ async function getSettings(userId) {
 function parseSettings(body, current) {
   const next = { ...current };
   const errors = [];
-  for (const key of ['mealsEnabled', 'exerciseEnabled', 'waterEnabled']) {
+  for (const key of ['mealsEnabled', 'exerciseEnabled', 'waterEnabled', 'weeklyEnabled']) {
     if (body[key] !== undefined) next[key] = Boolean(body[key]);
   }
   for (const key of ['breakfastTime', 'lunchTime', 'supperTime', 'exerciseTime']) {
@@ -110,20 +117,20 @@ async function saveSettings(userId, body) {
   const s = parsed.settings;
   const values = [
     s.mealsEnabled ? 1 : 0, s.breakfastTime, s.lunchTime, s.supperTime,
-    s.exerciseEnabled ? 1 : 0, s.exerciseTime, s.waterEnabled ? 1 : 0
+    s.exerciseEnabled ? 1 : 0, s.exerciseTime, s.waterEnabled ? 1 : 0, s.weeklyEnabled ? 1 : 0
   ];
   const existing = await get('SELECT user_id FROM reminder_settings WHERE user_id = ?', [userId]);
   if (existing) {
     await run(
       `UPDATE reminder_settings SET meals_enabled = ?, breakfast_time = ?, lunch_time = ?, supper_time = ?,
-         exercise_enabled = ?, exercise_time = ?, water_enabled = ?, updated_at = CURRENT_TIMESTAMP
+         exercise_enabled = ?, exercise_time = ?, water_enabled = ?, weekly_enabled = ?, updated_at = CURRENT_TIMESTAMP
        WHERE user_id = ?`,
       [...values, userId]
     );
   } else {
     await run(
       `INSERT INTO reminder_settings (user_id, meals_enabled, breakfast_time, lunch_time, supper_time,
-         exercise_enabled, exercise_time, water_enabled) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+         exercise_enabled, exercise_time, water_enabled, weekly_enabled) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [userId, ...values]
     );
   }
@@ -172,7 +179,13 @@ async function listDevices(userId) {
 
 async function getStatus(userId) {
   const { publicKey } = await ensureVapidKeys();
-  return { publicKey, settings: await getSettings(userId), devices: await listDevices(userId), waterTimes: WATER_TIMES };
+  return {
+    publicKey,
+    settings: await getSettings(userId),
+    devices: await listDevices(userId),
+    waterTimes: WATER_TIMES,
+    weekly: { day: 'Monday', time: WEEKLY_TIME }
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -268,6 +281,60 @@ function waterMessage(kind, snap) {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Weekly Summary (Monday morning): last week against the week before
+// ---------------------------------------------------------------------------
+const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`;
+
+function weeklyMessage(summary) {
+  const { last, previous, targets, waterTarget } = summary;
+  const name = summary.firstName;
+  const base = {
+    title: 'Weekly Summary 📊',
+    url: '/diet-monitoring.html#insights',
+    tag: 'weekly',
+    actions: [{ action: 'open', title: 'See my week' }]
+  };
+  if (!last.loggedDays && !last.activeMinutes) {
+    const hello = name ? `${name}, ` : '';
+    return {
+      ...base,
+      body: previous.loggedDays
+        ? `${hello}nothing was logged last week, after ${plural(previous.loggedDays, 'day', 'days')} the week before. Log breakfast today to get back on track.`
+        : `${hello}no meals or activity were logged last week. Log your breakfast today and we'll track your week.`
+    };
+  }
+
+  // Goals reached last week, best first: beating the week before wins, then the bigger gain.
+  const goals = [
+    { count: last.activeGoalDays, before: previous.activeGoalDays, text: (n) => `beat your ${targets.activityMinutes}-minute activity goal ${plural(n, 'time', 'times')}` },
+    { count: last.calorieGoalDays, before: previous.calorieGoalDays, text: (n) => `hit your ${targets.calories.toLocaleString('en-US')} kcal energy target ${plural(n, 'time', 'times')}` },
+    { count: last.proteinGoalDays, before: previous.proteinGoalDays, text: (n) => `reached your ${targets.protein} g protein goal ${plural(n, 'time', 'times')}` },
+    { count: last.waterGoalDays, before: previous.waterGoalDays, text: (n) => `drank all ${Math.round(waterTarget / 250)} glasses of water on ${plural(n, 'day', 'days')}` },
+    { count: last.breakfastDays, before: previous.breakfastDays, text: (n) => `ate breakfast on ${plural(n, 'day', 'days')}` }
+  ].filter((goal) => goal.count > 0)
+    .sort((a, b) => (Number(b.count > b.before) - Number(a.count > a.before))
+      || ((b.count - b.before) - (a.count - a.before))
+      || (b.count - a.count));
+
+  const sentences = [];
+  const you = name ? `${name}, you` : 'You';
+  if (goals.length) {
+    const top = goals[0];
+    const change = top.count - top.before;
+    const compare = change > 0 ? `, ${change} more than the week before` : change === 0 ? ', the same as the week before' : '';
+    sentences.push(`${you} ${top.text(top.count)} last week${compare}.`);
+  } else {
+    sentences.push(`${you} logged ${plural(last.loggedDays, 'day', 'days')} last week. Pick one goal this week, like ${targets.activityMinutes} active minutes a day.`);
+  }
+  if (last.averageScore !== null) {
+    const diff = previous.averageScore === null ? null : last.averageScore - previous.averageScore;
+    const trend = diff === null || diff === 0 ? '' : ` (${diff > 0 ? 'up' : 'down'} ${Math.abs(diff)} on the week before)`;
+    sentences.push(`Diet score averaged ${last.averageScore}${trend}.`);
+  }
+  return { ...base, body: sentences.join(' ') };
+}
+
 function buildMessage(kind, snap) {
   if (MEAL_LABEL[kind]) return mealMessage(kind, snap);
   if (kind === 'exercise') return exerciseMessage(snap);
@@ -275,8 +342,9 @@ function buildMessage(kind, snap) {
   return null;
 }
 
-function dueKinds(settings) {
+function dueKinds(settings, weekday = null) {
   const kinds = [];
+  if (settings.weeklyEnabled && weekday === WEEKLY_DAY) kinds.push(['weekly', WEEKLY_TIME]);
   if (settings.mealsEnabled) {
     kinds.push(['breakfast', settings.breakfastTime], ['lunch', settings.lunchTime], ['supper', settings.supperTime]);
   }
@@ -292,9 +360,10 @@ async function tick() {
   const now = dietService.wallClock();
   const day = now.slice(0, 10);
   const nowMinutes = toMinutes(now.slice(11, 16));
+  const weekday = new Date(`${day}T00:00:00Z`).getUTCDay();
   const rows = await all(
     `SELECT DISTINCT s.user_id, r.meals_enabled, r.breakfast_time, r.lunch_time, r.supper_time,
-            r.exercise_enabled, r.exercise_time, r.water_enabled
+            r.exercise_enabled, r.exercise_time, r.water_enabled, r.weekly_enabled
      FROM push_subscriptions s LEFT JOIN reminder_settings r ON r.user_id = s.user_id`
   );
   if (!rows.length) return { checked: 0, sent: 0 };
@@ -305,7 +374,7 @@ async function tick() {
   for (const row of rows) {
     const userId = Number(row.user_id);
     const settings = row.meals_enabled === null || row.meals_enabled === undefined ? DEFAULT_SETTINGS : rowToSettings(row);
-    for (const [kind, time] of dueKinds(settings)) {
+    for (const [kind, time] of dueKinds(settings, weekday)) {
       const late = nowMinutes - toMinutes(time);
       if (late < 0 || late > CATCH_UP_MINUTES || already.has(`${userId}:${kind}`)) continue;
       due.push({ userId, kind });
@@ -313,7 +382,10 @@ async function tick() {
   }
   if (!due.length) return { checked: rows.length, sent: 0 };
 
-  const snapshots = await dietService.reminderSnapshots(due.map((entry) => entry.userId));
+  const daily = due.filter((entry) => entry.kind !== 'weekly');
+  const weekly = due.filter((entry) => entry.kind === 'weekly');
+  const snapshots = daily.length ? await dietService.reminderSnapshots(daily.map((entry) => entry.userId)) : new Map();
+  const summaries = weekly.length ? await dietService.weeklySummaries(weekly.map((entry) => entry.userId), day) : new Map();
   let sent = 0;
   for (const { userId, kind } of due) {
     try {
@@ -322,8 +394,14 @@ async function tick() {
     } catch {
       continue;
     }
-    const snap = snapshots.get(userId);
-    const message = snap ? buildMessage(kind, snap) : null;
+    let message = null;
+    if (kind === 'weekly') {
+      const summary = summaries.get(userId);
+      message = summary ? weeklyMessage(summary) : null;
+    } else {
+      const snap = snapshots.get(userId);
+      message = snap ? buildMessage(kind, snap) : null;
+    }
     if (!message) continue; // nothing useful to say: already done
     const result = await sendToUser(userId, message);
     sent += result.sent;
@@ -361,6 +439,14 @@ async function sendTest(userId) {
   });
 }
 
+// "Send my weekly summary now" button: the same message as on Monday,
+// for the 7 days before today.
+async function sendWeeklyNow(userId) {
+  const summary = (await dietService.weeklySummaries([userId])).get(userId);
+  if (!summary) return { sent: 0, devices: 0 };
+  return sendToUser(userId, weeklyMessage(summary));
+}
+
 module.exports = {
   ensureVapidKeys,
   getStatus,
@@ -368,8 +454,9 @@ module.exports = {
   saveSubscription,
   removeSubscription,
   sendTest,
+  sendWeeklyNow,
   sendToUser,
   safeTick,
   startScheduler,
-  _internal: { buildMessage, dueKinds, parseSettings, parseSubscription, describeDevice, DEFAULT_SETTINGS }
+  _internal: { buildMessage, weeklyMessage, dueKinds, parseSettings, parseSubscription, describeDevice, DEFAULT_SETTINGS }
 };

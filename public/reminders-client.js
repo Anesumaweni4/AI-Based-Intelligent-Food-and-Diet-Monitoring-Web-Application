@@ -75,7 +75,8 @@
         messageEl.dataset.tone = 'error';
       } finally {
         busy = false;
-        render();
+        // Keep the message the handler (or the error) just wrote; only unlock the buttons.
+        actionsEl.querySelectorAll('button').forEach((other) => { other.disabled = false; });
       }
     });
     return element;
@@ -122,6 +123,7 @@
       messageEl.textContent = note || 'Reminders are on for this phone. We only send one when it helps: nothing if you have already eaten, drunk or moved enough.';
       actionsEl.append(
         button('Send a test', sendTest, 'green'),
+        button('📊 Weekly summary now', sendWeekly, 'ghost'),
         button('Turn off on this phone', turnOff, 'ghost')
       );
       return;
@@ -173,6 +175,11 @@
   async function sendTest() {
     const result = await api('/api/reminders/test', { method: 'POST' });
     render(`${result.message} It should appear in a few seconds.`);
+  }
+
+  async function sendWeekly() {
+    const result = await api('/api/reminders/weekly', { method: 'POST' });
+    render(`${result.message} It shows how last week compared with the week before.`);
   }
 
   // ---------- Settings form ----------

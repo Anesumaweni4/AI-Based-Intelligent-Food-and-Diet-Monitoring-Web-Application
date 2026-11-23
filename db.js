@@ -1152,7 +1152,8 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
         supper_time VARCHAR(5) NOT NULL DEFAULT '18:30',
         exercise_enabled SMALLINT NOT NULL DEFAULT 1,
         exercise_time VARCHAR(5) NOT NULL DEFAULT '17:00',
-        water_enabled SMALLINT NOT NULL DEFAULT 1,`;
+        water_enabled SMALLINT NOT NULL DEFAULT 1,
+        weekly_enabled SMALLINT NOT NULL DEFAULT 1,`;
   if (postgresPool) {
     await postgresPool.query(`
       CREATE TABLE IF NOT EXISTS push_subscriptions (
@@ -1182,6 +1183,7 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
         UNIQUE (user_id, kind, day)
       )
     `);
+    await postgresPool.query('ALTER TABLE reminder_settings ADD COLUMN IF NOT EXISTS weekly_enabled SMALLINT NOT NULL DEFAULT 1');
     await postgresPool.query(`
       CREATE TABLE IF NOT EXISTS app_settings (
         setting_key VARCHAR(60) PRIMARY KEY,
@@ -1217,6 +1219,10 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
         UNIQUE (user_id, kind, day)
       )
     `);
+    const reminderColumns = await sqliteAll('PRAGMA table_info(reminder_settings)');
+    if (!reminderColumns.some((column) => column.name === 'weekly_enabled')) {
+      await sqliteRun('ALTER TABLE reminder_settings ADD COLUMN weekly_enabled INTEGER NOT NULL DEFAULT 1');
+    }
     await sqliteRun(`
       CREATE TABLE IF NOT EXISTS app_settings (
         setting_key TEXT PRIMARY KEY,
@@ -1256,6 +1262,14 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       )
     `);
+    const [reminderColumns] = await pool.query(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'reminder_settings' AND COLUMN_NAME = 'weekly_enabled'`,
+      [dbConfig.database]
+    );
+    if (!reminderColumns.length) {
+      await pool.query('ALTER TABLE reminder_settings ADD COLUMN weekly_enabled SMALLINT NOT NULL DEFAULT 1');
+    }
     await pool.query(`
       CREATE TABLE IF NOT EXISTS app_settings (
         setting_key VARCHAR(60) PRIMARY KEY,

@@ -228,11 +228,15 @@ function analyseStudent(user, logs, activities, stepLogs = []) {
   return { targets, analysis, todayRecord, todayScore, week, history };
 }
 
-async function loadRows(userIds) {
+// Raw diary rows from `fromDay` up to and including `toDay` (default: the
+// 7 days before today plus today).
+async function loadRows(userIds, fromDay = null, toDay = null) {
   if (!userIds.length) return { logs: [], activities: [], steps: [] };
   const today = todayKey();
-  const start = `${addDays(today, -7)} 00:00:00`;
-  const end = `${addDays(today, 1)} 00:00:00`;
+  const firstDay = fromDay || addDays(today, -7);
+  const lastDay = toDay || today;
+  const start = `${firstDay} 00:00:00`;
+  const end = `${addDays(lastDay, 1)} 00:00:00`;
   const placeholders = userIds.map(() => '?').join(', ');
   const logs = await all(
     `SELECT id, user_id, menu_item_id, food_name, servings, calories, protein, carbohydrates, fat, fiber, sugar,
@@ -253,7 +257,7 @@ async function loadRows(userIds) {
     `SELECT user_id, day, steps, active_kcal, source, updated_at
      FROM diet_step_logs
      WHERE user_id IN (${placeholders}) AND day >= ? AND day <= ?`,
-    [...userIds, addDays(today, -7), today]
+    [...userIds, firstDay, lastDay]
   );
   return { logs, activities, steps };
 }
@@ -478,6 +482,75 @@ async function reminderSnapshots(userIds) {
       mealsBySlot: new Set(todayLogs
         .filter((log) => !(Number(log.is_drink) || log.is_drink === true))
         .map((log) => log.meal_slot || slotForWall(storedWall(log.eaten_at))))
+    });
+  }
+  return result;
+}
+
+// Last week against the week before, for the Monday "Weekly Summary"
+// notification. Weeks are the 7 days before `refDay` and the 7 before those,
+// so on a Monday they are Monday to Sunday.
+function weekTotals(days, logs, targets, waterTarget) {
+  const waterByDay = new Map();
+  for (const log of logs) {
+    const key = storedWall(log.eaten_at).slice(0, 10);
+    waterByDay.set(key, (waterByDay.get(key) || 0) + coach.waterFromLog(log));
+  }
+  const logged = days.filter(isLoggedDay);
+  const scores = logged.map((day) => model.scoreDay(day, targets).score);
+  const inRange = (day) => day.calories >= targets.calories * 0.9 && day.calories <= targets.calories * 1.1;
+  return {
+    loggedDays: logged.length,
+    activeGoalDays: days.filter((day) => day.activeMinutes >= targets.activityMinutes).length,
+    activeMinutes: Math.round(days.reduce((sum, day) => sum + day.activeMinutes, 0)),
+    calorieGoalDays: logged.filter(inRange).length,
+    proteinGoalDays: logged.filter((day) => day.protein >= targets.protein).length,
+    waterGoalDays: days.filter((day) => (waterByDay.get(day.date) || 0) >= waterTarget).length,
+    breakfastDays: logged.filter((day) => day.breakfast).length,
+    averageScore: scores.length ? Math.round(scores.reduce((sum, value) => sum + value, 0) / scores.length) : null,
+    bestDay: logged.length
+      ? logged.reduce((best, day, index) => (scores[index] > best.score ? { date: day.date, score: scores[index] } : best), { date: null, score: -1 })
+      : null
+  };
+}
+
+async function weeklySummaries(userIds, refDay = todayKey()) {
+  const ids = [...new Set(userIds.map(Number))].filter(Number.isFinite);
+  const result = new Map();
+  if (!ids.length) return result;
+  await syncOrderMeals();
+  const placeholders = ids.map(() => '?').join(', ');
+  const users = await all(
+    `SELECT u.id, u.full_name, u.age, u.weight, u.height, u.sex, p.body_goal
+     FROM users u LEFT JOIN diet_profiles p ON p.user_id = u.id
+     WHERE u.id IN (${placeholders})`,
+    ids
+  );
+  const lastKeys = Array.from({ length: 7 }, (_, index) => addDays(refDay, index - 7));
+  const prevKeys = Array.from({ length: 7 }, (_, index) => addDays(refDay, index - 14));
+  const { logs, activities, steps } = await loadRows(ids, prevKeys[0], lastKeys[6]);
+  for (const user of users) {
+    const userId = Number(user.id);
+    const own = (rows) => rows.filter((row) => Number(row.user_id) === userId);
+    const userLogs = own(logs);
+    const lastWeek = summariseDays(lastKeys, userLogs, own(activities), own(steps));
+    const prevWeek = summariseDays(prevKeys, userLogs, own(activities), own(steps));
+    // "Last week's goal": targets from the activity level of the week before.
+    const targets = model.computeTargets({
+      age: user.age, weight: user.weight, height: user.height, sex: user.sex,
+      averageActiveMinutes: prevWeek.reduce((sum, day) => sum + day.activeMinutes, 0) / 7,
+      bodyGoal: user.body_goal || 'maintain'
+    });
+    const waterTarget = coach.waterTargetMl(user.sex);
+    const inWeek = (keys) => userLogs.filter((log) => keys.includes(storedWall(log.eaten_at).slice(0, 10)));
+    result.set(userId, {
+      firstName: String(user.full_name || '').trim().split(/\s+/)[0] || '',
+      from: lastKeys[0],
+      to: lastKeys[6],
+      targets,
+      waterTarget,
+      last: weekTotals(lastWeek, inWeek(lastKeys), targets, waterTarget),
+      previous: weekTotals(prevWeek, inWeek(prevKeys), targets, waterTarget)
     });
   }
   return result;
@@ -761,6 +834,7 @@ module.exports = {
   TIME_ZONE,
   getStudentDashboard,
   reminderSnapshots,
+  weeklySummaries,
   todayKey,
   wallClock,
   getMealPlan,
