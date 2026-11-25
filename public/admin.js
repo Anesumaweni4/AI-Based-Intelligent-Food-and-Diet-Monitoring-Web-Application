@@ -1472,6 +1472,26 @@ function showOrderDetails(order, statusMessage = '') {
         </button>
       </div>
     ` : ''}
+    ${isDelivery && ['Pending', 'Preparing'].includes(order.status) ? `
+      <div class="aod-actions aod-actions--delivery">
+        ${order.status === 'Pending' ? `
+          <button type="button" class="aod-secondary" data-order-id="${Number(order.id)}" data-next-order-status="Preparing">
+            ${icon('<path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2.2 1-3.6 2.2-4.8.3 1.6 1.1 2.6 2.3 3 .1-3 .2-5.6.5-8.2z"/>')}
+            Start preparing
+          </button>` : ''}
+        <button type="button" class="submit-btn aod-collect aod-release" data-order-id="${Number(order.id)}" data-next-order-status="Ready for Pickup">
+          ${icon('<circle cx="6" cy="17" r="2.5"/><circle cx="18" cy="17" r="2.5"/><path d="M8.5 17h7M15 7h2l3 5v5M3 12h9V7H5"/>')}
+          Release to rider
+        </button>
+      </div>
+      <p class="aod-action-hint">Release the order when the food is packed. Riders are told it is ready and can pick it up.</p>
+    ` : ''}
+    ${isDelivery && order.status === 'Ready for Pickup' ? `
+      <div class="aod-state">${icon('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>')}<span><strong>Released to riders.</strong> Waiting for a rider to pick it up.</span></div>
+    ` : ''}
+    ${isDelivery && order.status === 'Out for Delivery' ? `
+      <div class="aod-state aod-state--moving">${icon('<circle cx="6" cy="17" r="2.5"/><circle cx="18" cy="17" r="2.5"/><path d="M8.5 17h7M15 7h2l3 5v5M3 12h9V7H5"/>')}<span><strong>On the way.</strong> The rider has the order and confirms delivery with the student's code.</span></div>
+    ` : ''}
   `;
   if (!orderDialog.open) orderDialog.showModal();
 }
