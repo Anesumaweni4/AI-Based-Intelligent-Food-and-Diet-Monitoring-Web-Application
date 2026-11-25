@@ -252,61 +252,193 @@ if (enableOrderNotificationsButton) {
   updateOrderNotificationControls();
 }
 
-function renderStudentOrders(orders) {
-  if (!orders.length) {
-    studentOrdersEl.innerHTML = '<div class="empty-state">You have no orders yet. Your order updates will appear here.</div>';
-    return;
+// ---------- My orders page: summary, filters, day groups, progress ----------
+const ordersSummaryEl = document.getElementById('orders-summary');
+const ordersFiltersEl = document.getElementById('orders-filters');
+const ORDER_FILTERS = [['all', 'All'], ['active', 'In progress'], ['done', 'Completed'], ['cancelled', 'Cancelled']];
+let studentOrdersFilter = 'all';
+
+const ORDER_ICONS = {
+  pickup: '<svg viewBox="0 0 24 24"><path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>',
+  delivery: '<svg viewBox="0 0 24 24"><circle cx="6" cy="17" r="2.5"/><circle cx="18" cy="17" r="2.5"/><path d="M8.5 17h7M15 7h2l3 5v5M3 12h9V7H5"/></svg>',
+  flame: '<svg viewBox="0 0 24 24"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2.2 1-3.6 2.2-4.8.3 1.6 1.1 2.6 2.3 3 .1-3 .2-5.6.5-8.2z"/></svg>',
+  receipt: '<svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>',
+  wallet: '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18M16 14.5h2"/></svg>',
+  heart: '<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>',
+  check: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
+};
+
+function orderGroup(status) {
+  if (status === 'Cancelled') return 'cancelled';
+  if (['Delivered', 'Collected'].includes(status)) return 'done';
+  return 'active';
+}
+
+function orderSteps(order) {
+  if (order.order_type === 'delivery') {
+    const steps = ['Placed', 'Preparing', 'Ready', 'On the way', 'Delivered'];
+    const at = { Pending: 0, Preparing: 1, 'Ready for Pickup': 2, 'Out for Delivery': 3, Delivered: 4 }[order.status];
+    return { steps, at: at ?? 0 };
+  }
+  const steps = ['Placed', 'Preparing', 'Ready', 'Collected'];
+  const at = { Pending: 0, Preparing: 1, 'Ready for Pickup': 2, Collected: 3 }[order.status];
+  return { steps, at: at ?? 0 };
+}
+
+function orderDayKey(date) {
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
+
+function orderDayLabel(date) {
+  const today = new Date();
+  const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+  if (orderDayKey(date) === orderDayKey(today)) return 'Today';
+  if (orderDayKey(date) === orderDayKey(yesterday)) return 'Yesterday';
+  return date.toLocaleDateString('en-GB', {
+    weekday: 'long', day: 'numeric', month: 'long',
+    ...(date.getFullYear() === today.getFullYear() ? {} : { year: 'numeric' })
+  });
+}
+
+function renderOrdersOverview(orders) {
+  if (!ordersSummaryEl || !ordersFiltersEl) return;
+  ordersSummaryEl.hidden = !orders.length;
+  ordersFiltersEl.hidden = !orders.length;
+  if (!orders.length) return;
+
+  const counts = { all: orders.length, active: 0, done: 0, cancelled: 0 };
+  const favourites = new Map();
+  let spent = 0;
+  orders.forEach(order => {
+    const group = orderGroup(order.status);
+    counts[group] += 1;
+    if (group === 'cancelled') return;
+    spent += Number(order.total) || 0;
+    (order.items || []).forEach(item => {
+      favourites.set(item.item_name, (favourites.get(item.item_name) || 0) + (Number(item.quantity) || 0));
+    });
+  });
+  const [favouriteName, favouriteCount] = [...favourites.entries()].sort((a, b) => b[1] - a[1])[0] || ['', 0];
+  const firstOrder = new Date(Math.min(...orders.map(order => new Date(order.created_at).getTime())));
+
+  const tile = (tone, icon, label, value, note) => `
+    <div class="op-stat" data-tone="${tone}">
+      <span class="op-stat-icon" aria-hidden="true">${ORDER_ICONS[icon]}</span>
+      <span class="op-stat-text">
+        <span class="op-stat-label">${label}</span>
+        <strong class="op-stat-value">${value}</strong>
+        <span class="op-stat-note">${note}</span>
+      </span>
+    </div>`;
+  ordersSummaryEl.innerHTML = [
+    tile('active', 'flame', 'In progress', String(counts.active),
+      counts.active ? 'Updating live' : 'Nothing cooking right now'),
+    tile('orders', 'receipt', 'Orders placed', String(counts.all),
+      `Since ${escapeHtml(firstOrder.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }))}`),
+    tile('spent', 'wallet', 'Total spent', formatCurrency(spent), 'Cancelled orders not counted'),
+    tile('favourite', 'heart', 'Your favourite', favouriteName ? escapeHtml(favouriteName) : '—',
+      favouriteName ? `Ordered ${favouriteCount} time${favouriteCount === 1 ? '' : 's'}` : 'Order a meal to find out')
+  ].join('');
+
+  ordersFiltersEl.innerHTML = ORDER_FILTERS.map(([key, label]) => `
+    <button type="button" class="op-filter" data-orders-filter="${key}" aria-pressed="${key === studentOrdersFilter}">
+      ${label}<span class="op-filter-count">${counts[key]}</span>
+    </button>`).join('');
+}
+
+function applyOrdersFilter() {
+  let shown = 0;
+  studentOrdersEl.querySelectorAll('.op-day').forEach(day => {
+    let dayShown = 0;
+    day.querySelectorAll('.student-order-card').forEach(card => {
+      const show = studentOrdersFilter === 'all' || card.dataset.group === studentOrdersFilter;
+      card.hidden = !show;
+      if (show) dayShown += 1;
+    });
+    day.hidden = dayShown === 0;
+    shown += dayShown;
+  });
+  const empty = studentOrdersEl.querySelector('.op-filter-empty');
+  if (empty) {
+    const label = (ORDER_FILTERS.find(([key]) => key === studentOrdersFilter) || ['', ''])[1].toLowerCase();
+    empty.textContent = `No ${label} orders.`;
+    empty.hidden = shown > 0;
+  }
+  ordersFiltersEl?.querySelectorAll('.op-filter').forEach(button => {
+    button.setAttribute('aria-pressed', String(button.dataset.ordersFilter === studentOrdersFilter));
+  });
+}
+
+ordersFiltersEl?.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-orders-filter]');
+  if (!button) return;
+  studentOrdersFilter = button.dataset.ordersFilter;
+  applyOrdersFilter();
+});
+
+function renderOrderCard(order, openOrderIds) {
+  const isDelivery = order.order_type === 'delivery';
+  const placed = new Date(order.created_at);
+  const items = order.items || [];
+  const itemCount = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+  const group = orderGroup(order.status);
+  const finished = group === 'done';
+  const names = items.map(item => item.item_name);
+  const preview = names.length > 2 ? `${names.slice(0, 2).join(', ')} +${names.length - 2} more` : names.join(', ');
+  const meta = [
+    placed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+    itemCount ? `${itemCount} item${itemCount === 1 ? '' : 's'}` : '',
+    isDelivery ? 'Delivery' : 'Pickup'
+  ].filter(Boolean).map(part => `<span>${escapeHtml(part)}</span>`).join(' · ');
+
+  let progress = '';
+  if (group === 'active') {
+    const { steps, at } = orderSteps(order);
+    progress = `
+        <span class="so-progress" style="--steps:${steps.length};--at:${at}" aria-label="Step ${at + 1} of ${steps.length}: ${escapeHtml(steps[at])}">
+          ${steps.map((label, index) => `
+            <span class="so-step${index < at ? ' is-done' : ''}${index === at ? ' is-current' : ''}">
+              <span class="so-dot" aria-hidden="true">${index < at ? ORDER_ICONS.check : ''}</span>
+              <span class="so-step-label">${escapeHtml(label)}</span>
+            </span>`).join('')}
+        </span>`;
   }
 
-  const openOrderIds = new Set(
-    Array.from(studentOrdersEl.querySelectorAll('details[open]'), element => element.dataset.orderId)
-  );
-  studentOrdersEl.innerHTML = orders.map(order => {
-    const isDelivery = order.order_type === 'delivery';
-    const placed = new Date(order.created_at);
-    const itemCount = (order.items || []).reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
-    const finished = ['Delivered', 'Collected'].includes(order.status);
-    const meta = [
-      placed.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
-      placed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-      itemCount ? `${itemCount} item${itemCount === 1 ? '' : 's'}` : '',
-      isDelivery ? 'Delivery' : 'Pickup'
-    ].filter(Boolean).map(part => `<span>${escapeHtml(part)}</span>`).join(' · ');
-    return `
-    <details class="order-card student-order-card" data-order-id="${escapeHtml(order.id)}" ${openOrderIds.has(String(order.id)) ? 'open' : ''}>
+  return `
+    <details class="order-card student-order-card" data-order-id="${escapeHtml(order.id)}" data-group="${group}" ${openOrderIds.has(String(order.id)) ? 'open' : ''}>
       <summary class="student-order-summary">
         <span class="so-icon" data-type="${isDelivery ? 'delivery' : 'pickup'}" aria-hidden="true">
-          ${isDelivery
-            ? '<svg viewBox="0 0 24 24"><circle cx="6" cy="17" r="2.5"/><circle cx="18" cy="17" r="2.5"/><path d="M8.5 17h7M15 7h2l3 5v5M3 12h9V7H5"/></svg>'
-            : '<svg viewBox="0 0 24 24"><path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>'}
+          ${isDelivery ? ORDER_ICONS.delivery : ORDER_ICONS.pickup}
         </span>
         <span class="so-main">
           <strong class="so-title">Order #${escapeHtml(order.id)}</strong>
+          ${preview ? `<span class="so-items">${escapeHtml(preview)}</span>` : ''}
           <span class="so-meta">${meta}</span>
         </span>
         <span class="badge" data-tone="${orderStatusTone(order.status)}">${escapeHtml(order.status)}</span>
-        <strong class="so-total">${formatCurrency(order.total)}</strong>
+        <strong class="so-total">${formatCurrency(order.total)}</strong>${progress}
       </summary>
       <div class="student-order-details">
         <p class="order-status-message">${escapeHtml(getOrderUpdateMessage(order.status))}</p>
-        ${order.order_type === 'delivery' ? `
+        ${isDelivery ? `
           <div class="order-delivery-row">
             <span class="order-delivery-to">🛵 Delivery to <strong>${escapeHtml(order.address)}</strong></span>
             ${order.delivery_code && !['Delivered', 'Cancelled'].includes(order.status)
               ? `<span class="order-delivery-code">Code <strong>${escapeHtml(order.delivery_code)}</strong></span>` : ''}
           </div>` : ''}
-        ${!['Delivered', 'Collected', 'Cancelled'].includes(order.status)
+        ${group === 'active'
           ? `<button type="button" class="track-btn" data-track="${escapeHtml(order.id)}">
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
-              ${order.order_type === 'delivery' && order.status === 'Out for Delivery' ? 'Track the rider live' : 'Track this order'}
+              ${isDelivery && order.status === 'Out for Delivery' ? 'Track the rider live' : 'Track this order'}
             </button>` : ''}
         <ul class="student-order-items">
-          ${(order.items || []).map(item => `
+          ${items.map(item => `
             <li>
               <span>${Number(item.quantity)} × ${escapeHtml(item.item_name)}</span>
               <strong>${formatCurrency(Number(item.unit_price) * Number(item.quantity))}</strong>
             </li>
           `).join('')}
+          <li class="so-items-total"><span>Total</span><strong>${formatCurrency(order.total)}</strong></li>
         </ul>
         <div class="so-actions">
           <button type="button" class="so-feedback" data-order-feedback="${escapeHtml(order.id)}" data-feedback-topic="${finished ? 'food' : 'order'}">
@@ -316,7 +448,50 @@ function renderStudentOrders(orders) {
         </div>
       </div>
     </details>`;
-  }).join('');
+}
+
+function renderStudentOrders(orders) {
+  renderOrdersOverview(orders);
+  if (!orders.length) {
+    studentOrdersEl.innerHTML = `
+      <div class="op-empty">
+        <span class="op-empty-icon" aria-hidden="true">${ORDER_ICONS.receipt}</span>
+        <strong>No orders yet</strong>
+        <p>When you order a meal, you can follow it here from the kitchen to your hands.</p>
+        <a class="btn-primary op-empty-cta" href="#menu">Browse the menu</a>
+      </div>`;
+    return;
+  }
+
+  const openOrderIds = new Set(
+    Array.from(studentOrdersEl.querySelectorAll('details[open]'), element => element.dataset.orderId)
+  );
+  const days = [];
+  const byDay = new Map();
+  [...orders].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).forEach(order => {
+    const placed = new Date(order.created_at);
+    const key = orderDayKey(placed);
+    if (!byDay.has(key)) {
+      const day = { label: orderDayLabel(placed), orders: [] };
+      byDay.set(key, day);
+      days.push(day);
+    }
+    byDay.get(key).orders.push(order);
+  });
+
+  studentOrdersEl.innerHTML = days.map(day => {
+    const total = day.orders.filter(order => order.status !== 'Cancelled')
+      .reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+    return `
+    <section class="op-day">
+      <header class="op-day-head">
+        <h4>${escapeHtml(day.label)}</h4>
+        <span>${day.orders.length} order${day.orders.length === 1 ? '' : 's'} · ${formatCurrency(total)}</span>
+      </header>
+      <div class="op-day-list">${day.orders.map(order => renderOrderCard(order, openOrderIds)).join('')}</div>
+    </section>`;
+  }).join('') + '<p class="op-filter-empty" hidden></p>';
+  applyOrdersFilter();
 }
 
 function orderStatusTone(status) {

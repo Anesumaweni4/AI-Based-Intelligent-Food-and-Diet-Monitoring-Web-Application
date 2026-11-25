@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="styles.css?v=20261115-1" />
     <link rel="stylesheet" href="theme.css?v=20261115-1" />
-    <link rel="stylesheet" href="client.css?v=20261123-2" />
+    <link rel="stylesheet" href="client.css?v=20261125-1" />
     <script>
       // Send staff to their own dashboards before the page paints.
       (() => {
@@ -124,13 +124,13 @@
 
       <section id="my-orders" class="client-section client-section-tinted orders-page" hidden>
         <div class="client-container">
-          <div class="client-section-head">
+          <div class="client-section-head op-head">
             <div>
               <p class="eyebrow">Live updates</p>
-              <h3>Your orders</h3>
-              <p class="client-section-intro">Status updates appear here automatically while this page is open.</p>
+              <h3>My orders</h3>
+              <p class="client-section-intro">Follow what's cooking and look back at past meals. This page updates by itself.</p>
             </div>
-            <div class="order-notification-controls">
+            <div class="order-notification-controls op-notify">
               <button type="button" class="btn-soft" id="enable-order-notifications">
                 <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>
                 Enable browser notifications
@@ -138,8 +138,10 @@
               <span id="order-notification-status" class="schedule-status" role="status" aria-live="polite"></span>
             </div>
           </div>
+          <div id="orders-summary" class="op-stats" hidden></div>
+          <div id="orders-filters" class="op-filters" role="group" aria-label="Filter orders" hidden></div>
           <p id="order-update-message" class="order-update-message" role="status" aria-live="polite"></p>
-          <div id="student-orders" class="order-list"></div>
+          <div id="student-orders" class="order-list op-list"></div>
         </div>
       </section>
 
@@ -384,7 +386,7 @@
       </section>
     </aside>
     <script src="client-shell.js?v=20261123-1"></script>
-    <script src="app.js?v=20261123-1"></script>
+    <script src="app.js?v=20261125-1"></script>
     <script src="track.js?v=20261115-1"></script>
     <script src="staff-dashboard-links.js?v=20261115-1"></script>
     <script src="feedback-chatbot.js?v=20261123-2"></script>
