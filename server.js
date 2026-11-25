@@ -260,7 +260,41 @@ function getPasswordResetBaseUrl() {
   return appUrl.origin;
 }
 
+// Sends email through a Google Apps Script web app over HTTPS (see README).
+// Useful where outgoing SMTP ports are blocked, e.g. Render's free plan.
+function getWebhookMailer(baseUrl) {
+  const url = process.env.MAIL_WEBHOOK_URL;
+  const secret = process.env.MAIL_WEBHOOK_SECRET;
+  if (!url || !secret || !baseUrl) return null;
+  try {
+    if (new URL(url).protocol !== 'https:') return null;
+  } catch {
+    return null;
+  }
+  return {
+    baseUrl,
+    async send({ to, subject, text }) {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ secret, to, subject, text, fromName: process.env.MAIL_FROM_NAME || 'THE KITCHEN' }),
+        redirect: 'follow',
+        signal: AbortSignal.timeout(20000)
+      });
+      const body = await response.text();
+      let result = null;
+      try { result = JSON.parse(body); } catch { result = null; }
+      if (!response.ok || !result || result.ok !== true) {
+        throw new Error(`Mail webhook failed (HTTP ${response.status}): ${(result && result.error) || body.slice(0, 200)}`);
+      }
+    }
+  };
+}
+
 function getPasswordResetMailer() {
+  const webhook = getWebhookMailer(getPasswordResetBaseUrl());
+  if (webhook) return webhook;
+
   const host = process.env.SMTP_HOST;
   const port = Number(process.env.SMTP_PORT);
   const user = process.env.SMTP_USER;
@@ -271,15 +305,15 @@ function getPasswordResetMailer() {
     return null;
   }
 
+  const transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure: process.env.SMTP_SECURE === 'true',
+    auth: { user, pass }
+  });
   return {
-    transporter: nodemailer.createTransport({
-      host,
-      port,
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: { user, pass }
-    }),
-    from,
-    baseUrl
+    baseUrl,
+    send: ({ to, subject, text }) => transporter.sendMail({ from, to, subject, text })
   };
 }
 
@@ -854,8 +888,7 @@ app.post('/api/auth/password-reset/request', async (req, res) => {
       const resetUrl = new URL('/reset-password.html', mailer.baseUrl);
       resetUrl.searchParams.set('token', rawToken);
       try {
-        await mailer.transporter.sendMail({
-          from: mailer.from,
+        await mailer.send({
           to: user.email,
           subject: 'Reset your THE KITCHEN password',
           text: `Hello ${user.full_name},\n\nUse this link within one hour to reset your password:\n${resetUrl.toString()}\n\nIf you did not request a password reset, you can ignore this email.`

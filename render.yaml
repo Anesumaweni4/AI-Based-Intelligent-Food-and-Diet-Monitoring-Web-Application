@@ -17,6 +17,12 @@ services:
       # Password reset emails (fill these in on Render; never commit real values)
       - key: APP_BASE_URL
         sync: false
+      # Option 1 (works on the free plan): Google Apps Script mail relay over HTTPS
+      - key: MAIL_WEBHOOK_URL
+        sync: false
+      - key: MAIL_WEBHOOK_SECRET
+        sync: false
+      # Option 2: SMTP (outgoing SMTP ports are blocked on Render's free plan)
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT

@@ -276,6 +276,35 @@ For SMTP port 465, set `SMTP_SECURE` to `"true"`. The app does not load `.env` f
 
 A Gmail App password requires 2-Step Verification on the Google account (Google Account → Security → App passwords). Any other SMTP provider works the same way with its own host, port and login.
 
+**Render's free plan blocks outgoing SMTP ports (25, 465, 587).** On the free plan, send through Gmail with a Google Apps Script relay instead, which the app calls over HTTPS. When `MAIL_WEBHOOK_URL` and `MAIL_WEBHOOK_SECRET` are set they are used instead of the SMTP settings; `APP_BASE_URL` is still required.
+
+1. Signed in to the Gmail account that should send the emails, open <https://script.google.com> → **New project**.
+2. Replace the code with the script below and put your own long random secret in `SECRET`.
+3. **Deploy → New deployment →** type **Web app**, *Execute as* **Me**, *Who has access* **Anyone** → **Deploy**, then allow the permissions Google asks for.
+4. Copy the **Web app URL** (it ends in `/exec`).
+5. On Render set `MAIL_WEBHOOK_URL` to that URL, `MAIL_WEBHOOK_SECRET` to the same secret, and `APP_BASE_URL` to the site's HTTPS address, then redeploy.
+
+```javascript
+const SECRET = 'put-a-long-random-secret-here';
+
+function doPost(e) {
+  const reply = (data) => ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+  let data;
+  try {
+    data = JSON.parse(e.postData.contents);
+  } catch (err) {
+    return reply({ ok: false, error: 'bad request' });
+  }
+  if (data.secret !== SECRET) return reply({ ok: false, error: 'forbidden' });
+  if (!data.to || !data.subject || !data.text) return reply({ ok: false, error: 'missing fields' });
+  MailApp.sendEmail({ to: data.to, subject: data.subject, body: data.text, name: data.fromName || 'THE KITCHEN' });
+  return reply({ ok: true });
+}
+```
+
+A personal Gmail account can send about 100 emails a day this way. If you edit the script later, publish it again with **Deploy → Manage deployments → Edit → Version: New version** so the same URL keeps working.
+
 ## AI diet monitoring
 
 Sign in as a student and open **Diet** in the top menu. Registration asks for age, weight, height and sex so the app can work out personal targets; existing students are asked to complete their profile on the Diet page.
