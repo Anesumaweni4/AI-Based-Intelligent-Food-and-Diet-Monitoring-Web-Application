@@ -1371,48 +1371,104 @@ function renderOrders() {
   });
 }
 
+function orderDetailsTone(status) {
+  if (['Delivered', 'Collected'].includes(status)) return 'done';
+  if (status === 'Cancelled') return 'cancelled';
+  if (['Ready for Pickup', 'Out for Delivery'].includes(status)) return 'ready';
+  if (status === 'Preparing') return 'preparing';
+  return 'pending';
+}
+
 function showOrderDetails(order, statusMessage = '') {
   activeOrderDetails = order;
-  const canMarkCollected = order.order_type !== 'delivery' && ['Pending', 'Preparing', 'Ready for Pickup'].includes(order.status);
+  const isDelivery = order.order_type === 'delivery';
+  const canMarkCollected = !isDelivery && ['Pending', 'Preparing', 'Ready for Pickup'].includes(order.status);
+  const items = order.items || [];
+  const itemCount = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+  const subtotal = items.reduce((sum, item) => sum + Number(item.unit_price) * Number(item.quantity), 0);
+  const deliveryFee = Number(order.delivery_fee) || 0;
+  const raw = order.created_at;
+  const placed = new Date(typeof raw === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(raw) ? `${raw.replace(' ', 'T')}Z` : raw);
+  const validDate = !Number.isNaN(placed.getTime());
+  const dateText = validDate ? placed.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : 'Date unavailable';
+  const timeText = validDate ? placed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
+  const payment = order.payment_method === 'monthly' ? 'Monthly account' : order.payment_method === 'credit' ? 'Student credit' : 'Cash';
+  const initials = String(order.customer_name || '?').trim().split(/\s+/).slice(0, 2).map((part) => part[0].toUpperCase()).join('');
+  const icon = (path) => `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${path}</svg>`;
+
   orderDialogTitle.textContent = `Order #${Number(order.id)}`;
   orderDialogStatus.textContent = statusMessage;
   orderDialogStatus.classList.remove('error');
   orderDialogContent.innerHTML = `
-    ${order.items.length ? `
-      <div class="admin-order-dialog-table-wrap">
-        <table class="schedule-table admin-order-dialog-table">
-          <thead>
-            <tr>
-              <th scope="col">Item</th>
-              <th scope="col">Qty</th>
-              <th scope="col">Unit price</th>
-              <th scope="col">Line total</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${order.items.map((item) => `
-              <tr>
-                <td>${escapeHtml(item.item_name)}</td>
-                <td>${Number(item.quantity)}</td>
-                <td>${formatCurrency(item.unit_price)}</td>
-                <td>${formatCurrency(Number(item.unit_price) * Number(item.quantity))}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    ` : '<p class="admin-order-dialog-empty">No item details are available for this order.</p>'}
-    <div class="admin-order-dialog-meta-row">
-      <div><span>Customer</span><strong>${escapeHtml(order.customer_name)}</strong></div>
-      <div><span>Date</span><strong>${escapeHtml(formatSaleDate(order.created_at))}</strong></div>
-      <div><span>Payment</span><strong>${order.payment_method === 'monthly' ? 'Monthly account' : order.payment_method === 'credit' ? 'Student credit' : 'Cash'}</strong></div>
-      <div><span>Status</span><strong>${escapeHtml(order.status)}</strong></div>
+    <div class="aod-hero">
+      <span class="aod-status" data-tone="${orderDetailsTone(order.status)}">${escapeHtml(order.status)}</span>
+      <span class="aod-when">${icon('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>')}${escapeHtml(dateText)}${timeText ? ` · ${escapeHtml(timeText)}` : ''}</span>
     </div>
-    <div class="admin-order-dialog-total"><span>Order total</span><strong>${formatCurrency(order.total)}</strong></div>
+
+    <div class="aod-cards">
+      <div class="aod-card aod-customer">
+        <span class="aod-avatar" aria-hidden="true">${escapeHtml(initials)}</span>
+        <span class="aod-card-text">
+          <span class="aod-label">Customer</span>
+          <strong>${escapeHtml(order.customer_name)}</strong>
+          ${order.phone ? `<span class="aod-sub">${escapeHtml(order.phone)}</span>` : ''}
+        </span>
+      </div>
+      <div class="aod-card">
+        <span class="aod-card-icon" data-tone="pay" aria-hidden="true">${icon('<rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18M16 14.5h2"/>')}</span>
+        <span class="aod-card-text">
+          <span class="aod-label">Payment</span>
+          <strong>${payment}</strong>
+        </span>
+      </div>
+      <div class="aod-card${isDelivery ? ' aod-wide' : ''}">
+        <span class="aod-card-icon" data-tone="${isDelivery ? 'delivery' : 'pickup'}" aria-hidden="true">${isDelivery
+          ? icon('<circle cx="6" cy="17" r="2.5"/><circle cx="18" cy="17" r="2.5"/><path d="M8.5 17h7M15 7h2l3 5v5M3 12h9V7H5"/>')
+          : icon('<path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>')}</span>
+        <span class="aod-card-text">
+          <span class="aod-label">${isDelivery ? 'Delivery to' : 'Order type'}</span>
+          <strong>${isDelivery ? escapeHtml(order.address || 'Address not given') : 'Pickup at the counter'}</strong>
+          ${isDelivery && order.delivery_code ? `<span class="aod-sub">Delivery code <b>${escapeHtml(order.delivery_code)}</b></span>` : ''}
+        </span>
+      </div>
+    </div>
+
+    ${order.note ? `
+      <div class="aod-note">
+        ${icon('<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>')}
+        <span><span class="aod-label">Customer note</span>${escapeHtml(order.note)}</span>
+      </div>` : ''}
+
+    <div class="aod-items">
+      <div class="aod-items-head">
+        <span>Items</span>
+        <span>${itemCount} item${itemCount === 1 ? '' : 's'}</span>
+      </div>
+      ${items.length ? `
+        <ul class="aod-item-list">
+          ${items.map((item) => `
+            <li>
+              <span class="aod-qty">${Number(item.quantity)}×</span>
+              <span class="aod-item-name">
+                <strong>${escapeHtml(item.item_name)}</strong>
+                <span>${formatCurrency(item.unit_price)} each</span>
+              </span>
+              <strong class="aod-line">${formatCurrency(Number(item.unit_price) * Number(item.quantity))}</strong>
+            </li>`).join('')}
+        </ul>` : '<p class="aod-empty">No item details are available for this order.</p>'}
+      <div class="aod-sums">
+        ${deliveryFee ? `
+          <div><span>Subtotal</span><span>${formatCurrency(subtotal)}</span></div>
+          <div><span>Delivery fee</span><span>${formatCurrency(deliveryFee)}</span></div>` : ''}
+        <div class="aod-total"><span>Order total</span><strong>${formatCurrency(order.total)}</strong></div>
+      </div>
+    </div>
+
     ${canMarkCollected ? `
-      <div class="admin-order-dialog-actions">
-        <button type="button" class="submit-btn" data-order-id="${Number(order.id)}" data-next-order-status="Collected">
-          Mark Collected
+      <div class="aod-actions">
+        <button type="button" class="submit-btn aod-collect" data-order-id="${Number(order.id)}" data-next-order-status="Collected">
+          ${icon('<path d="M5 12.5l4.5 4.5L19 7.5"/>')}
+          Mark collected
         </button>
       </div>
     ` : ''}
