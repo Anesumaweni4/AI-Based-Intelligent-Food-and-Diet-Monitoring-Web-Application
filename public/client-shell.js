@@ -47,20 +47,49 @@
   const sections = sectionLinks
     .map((link) => document.querySelector(link.getAttribute('href')))
     .filter(Boolean);
+  // "My orders" is a page of its own: #my-orders shows only the orders,
+  // any other address shows the welcome banner and the menu.
+  const ordersPage = $('my-orders');
+  const homeParts = ['top', 'menu'].map($).filter(Boolean);
+  const isOrdersView = () => window.location.hash === '#my-orders';
+  const applyView = (scroll) => {
+    if (!ordersPage) return;
+    const orders = isOrdersView();
+    const changed = ordersPage.hidden === orders;
+    ordersPage.hidden = !orders;
+    homeParts.forEach((part) => { part.hidden = orders; });
+    document.body.classList.toggle('view-orders', orders);
+    document.title = orders ? 'My orders · THE KITCHEN' : document.title.replace(/^My orders · /, '');
+    if (!scroll && !changed) return;
+    if (orders) {
+      window.scrollTo(0, 0);
+    } else {
+      const target = window.location.hash && window.location.hash !== '#checkout'
+        ? document.querySelector(window.location.hash) : null;
+      if (target) target.scrollIntoView();
+      else if (changed) window.scrollTo(0, 0);
+    }
+  };
+  applyView(false);
+  window.addEventListener('hashchange', () => { applyView(true); requestAnimationFrame(onScroll); });
+
   let ticking = false;
-  const onScroll = () => {
+  function onScroll() {
     ticking = false;
     topbar?.classList.toggle('is-scrolled', window.scrollY > 8);
     if (!sections.length) return;
     let current = null;
     for (const section of sections) {
+      if (section.hidden) continue;
       if (section.getBoundingClientRect().top - 120 <= 0) current = section;
     }
+    if (ordersPage && isOrdersView()) current = ordersPage;
+    else if (ordersPage && !current) current = $('menu');
     sectionLinks.forEach((link) => {
       const active = current && link.getAttribute('href') === `#${current.id}`;
       link.classList.toggle('is-active', Boolean(active));
     });
-  };
+  }
   window.addEventListener('scroll', () => {
     if (!ticking) {
       ticking = true;

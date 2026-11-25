@@ -5715,12 +5715,11 @@ body.cart-open {
    Your orders (redesign): icon tile, title with a meta line, coloured status,
    and feedback inside each order instead of a floating button.
    -------------------------------------------------------------------------- */
-.client-body .fbx-toggle[hidden] {
-  display: none;
-}
-
-.client-body .fbx--docked .fbx-panel {
-  bottom: 0;
+/* "My orders" is its own page: home.html#my-orders shows only the orders. */
+.client-body.view-orders .orders-page {
+  min-height: calc(100vh - 120px);
+  margin-top: 24px;
+  padding-bottom: 110px; /* room above the floating feedback button */
 }
 
 .client-body .student-order-summary {
