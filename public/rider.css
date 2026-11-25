@@ -291,14 +291,25 @@ body {
 .rd-dialog h2 { margin: 0 0 8px; font-family: var(--font-display); }
 .rd-dialog p { margin: 0 0 16px; color: var(--muted); line-height: 1.5; }
 
-.rd-code-inputs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 8px; }
-.rd-code-inputs input {
-  height: 64px;
+.rd-dialog { box-sizing: border-box; max-width: calc(100vw - 32px); }
+.rd-dialog * { box-sizing: border-box; }
+.rd-code-field { display: block; margin-bottom: 8px; }
+.rd-code-field input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: 72px;
+  padding: 0 0 0 0.6em;
   border: 2px solid var(--line-strong);
-  border-radius: 14px;
-  font: 800 1.8rem var(--font-ui);
+  border-radius: 16px;
+  background: #fff;
+  color: var(--ink);
+  font: 800 2.2rem var(--font-ui);
+  letter-spacing: 0.6em;
   text-align: center;
 }
-.rd-code-inputs input:focus { outline: none; border-color: var(--terracotta); }
+.rd-code-field input::placeholder { color: #d9cbbb; }
+.rd-code-field input:focus { outline: none; border-color: var(--terracotta); box-shadow: 0 0 0 4px rgba(162, 74, 48, 0.14); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .rd-code-error { min-height: 1.2em; color: #a33a22 !important; font-weight: 700; }
 .rd-dialog-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }

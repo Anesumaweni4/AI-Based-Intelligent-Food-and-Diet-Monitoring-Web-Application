@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
-    <link rel="stylesheet" href="rider.css?v=20261115-1" />
+    <link rel="stylesheet" href="rider.css?v=20261125-1" />
   </head>
   <body>
     <header class="rd-top">
@@ -60,12 +60,10 @@
       <form method="dialog" id="rd-code-form">
         <h2 id="rd-code-title">Enter the delivery code</h2>
         <p>Ask the student for the 4-digit code shown in their order. This confirms they received the food.</p>
-        <div class="rd-code-inputs" id="rd-code-inputs">
-          <input inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 1" autocomplete="one-time-code" />
-          <input inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 2" />
-          <input inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 3" />
-          <input inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 4" />
-        </div>
+        <label class="rd-code-field">
+          <span class="visually-hidden">4-digit delivery code</span>
+          <input id="rd-code-input" type="text" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="one-time-code" placeholder="0000" aria-label="4-digit delivery code" />
+        </label>
         <p class="rd-code-error" id="rd-code-error" role="alert"></p>
         <div class="rd-dialog-actions">
           <button type="button" class="rd-btn rd-btn--ghost" id="rd-code-cancel">Cancel</button>
@@ -74,6 +72,6 @@
       </form>
     </dialog>
 
-    <script src="rider.js?v=20261115-1"></script>
+    <script src="rider.js?v=20261125-1"></script>
   </body>
 </html>

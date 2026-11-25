@@ -6,7 +6,7 @@
   const messageEl = $('rd-message');
   const onlineInput = $('rd-online');
   const codeDialog = $('rd-code-dialog');
-  const codeInputs = Array.from(document.querySelectorAll('#rd-code-inputs input'));
+  const codeInput = $('rd-code-input');
   const codeError = $('rd-code-error');
 
   let tab = 'mine';
@@ -140,7 +140,7 @@
     try {
       const result = await api('/api/rider/jobs');
       data = result;
-      $('rd-name').textContent = `${result.rider.name}${result.rider.role !== 'rider' ? ` · ${result.rider.role}` : ''}`;
+      $('rd-name').textContent = `${result.rider.name || 'Kitchen staff'}${result.rider.role !== 'rider' ? ` · ${result.rider.role}` : ''}`;
       $('rd-stat-done').textContent = result.deliveredToday;
       $('rd-stat-fees').textContent = money(result.feesToday);
       const ids = new Set(result.available.map((job) => job.id));
@@ -235,32 +235,21 @@
 
   function openCode(id) {
     codeOrderId = id;
-    codeInputs.forEach((input) => { input.value = ''; });
+    codeInput.value = '';
     codeError.textContent = '';
     codeDialog.showModal();
-    setTimeout(() => codeInputs[0].focus(), 50);
+    setTimeout(() => codeInput.focus(), 50);
   }
 
-  codeInputs.forEach((input, index) => {
-    input.addEventListener('input', () => {
-      input.value = input.value.replace(/\D/g, '').slice(-1);
-      if (input.value && codeInputs[index + 1]) codeInputs[index + 1].focus();
-    });
-    input.addEventListener('keydown', (event) => {
-      if (event.key === 'Backspace' && !input.value && codeInputs[index - 1]) codeInputs[index - 1].focus();
-    });
-    input.addEventListener('paste', (event) => {
-      const digits = (event.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 4);
-      if (!digits) return;
-      event.preventDefault();
-      digits.split('').forEach((digit, i) => { if (codeInputs[i]) codeInputs[i].value = digit; });
-      codeInputs[Math.min(digits.length, 3)].focus();
-    });
+  // One field for the whole code: digits only, at most 4.
+  codeInput.addEventListener('input', () => {
+    codeInput.value = codeInput.value.replace(/\D/g, '').slice(0, 4);
+    codeError.textContent = '';
   });
 
   $('rd-code-form').addEventListener('submit', async (event) => {
     event.preventDefault();
-    const code = codeInputs.map((input) => input.value).join('');
+    const code = codeInput.value.replace(/\D/g, '');
     if (code.length !== 4) {
       codeError.textContent = 'Enter all 4 digits.';
       return;

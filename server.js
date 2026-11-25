@@ -2918,7 +2918,13 @@ app.patch('/api/orders/:id/status', requireCashierOrAdminApi, async (req, res) =
 // ---------------------------------------------------------------------------
 app.get('/api/rider/jobs', requireRiderApi, async (req, res) => {
   try {
-    res.json({ rider: { id: Number(req.accountUser.id), name: req.accountUser.full_name, role: req.accountUser.role || 'admin' }, ...(await delivery.riderJobs(req.accountUser.id)) });
+    let name = req.accountUser.full_name || req.accountUser.username;
+    if (!name) {
+      // Admin sessions only load the id and role, so look the name up.
+      const row = await get('SELECT full_name, username FROM users WHERE id = ?', [req.accountUser.id]);
+      name = (row && (row.full_name || row.username)) || 'Kitchen staff';
+    }
+    res.json({ rider: { id: Number(req.accountUser.id), name, role: req.accountUser.role || 'admin' }, ...(await delivery.riderJobs(req.accountUser.id)) });
   } catch (error) {
     console.error('Error loading rider jobs:', error);
     res.status(500).json({ message: 'Unable to load delivery jobs.' });
