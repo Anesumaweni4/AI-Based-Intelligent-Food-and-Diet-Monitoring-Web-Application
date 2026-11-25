@@ -5291,3 +5291,306 @@
     width: 100%;
   }
 }
+
+/* ---- Pending / Total orders dialogs (redesign) ---- */
+.admin-body .aor-dialog {
+  width: min(760px, calc(100% - 24px));
+  max-height: min(88vh, 860px);
+  background: #fffdf9;
+}
+
+.admin-body .aor-dialog .notice-dialog-content {
+  padding: 26px 28px 28px;
+}
+
+.admin-body .aor-dialog .revenue-dialog-header h2 {
+  font-size: clamp(2rem, 5vw, 2.6rem);
+  letter-spacing: -0.02em;
+}
+
+.admin-body .aor-dialog .revenue-dialog-close {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.admin-body .aor-dialog .revenue-dialog-close:hover {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+}
+
+.admin-body .aor-dialog .revenue-dialog-close:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.admin-body .aor-dialog .schedule-status {
+  margin: 0 0 14px;
+  color: var(--muted-ink);
+  font-size: 0.9rem;
+}
+
+.admin-body .aor-dialog .schedule-status:empty {
+  display: none;
+}
+
+.admin-body .aor-dialog .order-list {
+  display: block;
+}
+
+.aor-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.aor-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.aor-stats span {
+  color: var(--muted-ink);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.aor-stats strong {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.aor-stats strong.is-late {
+  color: #b23a22;
+}
+
+.aor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-body .aor-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 14px 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.admin-body .aor-row:hover,
+.admin-body .aor-row:focus-visible {
+  border-color: var(--line-strong);
+  box-shadow: 0 10px 24px rgba(36, 24, 19, 0.08);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.admin-body .aor-row:focus-visible {
+  box-shadow: var(--ring);
+}
+
+.aor-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  background: #e3eef7;
+  color: #2f5f84;
+}
+
+.aor-icon[data-type="delivery"] {
+  background: #f8e6dd;
+  color: var(--terracotta);
+}
+
+.aor-icon .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.aor-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.aor-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.aor-title strong {
+  font-size: 1rem;
+}
+
+.aor-title span {
+  color: var(--muted-ink);
+  font-size: 0.92rem;
+}
+
+.aor-items {
+  overflow: hidden;
+  font-size: 0.86rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aor-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  color: var(--muted-ink);
+  font-size: 0.8rem;
+}
+
+.aor-meta > span + span::before {
+  margin-right: 12px;
+  content: "·";
+}
+
+.aor-wait {
+  font-weight: 700;
+}
+
+.aor-wait.is-slow {
+  color: #a8650f;
+}
+
+.aor-wait.is-late {
+  color: #b23a22;
+}
+
+.aor-status {
+  white-space: nowrap;
+}
+
+.aor-total {
+  min-width: 64px;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+.aor-chevron {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--cream);
+  color: var(--terracotta);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.admin-body .aor-row:hover .aor-chevron,
+.admin-body .aor-row:focus-visible .aor-chevron {
+  background: var(--terracotta);
+  color: #fff;
+}
+
+.aor-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 36px 20px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 18px;
+  background: #fff;
+  text-align: center;
+}
+
+.aor-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 4px;
+  border-radius: 50%;
+  background: #e5f2e8;
+  color: #2f6b43;
+}
+
+.aor-empty-icon .icon {
+  width: 26px;
+  height: 26px;
+  stroke-width: 2.4;
+}
+
+.aor-empty strong {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+}
+
+.aor-empty p {
+  margin: 0;
+  color: var(--muted-ink);
+}
+
+@media (max-width: 600px) {
+  .admin-body .aor-dialog .notice-dialog-content {
+    padding: 20px 16px 22px;
+  }
+
+  .aor-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-body .aor-row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px 12px;
+    padding: 12px;
+  }
+
+  .aor-icon {
+    align-self: start;
+    width: 38px;
+    height: 38px;
+  }
+
+  .aor-status {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .aor-total {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: start;
+    min-width: 0;
+    font-size: 1.05rem;
+  }
+
+  .aor-chevron {
+    display: none;
+  }
+}

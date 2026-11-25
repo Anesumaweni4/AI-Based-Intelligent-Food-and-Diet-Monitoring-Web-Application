@@ -1631,19 +1631,10 @@ async function loadSummary() {
           if (!response.ok) throw new Error(orders.message || 'Unable to load orders.');
 
           allOrders = orders;
-          totalOrdersStatus.textContent = `${orders.length} order${orders.length === 1 ? '' : 's'}. Select an order to view its details.`;
-          totalOrdersList.innerHTML = orders.length ? orders.map((order) => `
-            <button type="button" class="order-card admin-order-summary" data-total-order-id="${Number(order.id)}">
-              <span class="admin-order-summary-main">
-                <span class="admin-order-number">Order #${Number(order.id)}</span>
-                <span class="admin-order-customer">${escapeHtml(order.customer_name)}</span>
-              </span>
-              <span class="admin-order-summary-end">
-                <span class="badge">${escapeHtml(order.status)}</span>
-                <strong>${formatCurrency(order.total)}</strong>
-              </span>
-            </button>
-          `).join('') : '<div class="empty-state">No orders yet.</div>';
+          totalOrdersStatus.textContent = `${orders.length} order${orders.length === 1 ? '' : 's'}, newest first. Select an order to see its details.`;
+          totalOrdersList.innerHTML = orders.length
+            ? `<div class="aor-list">${orders.map((order) => orderRowHtml(order, 'data-total-order-id')).join('')}</div>`
+            : '<div class="aor-empty"><strong>No orders yet</strong><p>Customer orders will appear here.</p></div>';
         } catch (error) {
           totalOrdersStatus.textContent = error.message || 'Unable to load orders.';
           totalOrdersStatus.classList.add('error');
@@ -1680,6 +1671,64 @@ async function loadSummary() {
   }
 }
 
+function parseServerDate(value) {
+  return new Date(typeof value === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value) ? `${value.replace(' ', 'T')}Z` : value);
+}
+
+function waitingText(minutes) {
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} h ${minutes % 60} min`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? '' : 's'}`;
+}
+
+const ORDER_ROW_ICONS = {
+  pickup: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>',
+  delivery: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="17" r="2.5"/><circle cx="18" cy="17" r="2.5"/><path d="M8.5 17h7M15 7h2l3 5v5M3 12h9V7H5"/></svg>',
+  chevron: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>'
+};
+
+// One order as a clickable row, shared by the Pending and Total orders dialogs.
+function orderRowHtml(order, dataAttribute) {
+  const isDelivery = order.order_type === 'delivery';
+  const placed = parseServerDate(order.created_at);
+  const minutes = Number.isNaN(placed.getTime()) ? null : Math.max(0, Math.floor((Date.now() - placed.getTime()) / 60000));
+  const open = !['Delivered', 'Collected', 'Cancelled'].includes(order.status);
+  const names = (order.items || []).map((item) => `${Number(item.quantity)}× ${item.item_name}`);
+  const preview = names.length > 2 ? `${names.slice(0, 2).join(', ')} +${names.length - 2} more` : names.join(', ');
+  const when = minutes === null ? ''
+    : open ? `<span class="aor-wait${minutes >= 30 ? ' is-late' : minutes >= 15 ? ' is-slow' : ''}">Waiting ${waitingText(minutes)}</span>`
+      : `<span>${escapeHtml(placed.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }))} · ${escapeHtml(placed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }))}</span>`;
+  return `
+    <button type="button" class="aor-row" ${dataAttribute}="${Number(order.id)}" aria-label="View details for order ${Number(order.id)}">
+      <span class="aor-icon" data-type="${isDelivery ? 'delivery' : 'pickup'}">${isDelivery ? ORDER_ROW_ICONS.delivery : ORDER_ROW_ICONS.pickup}</span>
+      <span class="aor-main">
+        <span class="aor-title"><strong>Order #${Number(order.id)}</strong><span>${escapeHtml(order.customer_name)}</span></span>
+        ${preview ? `<span class="aor-items">${escapeHtml(preview)}</span>` : ''}
+        <span class="aor-meta">${when}<span>${isDelivery ? 'Delivery' : 'Pickup'}</span></span>
+      </span>
+      <span class="aod-status aor-status" data-tone="${orderDetailsTone(order.status)}">${escapeHtml(order.status)}</span>
+      <strong class="aor-total">${formatCurrency(order.total)}</strong>
+      <span class="aor-chevron">${ORDER_ROW_ICONS.chevron}</span>
+    </button>`;
+}
+
+function orderStatsHtml(orders, label) {
+  const value = orders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+  const waits = orders.map((order) => parseServerDate(order.created_at).getTime()).filter((time) => !Number.isNaN(time));
+  const oldest = waits.length ? Math.max(0, Math.floor((Date.now() - Math.min(...waits)) / 60000)) : null;
+  const deliveries = orders.filter((order) => order.order_type === 'delivery').length;
+  return `
+    <div class="aor-stats">
+      <div><span>${label}</span><strong>${orders.length}</strong></div>
+      <div><span>Value</span><strong>${formatCurrency(value)}</strong></div>
+      <div><span>Pickup / delivery</span><strong>${orders.length - deliveries} / ${deliveries}</strong></div>
+      ${oldest !== null ? `<div><span>Longest wait</span><strong class="${oldest >= 30 ? 'is-late' : ''}">${waitingText(oldest)}</strong></div>` : ''}
+    </div>`;
+}
+
 async function showPendingOrders() {
   pendingOrdersStatus.textContent = 'Loading pending orders…';
   pendingOrdersStatus.classList.remove('error');
@@ -1691,26 +1740,22 @@ async function showPendingOrders() {
     const orders = await response.json();
     if (!response.ok) throw new Error(orders.message || 'Unable to load pending orders.');
 
-    const pendingOrders = orders.filter((order) => order.status === 'Pending');
+    const pendingOrders = orders.filter((order) => order.status === 'Pending')
+      .sort((a, b) => parseServerDate(a.created_at) - parseServerDate(b.created_at));
     if (!pendingOrders.length) {
-      pendingOrdersStatus.textContent = 'There are no pending orders right now.';
+      pendingOrdersStatus.textContent = '';
+      pendingOrdersList.innerHTML = `
+        <div class="aor-empty">
+          <span class="aor-empty-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+          <strong>All caught up</strong>
+          <p>There are no pending orders right now. New orders will show up here.</p>
+        </div>`;
       return;
     }
 
-    pendingOrdersStatus.textContent = `${pendingOrders.length} pending order${pendingOrders.length === 1 ? '' : 's'}. Select an order to view its details.`;
-    pendingOrdersList.innerHTML = pendingOrders.map((order) => `
-      <button type="button" class="order-card admin-order-summary" data-pending-order-id="${Number(order.id)}">
-        <span class="admin-order-summary-main">
-          <span class="admin-order-number">Order #${Number(order.id)}</span>
-          <span class="admin-order-customer">${escapeHtml(order.customer_name)}</span>
-        </span>
-        <span class="admin-order-summary-end">
-          <span class="badge">${escapeHtml(order.status)}</span>
-          <strong>${formatCurrency(order.total)}</strong>
-        </span>
-        <span class="admin-order-open-label">View order</span>
-      </button>
-    `).join('');
+    pendingOrdersStatus.textContent = 'Oldest first. Select an order to see its details.';
+    pendingOrdersList.innerHTML = orderStatsHtml(pendingOrders, 'Pending')
+      + `<div class="aor-list">${pendingOrders.map((order) => orderRowHtml(order, 'data-pending-order-id')).join('')}</div>`;
   } catch (error) {
     console.error('Error loading pending orders:', error);
     pendingOrdersStatus.textContent = error.message;
