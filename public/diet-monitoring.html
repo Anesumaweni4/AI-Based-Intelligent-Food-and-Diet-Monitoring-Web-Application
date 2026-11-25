@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
     <link rel="stylesheet" href="styles.css?v=20261115-1" />
     <link rel="stylesheet" href="theme.css?v=20261115-1" />
-    <link rel="stylesheet" href="client.css?v=20261115-1" />
+    <link rel="stylesheet" href="client.css?v=20261125-2" />
   </head>
   <body class="client-body dm-page">
     <header class="client-topbar">
@@ -648,27 +648,58 @@
       </div>
     </main>
 
-    <dialog id="diet-activity-dialog" class="dm-dialog" aria-labelledby="diet-activity-title">
-      <p class="eyebrow">Hourly activity check-in</p>
-      <h2 id="diet-activity-title">Have you been active in the last hour?</h2>
-      <p class="dm-muted">Walking to lectures, sport and the gym all count.</p>
-      <div class="dm-dialog-quick" id="dm-dialog-quick" hidden>
-        <span>About how long?</span>
-        <div class="dm-chip-row">
-          <button type="button" data-quick-minutes="10">10 min</button>
-          <button type="button" data-quick-minutes="20">20 min</button>
-          <button type="button" data-quick-minutes="30">30 min</button>
-          <button type="button" data-quick-minutes="60">1 hour</button>
+    <dialog id="diet-activity-dialog" class="dm-dialog ac-dialog" aria-labelledby="diet-activity-title">
+      <button type="button" class="ac-close" data-activity-close aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <div class="ac-top">
+        <div class="ac-ring" id="ac-ring" style="--p:0">
+          <svg viewBox="0 0 36 36" aria-hidden="true">
+            <circle class="ac-ring-track" cx="18" cy="18" r="15.9155"/>
+            <circle class="ac-ring-fill" cx="18" cy="18" r="15.9155" pathLength="100"/>
+          </svg>
+          <span class="ac-ring-icon" aria-hidden="true">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>
+          </span>
+        </div>
+        <div>
+          <p class="eyebrow">Hourly check-in</p>
+          <h2 id="diet-activity-title">Been moving this past hour?</h2>
         </div>
       </div>
-      <div class="dm-dialog-actions" id="dm-dialog-actions">
-        <button type="button" class="dm-btn dm-btn--green" data-activity-answer="yes">Yes, I have</button>
-        <button type="button" class="dm-btn dm-btn--ghost" data-activity-answer="not-yet">Not yet</button>
+      <p class="ac-progress" id="ac-progress">Walking to lectures, sport and the gym all count.</p>
+
+      <div class="ac-step" id="dm-dialog-actions">
+        <div class="ac-choices">
+          <button type="button" class="ac-choice ac-choice--yes" data-activity-answer="yes">
+            <span class="ac-choice-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+            <span><strong>Yes, I moved</strong><small>Add it to today</small></span>
+          </button>
+          <button type="button" class="ac-choice ac-choice--no" data-activity-answer="not-yet">
+            <span class="ac-choice-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+            <span><strong>Not yet</strong><small>Ask me next hour</small></span>
+          </button>
+        </div>
+        <p class="ac-hint">Walking to lectures, sport and the gym all count.</p>
+      </div>
+
+      <div class="ac-step" id="dm-dialog-quick" hidden>
+        <p class="ac-question">Nice one! About how long?</p>
+        <div class="ac-minutes">
+          <button type="button" data-quick-minutes="10"><strong>10</strong><span>min</span></button>
+          <button type="button" data-quick-minutes="20"><strong>20</strong><span>min</span></button>
+          <button type="button" data-quick-minutes="30"><strong>30</strong><span>min</span></button>
+          <button type="button" data-quick-minutes="60"><strong>1</strong><span>hour</span></button>
+        </div>
+        <button type="button" class="ac-back" data-activity-back>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+          Back
+        </button>
       </div>
     </dialog>
 
     <script src="client-shell.js?v=20261115-1"></script>
-    <script src="diet-monitoring.js?v=20261115-1"></script>
+    <script src="diet-monitoring.js?v=20261125-1"></script>
     <script src="reminders-client.js?v=20261123-1"></script>
     <script src="ai-scanner-client.js?v=20261115-1"></script>
   </body>

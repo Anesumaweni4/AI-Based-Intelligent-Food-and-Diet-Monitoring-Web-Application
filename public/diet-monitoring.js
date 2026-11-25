@@ -936,12 +936,44 @@ function showActivityReminderIfDue() {
   } catch {
     // Reminder still works while the page is open.
   }
+  openActivityCheckIn();
+}
+
+// Fills the check-in with today's active minutes, then opens it.
+function openActivityCheckIn() {
+  const totals = dietData && dietData.today && dietData.today.totals;
+  const target = dietData && dietData.targets && Number(dietData.targets.activityMinutes);
+  const done = totals ? Math.round(Number(totals.activeMinutes) || 0) : null;
+  const ring = $('ac-ring');
+  const progress = $('ac-progress');
+  if (done !== null && target > 0) {
+    ring.style.setProperty('--p', String(Math.min(100, Math.round((done / target) * 100))));
+    ring.classList.toggle('is-full', done >= target);
+    ring.classList.toggle('is-empty', done <= 0);
+    progress.innerHTML = done >= target
+      ? `<strong>${done} of ${target} active minutes</strong> today. Goal reached, keep it up!`
+      : `<strong>${done} of ${target} active minutes</strong> today. ${target - done} to go.`;
+  } else {
+    ring.style.setProperty('--p', '0');
+    ring.classList.add('is-empty');
+    progress.textContent = 'A little movement every hour adds up.';
+  }
   $('dm-dialog-quick').hidden = true;
   $('dm-dialog-actions').hidden = false;
   activityDialog.showModal();
 }
 
 activityDialog.addEventListener('click', async (event) => {
+  if (event.target.closest('[data-activity-close]')) {
+    activityDialog.close();
+    return;
+  }
+  if (event.target.closest('[data-activity-back]')) {
+    $('dm-dialog-quick').hidden = true;
+    $('dm-dialog-actions').hidden = false;
+    activityDialog.querySelector('[data-activity-answer="yes"]').focus();
+    return;
+  }
   const answer = event.target.closest('button[data-activity-answer]');
   if (answer) {
     if (answer.dataset.activityAnswer === 'yes') {
