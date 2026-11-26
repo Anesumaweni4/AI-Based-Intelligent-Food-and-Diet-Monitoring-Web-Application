@@ -12,6 +12,9 @@ const aiScanner = require('./ai-scanner');
 const delivery = require('./delivery');
 
 const app = express();
+// On Render, requests arrive through one proxy; trust it so req.ip is the
+// visitor's address (used by the rate limits). Locally nothing is trusted.
+if (process.env.RENDER) app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 const WEEKDAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const ADMIN_SESSION_COOKIE = 'foodieAdminSession';
@@ -336,6 +339,78 @@ function allowPasswordResetRequest(ip) {
     }
   }
   return true;
+}
+
+// Login brute-force protection: 5 wrong passwords for one username, or 50
+// from one address, within 15 minutes blocks further tries for 15 minutes.
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_MAX_FAILURES_PER_USERNAME = 5;
+const LOGIN_MAX_FAILURES_PER_IP = 50;
+const loginFailures = new Map();
+
+function recentLoginFailures(key, now = Date.now()) {
+  const recent = (loginFailures.get(key) || []).filter((timestamp) => now - timestamp < LOGIN_WINDOW_MS);
+  if (recent.length) loginFailures.set(key, recent); else loginFailures.delete(key);
+  return recent;
+}
+
+function loginBlockedFor(ip, username) {
+  const userFailures = recentLoginFailures(`user:${username.toLowerCase()}`);
+  const ipFailures = recentLoginFailures(`ip:${ip}`);
+  const blocked = (userFailures.length >= LOGIN_MAX_FAILURES_PER_USERNAME && userFailures) ||
+    (ipFailures.length >= LOGIN_MAX_FAILURES_PER_IP && ipFailures);
+  if (!blocked) return 0;
+  return Math.max(1, Math.ceil((blocked[0] + LOGIN_WINDOW_MS - Date.now()) / 60000));
+}
+
+function recordLoginFailure(ip, username) {
+  const now = Date.now();
+  for (const key of [`user:${username.toLowerCase()}`, `ip:${ip}`]) {
+    const recent = recentLoginFailures(key, now);
+    recent.push(now);
+    loginFailures.set(key, recent);
+  }
+  if (loginFailures.size > 20000) {
+    for (const key of loginFailures.keys()) recentLoginFailures(key, now);
+  }
+}
+
+function clearLoginFailures(username) {
+  loginFailures.delete(`user:${username.toLowerCase()}`);
+}
+
+// Order limits stop one student from emptying the stock with unpaid cash
+// orders or flooding the kitchen. Each can be changed with an environment
+// variable of the same name.
+const positiveIntFromEnv = (name, fallback) => {
+  const value = Number(process.env[name]);
+  return Number.isSafeInteger(value) && value > 0 ? value : fallback;
+};
+const MAX_PLATES_PER_ITEM = positiveIntFromEnv('MAX_PLATES_PER_ITEM', 10);
+const MAX_ACTIVE_CASH_ORDERS = positiveIntFromEnv('MAX_ACTIVE_CASH_ORDERS', 3);
+const MAX_ORDERS_PER_10_MINUTES = positiveIntFromEnv('MAX_ORDERS_PER_10_MINUTES', 5);
+const ORDER_RATE_WINDOW_MS = 10 * 60 * 1000;
+const recentOrderTimes = new Map();
+
+function recentOrdersFor(userId, now = Date.now()) {
+  return (recentOrderTimes.get(String(userId)) || []).filter((timestamp) => now - timestamp < ORDER_RATE_WINDOW_MS);
+}
+
+function canPlaceAnotherOrder(userId) {
+  return recentOrdersFor(userId).length < MAX_ORDERS_PER_10_MINUTES;
+}
+
+// Only orders that were actually placed count towards the limit.
+function recordPlacedOrder(userId) {
+  const now = Date.now();
+  const recent = recentOrdersFor(userId, now);
+  recent.push(now);
+  recentOrderTimes.set(String(userId), recent);
+  if (recentOrderTimes.size > 20000) {
+    for (const [id, times] of recentOrderTimes) {
+      if (!times.some((timestamp) => now - timestamp < ORDER_RATE_WINDOW_MS)) recentOrderTimes.delete(id);
+    }
+  }
 }
 
 function getCurrentMenuDay() {
@@ -960,10 +1035,19 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ message: 'Choose a valid account type.' });
     }
 
+    const blockedMinutes = loginBlockedFor(req.ip, username.trim());
+    if (blockedMinutes) {
+      return res.status(429).json({
+        message: `Too many wrong passwords. Please wait ${blockedMinutes} minute${blockedMinutes === 1 ? '' : 's'} and try again, or reset your password.`
+      });
+    }
+
     const user = await get('SELECT * FROM users WHERE username = ?', [username.trim()]);
     if (!user || !await verifyPassword(password, user.password)) {
+      recordLoginFailure(req.ip, username.trim());
       return res.status(401).json({ message: 'Invalid username or password.' });
     }
+    clearLoginFailures(username.trim());
 
     if (requestedRole === 'admin' && user.role !== 'admin') {
       return res.status(403).json({ message: 'This account does not have admin access.' });
@@ -2630,6 +2714,11 @@ app.post('/api/orders', requireStudentApi, async (req, res) => {
       if (!Number.isSafeInteger(combinedQuantity)) {
         return res.status(400).json({ message: 'The requested meal quantity is invalid.' });
       }
+      if (combinedQuantity > MAX_PLATES_PER_ITEM) {
+        return res.status(400).json({
+          message: `You can order up to ${MAX_PLATES_PER_ITEM} plates of ${menuItem.name} at a time.`
+        });
+      }
 
       const unitPriceCents = Math.round(Number(menuItem.price) * 100);
       if (!Number.isSafeInteger(unitPriceCents) || unitPriceCents < 0 ||
@@ -2649,7 +2738,28 @@ app.post('/api/orders', requireStudentApi, async (req, res) => {
     if (!Number.isSafeInteger(totalCents)) {
       return res.status(400).json({ message: 'The order total is invalid.' });
     }
+    if (!canPlaceAnotherOrder(req.accountUser.id)) {
+      return res.status(429).json({
+        message: `You have placed ${MAX_ORDERS_PER_10_MINUTES} orders in the last 10 minutes. Please wait a few minutes before ordering again.`
+      });
+    }
     const orderResult = await withTransaction(async (transaction) => {
+      if (paymentMethod === 'cash') {
+        const active = await transaction.get(
+          `SELECT COUNT(*) AS count FROM orders
+           WHERE user_id = ? AND payment_method = 'cash'
+             AND status IN ('Pending', 'Preparing', 'Ready for Pickup', 'Out for Delivery')`,
+          [req.accountUser.id]
+        );
+        if (Number(active.count) >= MAX_ACTIVE_CASH_ORDERS) {
+          const error = new Error(
+            `You already have ${Number(active.count)} unpaid cash orders waiting. ` +
+            'Collect or pay for them before placing another cash order, or pay with student credit.'
+          );
+          error.statusCode = 409;
+          throw error;
+        }
+      }
       if (paymentMethod === 'monthly') {
         const client = await transaction.get(
           "SELECT monthly_account_enabled FROM users WHERE id = ? AND role = 'staff'",
@@ -2749,6 +2859,7 @@ app.post('/api/orders', requireStudentApi, async (req, res) => {
       );
       return { order, balanceCents: Number(student.wallet_balance_cents) };
     });
+    recordPlacedOrder(req.accountUser.id);
     const createdItems = await all(
       `SELECT oi.*, mi.name AS item_name
        FROM order_items oi
@@ -2780,6 +2891,7 @@ app.patch('/api/orders/:id/status', requireCashierOrAdminApi, async (req, res) =
       return res.status(400).json({ message: 'Invalid status provided.' });
     }
 
+    let codeError = null;
     const updatedOrder = await withTransaction(async (transaction) => {
       const order = await transaction.get('SELECT * FROM orders WHERE id = ?', [req.params.id]);
       if (!order) {
@@ -2825,12 +2937,11 @@ app.patch('/api/orders/:id/status', requireCashierOrAdminApi, async (req, res) =
           error.statusCode = 409;
           throw error;
         }
-        const code = String(req.body.code || '').replace(/\D/g, '');
-        if (order.delivery_code && code !== String(order.delivery_code)) {
-          const error = new Error("Enter the student's 4-digit delivery code to confirm delivery.");
-          error.statusCode = 400;
-          throw error;
-        }
+        // Administrators can already see the code, so only cashiers are locked out.
+        codeError = await delivery.checkDeliveryCode(transaction, order, req.body.code, {
+          exempt: req.accountUser.role === 'admin'
+        });
+        if (codeError) return null;
       }
       const nowUtc = new Date().toISOString().slice(0, 19).replace('T', ' ');
       let update;
@@ -2897,6 +3008,7 @@ app.patch('/api/orders/:id/status', requireCashierOrAdminApi, async (req, res) =
       }
       return transaction.get('SELECT * FROM orders WHERE id = ?', [req.params.id]);
     });
+    if (codeError) throw codeError;
     delivery.notifyOrder(updatedOrder);
     if (updatedOrder && updatedOrder.user_id && ['Collected', 'Delivered'].includes(updatedOrder.status)) {
       dietService.syncOrderMeals(Number(updatedOrder.user_id))
@@ -2996,6 +3108,7 @@ app.get('/api/restaurant/orders', requireCashierOrAdminApi, async (req, res) => 
          WHERE oi.order_id = ?`,
         [order.id]
       );
+      if (req.accountUser.role !== 'admin') delete order.delivery_code;
       result.push({ ...order, items });
     }
 
@@ -3048,6 +3161,7 @@ app.get('/api/delivery/orders', requireCashierOrAdminApi, async (req, res) => {
          WHERE oi.order_id = ?`,
         [order.id]
       );
+      if (req.accountUser.role !== 'admin') delete order.delivery_code;
       result.push({ ...order, items });
     }
 

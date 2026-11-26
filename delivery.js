@@ -14,6 +14,10 @@ const KITCHEN = (() => {
   return Number.isFinite(lat) && Number.isFinite(lng) && (lat || lng) ? { lat, lng } : null;
 })();
 
+// After this many wrong delivery codes the order is locked for riders and
+// cashiers; an administrator unlocks it by giving the order to a rider.
+const MAX_DELIVERY_CODE_ATTEMPTS = 5;
+
 const utcNow = () => new Date().toISOString().slice(0, 19).replace('T', ' ');
 
 function newDeliveryCode() {
@@ -163,7 +167,32 @@ function fail(status, message) {
   return error;
 }
 
+// Checks the student's code inside an open transaction. A wrong code is
+// counted (and stays counted, so the caller must commit before reporting it):
+// returns null when the code is right, or the error to send otherwise.
+async function checkDeliveryCode(tx, order, submittedCode, { exempt = false } = {}) {
+  const failures = Number(order.delivery_code_failures) || 0;
+  if (!exempt && failures >= MAX_DELIVERY_CODE_ATTEMPTS) {
+    return fail(423, 'Too many wrong codes for this order. It is locked; ask an administrator to unlock it.');
+  }
+  const code = String(submittedCode || '').replace(/\D/g, '');
+  if (order.delivery_code && code === String(order.delivery_code)) return null;
+  if (!order.delivery_code && exempt) return null;
+  await tx.run(
+    'UPDATE orders SET delivery_code_failures = COALESCE(delivery_code_failures, 0) + 1 WHERE id = ?',
+    [order.id]
+  );
+  const left = MAX_DELIVERY_CODE_ATTEMPTS - failures - 1;
+  if (!exempt && left <= 0) {
+    return fail(423, 'Too many wrong codes for this order. It is locked; ask an administrator to unlock it.');
+  }
+  return fail(400, exempt
+    ? "That code is not right. Ask the student for the 4-digit code in their order."
+    : `That code is not right. Ask the student for the 4-digit code in their order. ${left} ${left === 1 ? 'try' : 'tries'} left.`);
+}
+
 async function changeJob(orderId, riderId, action, body = {}) {
+  let codeError = null;
   const order = await withTransaction(async (tx) => {
     const current = await tx.get('SELECT * FROM orders WHERE id = ?', [orderId]);
     if (!current || current.order_type !== 'delivery') throw fail(404, 'Delivery order not found.');
@@ -190,8 +219,8 @@ async function changeJob(orderId, riderId, action, body = {}) {
     } else if (action === 'deliver') {
       if (!mine) throw fail(403, 'This is not your delivery.');
       if (current.status !== 'Out for Delivery') throw fail(409, 'Pick the order up before delivering it.');
-      const code = String(body.code || '').replace(/\D/g, '');
-      if (!current.delivery_code || code !== String(current.delivery_code)) throw fail(400, 'That code is not right. Ask the student for the 4-digit code in their order.');
+      codeError = await checkDeliveryCode(tx, current, body.code);
+      if (codeError) return null;
       const now = utcNow();
       const update = await tx.run(
         "UPDATE orders SET status = 'Delivered', delivered_at = ?, collected_at = ? WHERE id = ? AND status = 'Out for Delivery'",
@@ -203,6 +232,7 @@ async function changeJob(orderId, riderId, action, body = {}) {
     }
     return tx.get('SELECT * FROM orders WHERE id = ?', [orderId]);
   });
+  if (codeError) throw codeError;
   if (['pickup', 'deliver'].includes(action)) notifyOrder(order);
   return order;
 }
@@ -356,11 +386,11 @@ async function assignRider(orderId, riderId) {
     if (!ACTIVE_STATUSES.includes(current.status)) throw fail(409, `This order is already ${String(current.status).toLowerCase()}.`);
     if (riderId === null) {
       if (current.status === 'Out for Delivery') throw fail(409, 'The rider already has the food. Move it to another rider instead.');
-      await tx.run('UPDATE orders SET rider_id = NULL WHERE id = ?', [orderId]);
+      await tx.run('UPDATE orders SET rider_id = NULL, delivery_code_failures = 0 WHERE id = ?', [orderId]);
     } else {
       const rider = await tx.get("SELECT id FROM users WHERE id = ? AND role = 'rider'", [riderId]);
       if (!rider) throw fail(400, 'Choose a delivery rider account.');
-      await tx.run('UPDATE orders SET rider_id = ? WHERE id = ?', [riderId, orderId]);
+      await tx.run('UPDATE orders SET rider_id = ?, delivery_code_failures = 0 WHERE id = ?', [riderId, orderId]);
     }
     return tx.get('SELECT * FROM orders WHERE id = ?', [orderId]);
   });
@@ -378,6 +408,7 @@ async function assignRider(orderId, riderId) {
 module.exports = {
   adminBoard,
   assignRider,
+  checkDeliveryCode,
   DELIVERY_FEE_CENTS,
   KITCHEN,
   newDeliveryCode,

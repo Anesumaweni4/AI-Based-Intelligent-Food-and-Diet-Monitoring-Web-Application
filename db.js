@@ -6,6 +6,7 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { AsyncLocalStorage } = require('async_hooks');
 const { hashPassword, isDefaultAdminPasswordHash } = require('./passwords');
 
 const dbConfig = {
@@ -27,6 +28,19 @@ fs.mkdirSync(path.dirname(sqliteDbPath), { recursive: true });
 let pool = null;
 let sqliteDb = null;
 let postgresPool = null;
+
+// SQLite uses one shared connection, so two requests must never have a
+// transaction open at the same time. Every SQLite call waits its turn in this
+// queue. Calls made inside a transaction (which already holds the queue) run
+// straight away, so a transaction can still use the plain run/get/all helpers.
+const sqliteLockContext = new AsyncLocalStorage();
+let sqliteQueue = Promise.resolve();
+function withSqliteLock(task) {
+  if (sqliteLockContext.getStore()) return task();
+  const result = sqliteQueue.then(() => sqliteLockContext.run(true, task));
+  sqliteQueue = result.catch(() => {});
+  return result;
+}
 
 function postgresSql(sql) {
   let parameterIndex = 0;
@@ -126,7 +140,7 @@ async function run(sql, params = []) {
     return postgresRun(postgresPool, sql, params);
   }
   if (sqliteDb) {
-    return sqliteRun(sql, params);
+    return withSqliteLock(() => sqliteRun(sql, params));
   }
 
   const [result] = await pool.execute(sql, params);
@@ -139,7 +153,7 @@ async function all(sql, params = []) {
     return result.rows;
   }
   if (sqliteDb) {
-    return sqliteAll(sql, params);
+    return withSqliteLock(() => sqliteAll(sql, params));
   }
 
   const [rows] = await pool.execute(sql, params);
@@ -152,7 +166,7 @@ async function get(sql, params = []) {
     return result.rows[0] || null;
   }
   if (sqliteDb) {
-    return sqliteGet(sql, params);
+    return withSqliteLock(() => sqliteGet(sql, params));
   }
 
   const rows = await all(sql, params);
@@ -183,15 +197,17 @@ async function withTransaction(callback) {
     }
   }
   if (sqliteDb) {
-    await sqliteRun('BEGIN IMMEDIATE');
-    try {
-      const result = await callback({ run: sqliteRun, get: sqliteGet, all: sqliteAll });
-      await sqliteRun('COMMIT');
-      return result;
-    } catch (error) {
-      await sqliteRun('ROLLBACK');
-      throw error;
-    }
+    return withSqliteLock(async () => {
+      await sqliteRun('BEGIN IMMEDIATE');
+      try {
+        const result = await callback({ run: sqliteRun, get: sqliteGet, all: sqliteAll });
+        await sqliteRun('COMMIT');
+        return result;
+      } catch (error) {
+        await sqliteRun('ROLLBACK').catch(() => {});
+        throw error;
+      }
+    });
   }
 
   const connection = await pool.getConnection();
@@ -1118,7 +1134,8 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
     ['rider_lng', 'DECIMAL(10,6)', 'REAL'],
     ['rider_location_at', 'TIMESTAMP', 'DATETIME'],
     ['dispatched_at', 'TIMESTAMP', 'DATETIME'],
-    ['delivered_at', 'TIMESTAMP', 'DATETIME']
+    ['delivered_at', 'TIMESTAMP', 'DATETIME'],
+    ['delivery_code_failures', 'INT NOT NULL DEFAULT 0', 'INTEGER NOT NULL DEFAULT 0']
   ];
   if (postgresPool) {
     for (const [name, type] of deliveryColumns) {
@@ -1913,7 +1930,7 @@ async function initializeDatabase({ seedData = true, requireEmpty = false } = {}
 }
 
 async function replaceMenuSchedule(entries) {
-  if (postgresPool) {
+  if (postgresPool || sqliteDb) {
     await withTransaction(async (transaction) => {
       await transaction.run('DELETE FROM menu_schedule');
       for (const entry of entries) {
@@ -1923,24 +1940,6 @@ async function replaceMenuSchedule(entries) {
         );
       }
     });
-    return;
-  }
-
-  if (sqliteDb) {
-    await sqliteRun('BEGIN TRANSACTION');
-    try {
-      await sqliteRun('DELETE FROM menu_schedule');
-      for (const entry of entries) {
-        await sqliteRun(
-          'INSERT INTO menu_schedule (day_of_week, menu_item_id) VALUES (?, ?)',
-          [entry.dayOfWeek, entry.menuItemId]
-        );
-      }
-      await sqliteRun('COMMIT');
-    } catch (error) {
-      await sqliteRun('ROLLBACK');
-      throw error;
-    }
     return;
   }
 
